@@ -45,12 +45,6 @@ header p{margin:0;color:var(--muted);font-size:.85rem;text-align:right;max-width
 .shoot .cam{font-size:1.6rem}
 .shoot small{display:block;color:var(--muted);font-weight:400;font-size:.85rem}
 input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
-.scan{width:100%;min-height:92px;padding:12px;border-radius:14px;border:2px solid var(--gold);background:#000;color:#fff;font:inherit;font-size:16px;resize:vertical}
-.scan::placeholder{color:#8a8a8a}
-.how{margin:6px 0 0;font-size:.88rem;color:var(--muted)}
-.how summary{cursor:pointer;color:var(--gold-l);font-weight:600}
-.how p{margin:6px 0 0}
-.or{text-align:center;color:var(--muted);font-size:.85rem;margin:10px 0 8px}
 .thumbs{display:flex;gap:8px;flex-wrap:wrap}
 .thumbs:not(:empty){margin-bottom:10px}
 .thumb{position:relative;width:78px;height:78px;border-radius:12px;overflow:hidden;border:1px solid var(--line)}
@@ -106,6 +100,26 @@ button:focus-visible,.shoot:focus-within{outline:3px solid var(--gold-l);outline
 .dot.comprar{color:var(--go)} .dot.moderacao{color:var(--wait)} .dot.evitar{color:var(--stop)}
 .clear{background:none;border:0;color:var(--muted);font:inherit;font-size:.85rem;text-decoration:underline;cursor:pointer;padding:6px 0}
 .fine{margin-top:26px;font-size:.8rem;color:var(--muted)}
+.scanbtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:74px;border:0;border-radius:14px;background:var(--gold);color:#000;font-family:"Bebas Neue",sans-serif;font-size:1.5rem;letter-spacing:.06em;cursor:pointer}
+.scanbtn svg{width:30px;height:30px}
+.alt{display:flex;gap:8px;margin-top:10px}
+.alt input{flex:1;min-width:0;padding:12px;border-radius:12px;border:1px solid var(--line);background:#000;color:#fff;font:inherit;font-size:16px;letter-spacing:.04em}
+.alt label,.alt button{flex:none;display:flex;align-items:center;justify-content:center;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--ink);font:inherit;font-weight:600;cursor:pointer}
+.found{display:flex;gap:12px;align-items:center;padding:10px;border-radius:14px;background:var(--card2);margin-bottom:10px}
+.found img{width:58px;height:58px;object-fit:contain;border-radius:10px;background:#fff;flex:none}
+.found .nm{font-weight:700;line-height:1.2}
+.found .sub{color:var(--muted);font-size:.85rem}
+.found .x{margin-left:auto;background:none;border:0;color:var(--muted);font-size:1.4rem;cursor:pointer;padding:6px}
+.found.miss{border:1px solid var(--stop)}
+#scanner{position:fixed;inset:0;z-index:50;background:#000;display:flex;flex-direction:column}
+#scanner video{flex:1;width:100%;object-fit:cover}
+#scanner .box{position:absolute;left:10%;right:10%;top:38%;height:22%;border:3px solid var(--gold);border-radius:16px;box-shadow:0 0 0 9999px rgba(0,0,0,.45)}
+#scanner .bar{position:absolute;left:0;right:0;bottom:0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:10px;align-items:center}
+#scanner .bar p{margin:0;color:#fff;text-align:center}
+#scanner .bar button{width:100%;max-width:420px;padding:15px;border-radius:14px;border:1px solid #444;background:#111;color:#fff;font:inherit;font-weight:700}
+.prodimg{float:right;width:74px;height:74px;object-fit:contain;background:#fff;border-radius:12px;margin:0 0 8px 10px}
+.src{font-size:.8rem;color:var(--muted);margin-top:10px}
+.src a{color:var(--gold-l)}
 .hidden{display:none!important}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -114,7 +128,7 @@ button:focus-visible,.shoot:focus-within{outline:3px solid var(--gold-l);outline
 <main>
   <header>
     <h1>Leva ou não?</h1>
-    <p>Foto do rótulo, veredito na hora. Nenhuma foto fica salva.</p>
+    <p>Escaneia o código de barras e vê na hora se vale levar.</p>
   </header>
 
   <div class="tabs" role="tablist">
@@ -124,28 +138,28 @@ button:focus-visible,.shoot:focus-within{outline:3px solid var(--gold-l);outline
 
   <section class="slot" id="slotA">
     <h2 id="slotATitle">Produto</h2>
-    <textarea class="scan" data-text="A" rows="3" placeholder="Toque aqui → Escanear Texto e aponte pros ingredientes"></textarea>
-    <details class="how"><summary>Como escanear?</summary><p>Toque no campo acima. Se não aparecer o botão <b>Escanear Texto</b>, toque de novo no campo (ou segure) e escolha <b>Escanear Texto</b>. Aponte a câmera pros ingredientes e toque em <b>Inserir</b>. Pode escanear mais de uma vez (ingredientes + tabela).</p></details>
-    <div class="or">ou</div>
-    <div class="thumbs" data-thumbs="A"></div>
-    <label class="shoot" data-shoot="A">
-      <span class="cam" aria-hidden="true">📷</span>
-      <span><span data-shoot-title="A">Fotografar ingredientes</span><small>Tabela nutricional ajuda também</small></span>
-      <input type="file" accept="image/*" capture="environment" data-input="A">
-    </label>
+    <div data-found="A"></div>
+    <div data-pick="A">
+      <button class="scanbtn" data-scan="A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 8v8M10 8v8M13.5 8v8M17 8v8"/></svg>Escanear código de barras</button>
+      <div class="alt">
+        <input data-code="A" inputmode="numeric" pattern="[0-9]*" maxlength="14" placeholder="ou digita o número" aria-label="Número do código de barras">
+        <button data-ok="A">OK</button>
+        <label title="Foto do código de barras">📷<input type="file" accept="image/*" capture="environment" data-photo="A" hidden></label>
+      </div>
+    </div>
   </section>
 
   <section class="slot hidden" id="slotB">
-    <h2>Produto B</h2>
-    <textarea class="scan" data-text="B" rows="3" placeholder="Toque aqui → Escanear Texto e aponte pros ingredientes"></textarea>
-    <details class="how"><summary>Como escanear?</summary><p>Toque no campo acima. Se não aparecer o botão <b>Escanear Texto</b>, toque de novo no campo (ou segure) e escolha <b>Escanear Texto</b>. Aponte a câmera pros ingredientes e toque em <b>Inserir</b>. Pode escanear mais de uma vez (ingredientes + tabela).</p></details>
-    <div class="or">ou</div>
-    <div class="thumbs" data-thumbs="B"></div>
-    <label class="shoot" data-shoot="B">
-      <span class="cam" aria-hidden="true">📷</span>
-      <span><span data-shoot-title="B">Fotografar ingredientes</span><small>Do outro produto</small></span>
-      <input type="file" accept="image/*" capture="environment" data-input="B">
-    </label>
+    <h2 id="slotBTitle">Produto B</h2>
+    <div data-found="B"></div>
+    <div data-pick="B">
+      <button class="scanbtn" data-scan="B"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 8v8M10 8v8M13.5 8v8M17 8v8"/></svg>Escanear código de barras</button>
+      <div class="alt">
+        <input data-code="B" inputmode="numeric" pattern="[0-9]*" maxlength="14" placeholder="ou digita o número" aria-label="Número do código de barras">
+        <button data-ok="B">OK</button>
+        <label title="Foto do código de barras">📷<input type="file" accept="image/*" capture="environment" data-photo="B" hidden></label>
+      </div>
+    </div>
   </section>
 
   <div class="row">
@@ -164,50 +178,109 @@ button:focus-visible,.shoot:focus-within{outline:3px solid var(--gold-l);outline
     <button class="clear" id="clearHist">Limpar lista</button>
   </section>
 
-  <p class="fine">As fotos ficam só na tela enquanto você analisa e somem ao fechar. A lista acima guarda só nome e veredito. A leitura é feita no próprio celular; se a foto sair torta ou com reflexo, tira de novo mais de perto. Não substitui pediatra ou nutricionista.</p>
+  <p class="fine">Nada é salvo além do nome e veredito na lista acima. Dados do Open Food Facts, base aberta e colaborativa. Não substitui pediatra ou nutricionista.</p>
 </main>
 
+<div id="scanner" class="hidden" role="dialog" aria-label="Leitor de código de barras">
+  <video id="cam" playsinline muted autoplay></video>
+  <div class="box" aria-hidden="true"></div>
+  <div class="bar"><p id="scanMsg">Aponte pro código de barras</p><button id="scanClose">Cancelar</button></div>
+</div>
+<script src="lib/zxing.min.js"></script>
 <script>
 const $ = s => document.querySelector(s);
 const goBtn = $("#go"), statusEl = $("#status"), result = $("#result"), baby = $("#baby");
-let mode = "one", sample = null, busy = false, maxTotal = 2;
-const photos = { A: [], B: [] };
+let mode = "one", busy = false;
+const prod = { A: null, B: null };      // {code, status:'loading'|'ok'|'miss'|'erro', data}
 
 function store(k, v){ try{ if(v===undefined) return JSON.parse(localStorage.getItem(k)); localStorage.setItem(k, JSON.stringify(v)); }catch(e){ return null; } }
 baby.checked = store("baby2") ?? false;
 baby.onchange = () => store("baby2", baby.checked);
+function el(tag, cls, text){ const e = document.createElement(tag); if(cls) e.className = cls; if(text!=null) e.textContent = text; return e; }
 
-function perSlot(){ return mode === "one" ? Math.min(2, maxTotal) : Math.max(1, Math.min(2, Math.floor(maxTotal/2))); }
+/* ---------- busca na base aberta ---------- */
+const FIELDS = "product_name,product_name_pt,generic_name_pt,brands,quantity,image_front_small_url,ingredients_text_pt,ingredients_text,additives_tags,nova_group,nutriscore_grade,nutriments,categories_tags";
+const cache = new Map();
+async function buscar(code){
+  if (cache.has(code)) return cache.get(code);
+  const p = (async () => {
+    let res;
+    try { res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json?fields=${FIELDS}`); }
+    catch (e) { throw new Error("net"); }
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error("http");
+    const j = await res.json();
+    return j && j.status === 1 && j.product ? j.product : null;
+  })();
+  cache.set(code, p);
+  p.catch(() => cache.delete(code));
+  return p;
+}
+const nomeProd = d => [d.product_name_pt || d.product_name || d.generic_name_pt || "Produto", d.brands && d.brands.split(",")[0].trim()].filter(Boolean).join(" · ");
 
+function setCode(k, code){
+  code = String(code || "").replace(/\D/g, "");
+  if (code.length < 8){ statusEl.className = "status warn"; statusEl.textContent = "Código incompleto. Confere os números."; return; }
+  statusEl.className = "status"; statusEl.textContent = "";
+  prod[k] = { code, status: "loading" }; renderSlot(k); render();
+  buscar(code).then(d => { if (!prod[k] || prod[k].code !== code) return; prod[k] = { code, status: d ? "ok" : "miss", data: d }; renderSlot(k); render(); })
+    .catch(() => { if (!prod[k] || prod[k].code !== code) return; prod[k] = { code, status: "erro" }; renderSlot(k); render(); });
+}
 function renderSlot(k){
-  const box = document.querySelector(`[data-thumbs="${k}"]`); box.innerHTML = "";
-  photos[k].forEach((f, i) => {
-    const d = document.createElement("div"); d.className = "thumb";
-    const img = document.createElement("img"); img.src = f.url; img.alt = "Foto " + (i+1);
-    const x = document.createElement("button"); x.textContent = "×"; x.setAttribute("aria-label","Remover foto");
-    x.onclick = () => { URL.revokeObjectURL(f.url); photos[k].splice(i,1); render(); };
-    d.append(img, x); box.append(d);
-  });
-  document.querySelector(`[data-shoot="${k}"]`).classList.toggle("hidden", photos[k].length >= perSlot());
-  document.querySelector(`[data-shoot-title="${k}"]`).textContent = photos[k].length ? "Adicionar outra foto" : "Fotografar ingredientes";
+  const box = document.querySelector(`[data-found="${k}"]`), pick = document.querySelector(`[data-pick="${k}"]`);
+  box.innerHTML = ""; const p = prod[k];
+  pick.classList.toggle("hidden", !!p);
+  if (!p) return;
+  const f = el("div", "found" + (p.status === "miss" || p.status === "erro" ? " miss" : ""));
+  if (p.status === "ok" && p.data.image_front_small_url){ const im = el("img"); im.src = p.data.image_front_small_url; im.alt = ""; f.append(im); }
+  const t = el("div");
+  if (p.status === "loading") t.append(el("div","nm","Buscando…"), el("div","sub",p.code));
+  if (p.status === "ok") t.append(el("div","nm",nomeProd(p.data)), el("div","sub",[p.data.quantity, p.code].filter(Boolean).join(" · ")));
+  if (p.status === "miss") t.append(el("div","nm","Produto não cadastrado na base"), el("div","sub",p.code + " · tenta outro produto"));
+  if (p.status === "erro") t.append(el("div","nm","Sem conexão"), el("div","sub","Confere a internet e escaneia de novo"));
+  f.append(t);
+  const x = el("button","x","×"); x.setAttribute("aria-label","Trocar produto"); x.onclick = () => { prod[k] = null; renderSlot(k); render(); };
+  f.append(x); box.append(f);
 }
-const txt = k => (document.querySelector(`[data-text="${k}"]`).value || "").trim();
-const temAlgo = k => photos[k].length > 0 || txt(k).length > 10;
-function ready(){ return mode === "one" ? temAlgo("A") : temAlgo("A") && temAlgo("B"); }
-document.querySelectorAll("[data-text]").forEach(t => t.addEventListener("input", () => render()));
-function render(){
-  renderSlot("A"); renderSlot("B");
-  goBtn.textContent = mode === "one" ? "Analisar" : "Comparar";
-  goBtn.disabled = !ready() || busy;
-}
-function clearPhotos(){ ["A","B"].forEach(k => { photos[k].forEach(f => URL.revokeObjectURL(f.url)); photos[k] = []; document.querySelector(`[data-text="${k}"]`).value = ""; }); }
+function ready(){ const ok = k => prod[k] && prod[k].status === "ok"; return mode === "one" ? ok("A") : ok("A") && ok("B"); }
+function render(){ goBtn.textContent = mode === "one" ? "Analisar" : "Comparar"; goBtn.disabled = !ready() || busy; }
 
-document.querySelectorAll("[data-input]").forEach(inp => {
-  inp.onchange = () => {
-    const k = inp.dataset.input, f = inp.files && inp.files[0];
-    if (f) { const ph = { file: f, url: URL.createObjectURL(f) }; photos[k].push(ph); if (!aiImg) lerJa(ph).catch(() => {}); }
-    inp.value = ""; render();
-  };
+document.querySelectorAll("[data-ok]").forEach(b => b.onclick = () => { const k = b.dataset.ok; setCode(k, document.querySelector(`[data-code="${k}"]`).value); });
+document.querySelectorAll("[data-code]").forEach(i => i.addEventListener("keydown", e => { if (e.key === "Enter") setCode(i.dataset.code, i.value); }));
+
+/* ---------- leitor de código de barras ---------- */
+const Z = window.ZXing;
+function reader(){
+  const hints = new Map();
+  hints.set(Z.DecodeHintType.POSSIBLE_FORMATS, [Z.BarcodeFormat.EAN_13, Z.BarcodeFormat.EAN_8, Z.BarcodeFormat.UPC_A, Z.BarcodeFormat.UPC_E]);
+  hints.set(Z.DecodeHintType.TRY_HARDER, true);
+  return new Z.BrowserMultiFormatReader(hints, 200);
+}
+let rd = null, alvo = null;
+function fecharScanner(){ try{ rd && rd.reset(); }catch(e){} rd = null; $("#scanner").classList.add("hidden"); }
+async function abrirScanner(k){
+  if (!Z){ statusEl.className = "status warn"; statusEl.textContent = "Leitor não carregou. Digita o número do código."; return; }
+  alvo = k; $("#scanMsg").textContent = "Aponte pro código de barras"; $("#scanner").classList.remove("hidden");
+  rd = reader();
+  try{
+    await rd.decodeFromConstraints({ video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } } }, $("#cam"), (res, err) => {
+      if (res && rd){ const code = res.getText(); if (navigator.vibrate) navigator.vibrate(60); fecharScanner(); setCode(alvo, code); }
+    });
+  }catch(e){
+    fecharScanner();
+    statusEl.className = "status warn";
+    statusEl.textContent = "Não consegui abrir a câmera. Libera a câmera pro app ou usa o 📷 / digita o número.";
+  }
+}
+$("#scanClose").onclick = fecharScanner;
+document.querySelectorAll("[data-scan]").forEach(b => b.onclick = () => abrirScanner(b.dataset.scan));
+document.querySelectorAll("[data-photo]").forEach(inp => inp.onchange = async () => {
+  const f = inp.files && inp.files[0]; inp.value = ""; if (!f || !Z) return;
+  const k = inp.dataset.photo, url = URL.createObjectURL(f);
+  statusEl.className = "status"; statusEl.textContent = "Lendo o código da foto…";
+  try{ const r = await reader().decodeFromImageUrl(url); statusEl.textContent = ""; setCode(k, r.getText()); }
+  catch(e){ statusEl.className = "status warn"; statusEl.textContent = "Não achei código de barras nessa foto. Tira mais de perto, reto."; }
+  finally{ URL.revokeObjectURL(url); }
 });
 
 function setMode(m){
@@ -216,199 +289,15 @@ function setMode(m){
   $("#tabTwo").setAttribute("aria-selected", m === "two");
   $("#slotB").classList.toggle("hidden", m === "one");
   $("#slotATitle").textContent = m === "one" ? "Produto" : "Produto A";
-  ["A","B"].forEach(k => { while (photos[k].length > perSlot()){ URL.revokeObjectURL(photos[k].pop().url); } });
   result.classList.add("hidden"); statusEl.textContent = "";
   render();
 }
 $("#tabOne").onclick = () => setMode("one");
 $("#tabTwo").onclick = () => setMode("two");
+function clearPhotos(){ prod.A = null; prod.B = null; document.querySelectorAll("[data-code]").forEach(i => i.value = ""); renderSlot("A"); renderSlot("B"); }
 
-const CRITERIOS = (isBaby) => `A pessoa está no supermercado fazendo compras pra família (adultos e uma criança de 2 anos que já come quase tudo que os pais comem) e prefere alimentos o mais naturais possível.
-Critérios (use bom senso e compare com a categoria do produto):
-- Bom: lista curta de ingredientes reconhecíveis (comida de verdade), sem açúcar adicionado ou com pouco.
-- Ruim: açúcar/xarope de glicose entre os primeiros ingredientes ou açúcar adicionado alto (%VD alto na porção); adoçantes artificiais (aspartame, sucralose, acessulfame, neotame, ciclamato, sacarina); corantes artificiais (tartrazina, amarelo crepúsculo, vermelho 40, caramelo IV etc.); vários conservantes (benzoato, sorbato, nitrito/nitrato); gordura vegetal hidrogenada/trans; aromatizante artificial ou "idêntico ao natural"; soro de leite como 1º ingrediente em produto que parece leite; % de fruta muito baixo em "suco"; muitos espessantes/estabilizantes.
-- Um aditivo leve isolado (ex.: um conservante em ricota, vitamina C como antioxidante) não condena o produto sozinho: pese o conjunto.
-${isBaby ? "- MODO BEBÊ LIGADO: o produto é só pra criança de 2 anos. Seja mais rigoroso: ideal sem açúcar adicionado, sem adoçantes, sem corantes artificiais, sem cafeína, sódio moderado." : ""}
-Vereditos: "comprar" (pode levar tranquilo), "moderacao" (ok de vez em quando / tem ressalvas), "evitar" (deixa na prateleira).
-Escreva em português do Brasil, frases curtas e simples, jeito de conversa.`;
-
-function promptOne(isBaby){
-  return `Analise a(s) foto(s) do rótulo de UM produto (ingredientes e/ou tabela nutricional).
-${CRITERIOS(isBaby)}
-Se não der pra ler os ingredientes, use legivel=false e diga no resumo o que fotografar.
-Responda SOMENTE com JSON:
-{"legivel": true, "produto": "nome/tipo", "veredito": "comprar|moderacao|evitar", "resumo": "1-2 frases", "comentario": "2-3 frases de papo sobre o produto: o que ele é, uma curiosidade ou dica de uso/alternativa mais natural. Tom leve de conversa", "pontos_bons": ["..."], "pontos_ruins": ["..."], ${isBaby ? '"bebe": {"serve": true, "motivo": "1 frase"}' : '"bebe": null'}, "ingredientes": "ingredientes lidos do rótulo"}`;
-}
-function promptTwo(isBaby, nA, nB){
-  return `Compare DOIS produtos. As primeiras ${nA} imagem(ns) são do PRODUTO A; as ${nB} seguinte(s) são do PRODUTO B.
-${CRITERIOS(isBaby)}
-Diga qual dos dois é melhor pra levar pelos critérios. Se não der pra ler algum, marque legivel=false nele.
-Responda SOMENTE com JSON:
-{"a": {"legivel": true, "produto": "nome/tipo", "veredito": "comprar|moderacao|evitar", "resumo": "1 frase"}, "b": {"legivel": true, "produto": "nome/tipo", "veredito": "comprar|moderacao|evitar", "resumo": "1 frase"}, "melhor": "a|b|empate", "motivo": "1-2 frases explicando a escolha", "comentario": "2-3 frases de papo sobre esses produtos: o que são, uma curiosidade ou dica. Tom leve de conversa", "diferencas": ["diferença principal", "..."], ${isBaby ? '"bebe": "1 frase: qual serve (ou se nenhum serve) pro bebê"' : '"bebe": null'}}`;
-}
-
-const LABEL = {comprar:"Pode levar", moderacao:"Com moderação", evitar:"Deixa na prateleira"};
-const vOk = v => ["comprar","moderacao","evitar"].includes(v) ? v : "moderacao";
-function el(tag, cls, text){ const e = document.createElement(tag); if(cls) e.className = cls; if(text!=null) e.textContent = text; return e; }
-function list(arr, cls){ if (!Array.isArray(arr) || !arr.length) return null; const ul = el("ul","list "+cls); arr.forEach(t => ul.append(el("li",null,String(t)))); return ul; }
-function againBtn(){
-  const b = el("button","again","Analisar outro");
-  b.onclick = () => { clearPhotos(); result.classList.add("hidden"); statusEl.textContent = ""; render(); window.scrollTo({top:0,behavior:"smooth"}); };
-  return b;
-}
-function show(){ result.classList.remove("hidden"); result.scrollIntoView({behavior:"smooth", block:"start"}); }
-
-function showOne(r){
-  result.innerHTML = "";
-  const c = el("div","card");
-  if (!r || r.legivel === false){
-    c.append(el("p","pname","Não consegui ler o rótulo"), el("p","summary",(r && r.resumo) || "Tire mais de perto a lista de ingredientes, com luz e sem reflexo."));
-  } else {
-    const v = vOk(r.veredito); c.classList.add(v);
-    c.append(el("div","stamp",LABEL[v]));
-    if (r.produto) c.append(el("p","pname",r.produto));
-    if (r.resumo) c.append(el("p","summary",r.resumo));
-    if (r.comentario) c.append(el("p","talk","💬 " + r.comentario));
-    [list(r.pontos_bons,"good"), list(r.pontos_ruins,"bad")].forEach(x => x && c.append(x));
-    if (r.bebe && typeof r.bebe === "object"){
-      const b = el("div","baby " + (r.bebe.serve ? "ok" : "no"), r.bebe.serve ? "👶 Serve pro bebê" : "👶 Não indicado pro bebê");
-      if (r.bebe.motivo) b.append(el("span",null,r.bebe.motivo)); c.append(b);
-    }
-    if (r.ingredientes){ const d = el("details","ing"); d.append(el("summary",null,"Ingredientes lidos"), el("p",null,r.ingredientes)); c.append(d); }
-    saveHist(r.produto || "Produto", v);
-  }
-  result.append(c, againBtn()); show();
-}
-
-function showTwo(r){
-  result.innerHTML = "";
-  const a = (r && r.a) || {}, b = (r && r.b) || {};
-  const best = r && ["a","b"].includes(r.melhor) ? r.melhor : null;
-  const top = el("div","card winner");
-  const winName = best === "a" ? (a.produto || "Produto A") : best === "b" ? (b.produto || "Produto B") : null;
-  top.append(el("p","crown", winName ? "Leva o " + (best === "a" ? "A" : "B") : "Empate"));
-  if (winName) top.append(el("p","pname",winName));
-  if (r && r.motivo) top.append(el("p","summary",r.motivo));
-  if (r && r.comentario) top.append(el("p","talk","💬 " + r.comentario));
-  const dl = list(r && r.diferencas, "good"); if (dl) top.append(dl);
-  if (r && typeof r.bebe === "string" && r.bebe) { const bb = el("div","baby ok","👶 Pro bebê"); bb.append(el("span",null,r.bebe)); top.append(bb); }
-  const vs = el("div","vs");
-  [["A",a],["B",b]].forEach(([t,p]) => {
-    const c = el("div","card");
-    c.append(el("div","tag","Produto " + t));
-    if (p.legivel === false){ c.append(el("p","summary","Não deu pra ler. Tire mais de perto.")); }
-    else {
-      const v = vOk(p.veredito);
-      c.append(el("div","stamp " + v, LABEL[v]));
-      if (p.produto) c.append(el("p","pname",p.produto));
-      if (p.resumo) c.append(el("p","summary",p.resumo));
-      saveHist(p.produto || ("Produto " + t), v);
-    }
-    vs.append(c);
-  });
-  result.append(top, vs, againBtn()); show();
-}
-
-function saveHist(name, v){
-  const h = store("hist") || [];
-  h.unshift({name: String(name).slice(0,60), v});
-  store("hist", h.slice(0,12)); renderHist();
-}
-function renderHist(){
-  const h = store("hist") || [];
-  $("#hist").classList.toggle("hidden", !h.length);
-  const ul = $("#histList"); ul.innerHTML = "";
-  h.forEach(x => { const li = el("li"); li.append(el("span",null,x.name), el("span","dot "+x.v, LABEL[x.v]||"")); ul.append(li); });
-}
-$("#clearHist").onclick = () => { store("hist", []); renderHist(); };
-renderHist();
-
-/* ====================== LEITURA NO CELULAR (OCR) ====================== */
-let ocrWorker = null, ocrLoading = null;
-function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = () => bad(new Error("script")); document.head.append(s); }); }
-async function getOcr(onStep){
-  if (ocrWorker) return ocrWorker;
-  if (!ocrLoading) ocrLoading = (async () => {
-    onStep && onStep("Preparando o leitor (só na 1ª vez, pode demorar um pouco)…");
-    if (!window.Tesseract) await loadScript(new URL("./ocr/tesseract.min.js", location.href).href);
-    const base = new URL("./", location.href).href;
-    const w = await Tesseract.createWorker("por", 1, {
-      workerPath: base + "ocr/worker.min.js",
-      corePath: base + "ocr/",
-      langPath: base + "ocr/",
-      workerBlobURL: false,
-      gzip: true,
-      cacheMethod: "none"
-    });
-    ocrWorker = w; return w;
-  })().catch(e => { ocrLoading = null; throw e; });
-  return ocrLoading;
-}
-async function prep(file, rot, max = 1600, filtro = true){
-  const url = URL.createObjectURL(file);
-  try{
-    const img = await new Promise((ok, bad) => { const i = new Image(); i.onload = () => ok(i); i.onerror = bad; i.src = url; });
-    const sc = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
-    const w = Math.round(img.naturalWidth * sc), h = Math.round(img.naturalHeight * sc);
-    const c = document.createElement("canvas"); const side = rot % 180 !== 0;
-    c.width = side ? h : w; c.height = side ? w : h;
-    const g = c.getContext("2d");
-    g.translate(c.width/2, c.height/2); g.rotate(rot * Math.PI / 180);
-    if (filtro) g.filter = "grayscale(1) contrast(1.35)";
-    g.drawImage(img, -w/2, -h/2, w, h);
-    return c;
-  } finally { URL.revokeObjectURL(url); }
-}
+/* ---------- regras ---------- */
 const nrm = s => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-function textScore(d){
-  const t = nrm(d.text); let s = d.confidence || 0;
-  if (/ingrediente/.test(t)) s += 40;
-  if (/(acucar|leite|agua|sal|oleo|farinha|sodio|carboidrato)/.test(t)) s += 15;
-  return s;
-}
-const CAP = window.Capacitor;
-const NATIVE = !!(CAP && CAP.isNativePlatform && CAP.isNativePlatform());
-let mlkit = null;
-if (NATIVE) { try { mlkit = CAP.registerPlugin ? CAP.registerPlugin("CapacitorPluginMlKitTextRecognition") : CAP.Plugins.CapacitorPluginMlKitTextRecognition; } catch (e) { mlkit = null; } }
-
-// um passe de leitura numa rotação; devolve {text, sc}
-async function passo(file, rot, onStep){
-  if (mlkit){
-    try{
-      const c = await prep(file, rot, 1800, false);
-      const b64 = c.toDataURL("image/jpeg", 0.9).split(",")[1];
-      const r = await mlkit.detectText({ base64Image: b64, rotation: 0 });
-      const text = r && r.text || "";
-      return { text, sc: textScore({ text, confidence: Math.min(90, text.length / 6) }) };
-    }catch(e){ /* leitor do Google ainda baixando: usa o embutido desta vez */ }
-  }
-  const w = await getOcr(onStep);
-  const { data } = await w.recognize(await prep(file, rot, 2000, true));
-  return { text: data.text, sc: textScore(data) };
-}
-// lê a foto: tenta reto; só gira se a leitura sair ruim
-async function readPhoto(file, onStep){
-  onStep && onStep("Lendo o texto da foto…");
-  let best = await passo(file, 0, onStep);
-  if (best.sc >= 70) return best.text;
-  for (const rot of [180, 90, 270]){
-    onStep && onStep("Foto meio torta, girando pra ler…");
-    const r = await passo(file, rot, onStep);
-    if (r.sc > best.sc) best = r;
-    if (best.sc >= 70) break;
-  }
-  return best.text;
-}
-// cada foto começa a ser lida assim que entra; o Analisar só espera terminar
-function lerJa(ph){ if (!ph.leitura) ph.leitura = readPhoto(ph.file).catch(e => { ph.leitura = null; throw e; }); return ph.leitura; }
-async function readAll(files, onStep){
-  let out = "";
-  for (const f of files){ const ph = (photos.A.concat(photos.B)).find(p => p.file === f); out += "\n" + await (ph ? lerJa(ph) : readPhoto(f, onStep)); }
-  return out.trim();
-}
-
-/* ====================== REGRAS (sem internet de IA) ====================== */
-const has = (t, re) => re.test(t);
 function ingredientesDe(raw, limpo){
   const t = nrm(raw).replace(/\s+/g, " ");
   const i = t.search(/ingredientes?\s*[:.;]?/);
@@ -499,7 +388,7 @@ function comparar(a, b, isBaby){
   else if (lg(a)) melhor = "a"; else if (lg(b)) melhor = "b";
   const w = melhor === "a" ? a : melhor === "b" ? b : null, l = melhor === "a" ? b : melhor === "b" ? a : null;
   const dif = [];
-  if (w && l && lg(l)) { l.pontos_ruins.filter(x => !w.pontos_ruins.includes(x)).slice(0, 3).forEach(x => dif.push("O outro tem: " + x.toLowerCase())); }
+  if (w && l && lg(l)) { l.pontos_ruins.filter(x => !w.pontos_ruins.includes(x)).slice(0, 3).forEach(x => dif.push("O outro: " + x.charAt(0).toLowerCase() + x.slice(1))); }
   return {
     a: { legivel: lg(a), produto: a && a.produto, veredito: a && a.veredito, resumo: a && a.resumo },
     b: { legivel: lg(b), produto: b && b.produto, veredito: b && b.veredito, resumo: b && b.resumo },
@@ -509,64 +398,131 @@ function comparar(a, b, isBaby){
   };
 }
 
-/* ====================== ANÁLISE ====================== */
-let aiText = false, aiImg = false;
-const ERR = {
-  rate_limited:"Muitas análises seguidas. Espera um pouco e tenta de novo.",
-  invalid_json:"A resposta veio embaralhada. Toca de novo.",
-  ocr_load:"Não consegui carregar o leitor de texto. Confere a internet e tenta de novo."
-};
-async function iaTexto(prompt, texto){
-  return sample.json(prompt + "\n\nNão há foto: abaixo está o TEXTO lido do rótulo por OCR (pode ter erros de leitura, interprete com bom senso):\n\n" + texto.slice(0, 12000), { cache: false });
+
+const ENUM = { e951:"aspartame", e955:"sucralose", e950:"acessulfame", e961:"neotame", e952:"ciclamato", e954:"sacarina",
+  e102:"tartrazina", e110:"amarelo crepusculo", e129:"vermelho 40", e124:"ponceau", e133:"azul brilhante", e150c:"caramelo iii", e150d:"caramelo iv", e122:"azorrubina", e127:"eritrosina", e132:"indigotina",
+  e211:"benzoato", e212:"benzoato", e202:"sorbato", e200:"sorbato", e250:"nitrito", e252:"nitrato", e251:"nitrato", e242:"dicarbonato", e223:"metabissulfito", e282:"propionato", e621:"glutamato" };
+function analisarProduto(d, isBaby){
+  const ing = d.ingredients_text_pt || d.ingredients_text || "";
+  const extras = (d.additives_tags || []).map(t => ENUM[t.replace(/^en:/, "")]).filter(Boolean);
+  const texto = (ing + (extras.length ? ", " + extras.join(", ") : "")).trim();
+  let r;
+  if (ing) r = avaliar(texto, isBaby, true);
+  if (!r || r.legivel === false) r = { legivel: true, veredito: "moderacao", pontos_bons: [], pontos_ruins: ["A base não tem a lista de ingredientes desse produto"], comentario: "", _pts: 1, _n: 0, ingredientes: "" };
+  const bons = r.pontos_bons || [], ruins = r.pontos_ruins || [];
+  let pts = r._pts || 0;
+  const nova = +d.nova_group || 0;
+  if (nova === 4){ pts += 2; ruins.unshift("Ultraprocessado (NOVA 4)"); }
+  else if (nova === 3){ pts += 1; ruins.unshift("Processado (NOVA 3)"); }
+  else if (nova === 1){ bons.unshift("Alimento in natura ou minimamente processado (NOVA 1)"); }
+  const n = d.nutriments || {};
+  const acu = n.sugars_100g, sal = n.salt_100g, gs = n["saturated-fat_100g"];
+  const acucarAdd = !ing || /(a[cg]ucar|xarope|sacarose|glicose|frutose|maltodextrina|dextrose|mel\b)/.test(nrm(ing));
+  if (acu != null && acu >= 22.5 && acucarAdd){ pts += 1; ruins.push("Muito açúcar: " + (+acu).toFixed(0) + " g em 100 g"); }
+  if (sal != null && sal >= 1.5){ pts += 1; ruins.push("Muito sal: " + (+sal).toFixed(1) + " g em 100 g"); }
+  if (gs != null && gs >= 5){ ruins.push("Gordura saturada alta: " + (+gs).toFixed(0) + " g em 100 g"); }
+  let v = pts >= 3 ? "evitar" : pts >= 1 ? "moderacao" : "comprar";
+  if (isBaby && pts >= 2) v = "evitar";
+  const coment = [];
+  if (nova === 4) coment.push("NOVA 4 é a classificação de ultraprocessado: feito na indústria com ingredientes que você não tem em casa.");
+  if (nova === 1) coment.push("NOVA 1 é comida de verdade, do jeito que vem da natureza ou quase.");
+  if (r.comentario && r.comentario !== "Nada que chame atenção no rótulo.") coment.push(r.comentario);
+  const resumo = v === "comprar" ? "Pode levar tranquilo." : v === "moderacao" ? "Não é dos piores, mas tem ressalvas. De vez em quando tá ok." : "Muita coisa industrial aqui. Melhor deixar na prateleira.";
+  const out = { legivel: true, produto: nomeProd(d), imagem: d.image_front_small_url || "", veredito: v, resumo,
+    comentario: coment.slice(0, 2).join(" ") || "Rótulo sem nada que chame atenção.", pontos_bons: bons.slice(0, 4), pontos_ruins: [...new Set(ruins)].slice(0, 6),
+    ingredientes: ing.slice(0, 700), _pts: pts, _n: r._n || 0 };
+  if (isBaby) out.bebe = { serve: v === "comprar", motivo: v === "comprar" ? "Sem açúcar adicionado, adoçante ou corante artificial." : "Tem coisa que é melhor evitar pra idade dele." };
+  return out;
 }
-goBtn.onclick = async () => {
-  if (!ready() || busy) return;
-  statusEl.className = "status";
-  busy = true; render(); result.classList.add("hidden");
-  const step = t => { statusEl.textContent = t; };
-  const isBaby = baby.checked;
-  try{
-    if (aiImg && !txt("A") && !txt("B")){
-      step(mode === "one" ? "Lendo o rótulo… uns segundos" : "Lendo os dois rótulos… uns segundos");
-      if (mode === "one") showOne(await sample.json(promptOne(isBaby), { images: photos.A.map(p => p.file), cache: false }));
-      else showTwo(await sample.json(promptTwo(isBaby, photos.A.length, photos.B.length), { images: [...photos.A, ...photos.B].map(p => p.file), cache: false }));
-    } else {
-      let tA, tB;
-      try{
-        tA = (txt("A") + "\n" + (photos.A.length ? await readAll(photos.A.map(p => p.file), step) : "")).trim();
-        if (mode === "two") tB = (txt("B") + "\n" + (photos.B.length ? await readAll(photos.B.map(p => p.file), step) : "")).trim();
-      }catch(e){ throw { code: "ocr_load" }; }
-      if (aiText){
-        step("Analisando…");
-        try{
-          if (mode === "one") { showOne(await iaTexto(promptOne(isBaby), tA)); }
-          else { showTwo(await iaTexto(promptTwo(isBaby, 1, 1).replace(/As primeiras .*? PRODUTO B\./, "Os textos dos dois produtos estão separados abaixo."), "PRODUTO A:\n" + tA + "\n\nPRODUTO B:\n" + tB)); }
-          statusEl.textContent = ""; return;
-        }catch(e){ if (e && e.code === "rate_limited") throw e; /* cai pras regras */ }
-      }
-      const limpoA = !!txt("A") && !photos.A.length, limpoB = !!txt("B") && !photos.B.length;
-      if (mode === "one") showOne(avaliar(tA, isBaby, limpoA));
-      else showTwo(comparar(avaliar(tA, isBaby, limpoA), avaliar(tB, isBaby, limpoB), isBaby));
+
+/* ---------- tela de resultado ---------- */
+const LABEL = {comprar:"Pode levar", moderacao:"Com moderação", evitar:"Deixa na prateleira"};
+const vOk = v => ["comprar","moderacao","evitar"].includes(v) ? v : "moderacao";
+function el(tag, cls, text){ const e = document.createElement(tag); if(cls) e.className = cls; if(text!=null) e.textContent = text; return e; }
+function list(arr, cls){ if (!Array.isArray(arr) || !arr.length) return null; const ul = el("ul","list "+cls); arr.forEach(t => ul.append(el("li",null,String(t)))); return ul; }
+function againBtn(){
+  const b = el("button","again","Analisar outro");
+  b.onclick = () => { clearPhotos(); result.classList.add("hidden"); statusEl.textContent = ""; render(); window.scrollTo({top:0,behavior:"smooth"}); };
+  return b;
+}
+function show(){ result.classList.remove("hidden"); result.scrollIntoView({behavior:"smooth", block:"start"}); }
+
+function showOne(r){
+  result.innerHTML = "";
+  const c = el("div","card");
+  if (!r || r.legivel === false){
+    c.append(el("p","pname","Não consegui ler o rótulo"), el("p","summary",(r && r.resumo) || "Tire mais de perto a lista de ingredientes, com luz e sem reflexo."));
+  } else {
+    const v = vOk(r.veredito); c.classList.add(v);
+    c.append(el("div","stamp",LABEL[v]));
+    if (r.imagem){ const im = el("img","prodimg"); im.src = r.imagem; im.alt = ""; c.append(im); }
+    if (r.produto) c.append(el("p","pname",r.produto));
+    if (r.resumo) c.append(el("p","summary",r.resumo));
+    if (r.comentario) c.append(el("p","talk","💬 " + r.comentario));
+    [list(r.pontos_bons,"good"), list(r.pontos_ruins,"bad")].forEach(x => x && c.append(x));
+    if (r.bebe && typeof r.bebe === "object"){
+      const b = el("div","baby " + (r.bebe.serve ? "ok" : "no"), r.bebe.serve ? "👶 Serve pro bebê" : "👶 Não indicado pro bebê");
+      if (r.bebe.motivo) b.append(el("span",null,r.bebe.motivo)); c.append(b);
     }
-    statusEl.textContent = "";
-  }catch(e){
-    statusEl.className = "status warn";
-    statusEl.textContent = ERR[e && e.code] || "Deu problema na análise. Tenta de novo.";
-  }finally{ busy = false; render(); }
+    if (r.ingredientes){ const d = el("details","ing"); d.append(el("summary",null,"Ingredientes lidos"), el("p",null,r.ingredientes)); c.append(d); }
+    saveHist(r.produto || "Produto", v);
+  }
+  result.append(c, againBtn()); show();
+}
+
+function showTwo(r){
+  result.innerHTML = "";
+  const a = (r && r.a) || {}, b = (r && r.b) || {};
+  const best = r && ["a","b"].includes(r.melhor) ? r.melhor : null;
+  const top = el("div","card winner");
+  const winName = best === "a" ? (a.produto || "Produto A") : best === "b" ? (b.produto || "Produto B") : null;
+  top.append(el("p","crown", winName ? "Leva o " + (best === "a" ? "A" : "B") : "Empate"));
+  if (winName) top.append(el("p","pname",winName));
+  if (r && r.motivo) top.append(el("p","summary",r.motivo));
+  if (r && r.comentario) top.append(el("p","talk","💬 " + r.comentario));
+  const dl = list(r && r.diferencas, "good"); if (dl) top.append(dl);
+  if (r && typeof r.bebe === "string" && r.bebe) { const bb = el("div","baby ok","👶 Pro bebê"); bb.append(el("span",null,r.bebe)); top.append(bb); }
+  const vs = el("div","vs");
+  [["A",a],["B",b]].forEach(([t,p]) => {
+    const c = el("div","card");
+    c.append(el("div","tag","Produto " + t));
+    if (p.legivel === false){ c.append(el("p","summary","Não deu pra ler. Tire mais de perto.")); }
+    else {
+      const v = vOk(p.veredito);
+      c.append(el("div","stamp " + v, LABEL[v]));
+      if (p.produto) c.append(el("p","pname",p.produto));
+      if (p.resumo) c.append(el("p","summary",p.resumo));
+      saveHist(p.produto || ("Produto " + t), v);
+    }
+    vs.append(c);
+  });
+  result.append(top, vs, againBtn()); show();
+}
+
+function saveHist(name, v){
+  const h = store("hist") || [];
+  h.unshift({name: String(name).slice(0,60), v});
+  store("hist", h.slice(0,12)); renderHist();
+}
+function renderHist(){
+  const h = store("hist") || [];
+  $("#hist").classList.toggle("hidden", !h.length);
+  const ul = $("#histList"); ul.innerHTML = "";
+  h.forEach(x => { const li = el("li"); li.append(el("span",null,x.name), el("span","dot "+x.v, LABEL[x.v]||"")); ul.append(li); });
+}
+$("#clearHist").onclick = () => { store("hist", []); renderHist(); };
+renderHist();
+
+
+function fonte(code){ const p = el("p","src"); p.append("Fonte: "); const a = el("a",null,"Open Food Facts"); a.href = "https://br.openfoodfacts.org/produto/" + code; a.target = "_blank"; a.rel = "noopener"; p.append(a); return p; }
+
+goBtn.onclick = () => {
+  if (!ready() || busy) return;
+  statusEl.className = "status"; statusEl.textContent = "";
+  const isBaby = baby.checked;
+  if (mode === "one"){ showOne(analisarProduto(prod.A.data, isBaby)); result.querySelector(".card").append(fonte(prod.A.code)); }
+  else showTwo(comparar(analisarProduto(prod.A.data, isBaby), analisarProduto(prod.B.data, isBaby), isBaby));
 };
-
-sample = null; maxTotal = 4;
-(async () => {
-  try{
-    const s = window.claude && window.claude.use ? await window.claude.use("sample") : null;
-    if (!s) return;
-    const lim = await s.limits().catch(() => null);
-    sample = s; aiText = true; aiImg = !!(lim && lim.images);
-  }catch(e){}
-})();
-// adianta o download do leitor pra 1ª análise sair mais rápida
-setTimeout(() => { if (!aiImg && !mlkit) getOcr().catch(() => {}); }, 300);
-
 render();
 </script>
 </body>
