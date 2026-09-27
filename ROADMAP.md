@@ -16,6 +16,10 @@ Hoje: uso pessoal do Thiago (site no GitHub Pages + APK Android automático).
 - **Diferenciais:** ranking do corredor ("melhores achocolatados"), sugestão de troca mais natural, lista de compras, perfis (bebê, diabético, sem glúten/lactose)
 - **Métricas:** % de códigos encontrados, tempo até o resultado
 
+## Jurídico (pronto pra quando for lançar)
+- Checklist: `docs/CHECKLIST-LANCAMENTO.md`
+- Rascunhos: `docs/POLITICA-DE-PRIVACIDADE.md`, `docs/TERMOS-DE-USO.md`
+
 ## Concorrência
 - **Yuka** (França): +85 mi de usuários, chegou ao Brasil em jul/2026 com 600 mil produtos; grátis + Premium; nota 0–100 (60% nutrição, 30% aditivos, 10% orgânico)
 - **Open Food Facts** (app da base aberta), **Fooducate** (EUA)
