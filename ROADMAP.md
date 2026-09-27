@@ -8,8 +8,10 @@ Hoje: uso pessoal do Thiago (site no GitHub Pages + APK Android automático).
 - Analisar 1 ou comparar 2, modo bebê, histórico, visual Zicão
 - Workflows: site (Pages) e APK (Releases)
 
+- Produto sem cadastro: leitura dos ingredientes do rótulo sem IA (ML Kit no app, Escanear Texto no site) + base própria no aparelho (`baseLocal`)
+
 ## Pra vender / monetizar
-- **Cobertura BR:** base própria de produtos brasileiros (cadastrar quando o Open Food Facts não tiver: foto do rótulo → IA preenche → fica salvo pra todos)
+- **Cobertura BR:** trocar `baseLocal` (aparelho) por servidor (Supabase grátis no início): o que um usuário ler do rótulo fica disponível pra todos. Opcional: enviar pro Open Food Facts também
 - **IA:** comentário e leitura de rótulo sem cadastro via servidor próprio (chave da API nunca no app)
 - **Receita:** anúncios leves (AdMob) no plano grátis + assinatura sem anúncio e sem limite
 - **Lojas:** Google Play (US$ 25 uma vez), App Store (US$ 99/ano); política de privacidade (LGPD) e aviso "não substitui nutricionista"

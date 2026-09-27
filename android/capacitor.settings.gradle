@@ -4,3 +4,6 @@ project(':capacitor-android').projectDir = new File('../node_modules/@capacitor/
 
 include ':capacitor-app'
 project(':capacitor-app').projectDir = new File('../node_modules/@capacitor/app/android')
+
+include ':pantrist-capacitor-plugin-ml-kit-text-recognition'
+project(':pantrist-capacitor-plugin-ml-kit-text-recognition').projectDir = new File('../node_modules/@pantrist/capacitor-plugin-ml-kit-text-recognition/android')

@@ -4,6 +4,7 @@ Escaneia o código de barras no mercado e o app diz se vale levar: **Pode levar*
 
 - Lê o código de barras pela câmera (ZXing), ou por foto, ou digitando o número
 - Busca o produto no **Open Food Facts** (base aberta e gratuita)
+- Produto sem cadastro: lê os ingredientes do rótulo (app: leitor nativo do Google/ML Kit; site no iPhone: Escanear Texto da Apple) e guarda numa base própria (`baseLocal`, hoje no aparelho)
 - Regras: classificação NOVA (ultraprocessado), açúcar adicionado, adoçantes, corantes artificiais, conservantes, gordura hidrogenada, soro de leite, % de suco, sal, excesso de aditivos
 - Nenhuma foto é salva.
 

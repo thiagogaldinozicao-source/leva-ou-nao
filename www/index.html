@@ -120,6 +120,14 @@ button:focus-visible,.shoot:focus-within{outline:3px solid var(--gold-l);outline
 .prodimg{float:right;width:74px;height:74px;object-fit:contain;background:#fff;border-radius:12px;margin:0 0 8px 10px}
 .src{font-size:.8rem;color:var(--muted);margin-top:10px}
 .src a{color:var(--gold-l)}
+.ler{margin-top:4px}
+.ler-t{margin:0 0 8px;color:#DDD;font-size:.95rem}
+.ler-ta{width:100%;min-height:96px;padding:12px;border-radius:14px;border:2px solid var(--gold);background:#000;color:#fff;font:inherit;font-size:16px;resize:vertical}
+.ler-ta::placeholder{color:#8a8a8a}
+.ler-btn{margin-top:10px;min-height:56px;font-size:1.3rem}
+.how{margin:6px 0 0;font-size:.88rem;color:var(--muted)}
+.how summary{cursor:pointer;color:var(--gold-l);font-weight:600}
+.how p{margin:6px 0 0}
 .hidden{display:none!important}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -218,13 +226,30 @@ async function buscar(code){
 }
 const nomeProd = d => { const n = d.product_name_pt || d.product_name || d.generic_name_pt || "Produto", m = d.brands && d.brands.split(",")[0].trim(); return m && !nrm(n).includes(nrm(m)) ? n + " · " + m : n; };
 
+/* ---------- base própria (hoje no aparelho; no app de verdade vira servidor) ----------
+   Guarda os ingredientes lidos do rótulo por código de barras. Trocar get/set por uma API
+   (ex.: Supabase) quando virar produto: o resto do app não muda. */
+const baseLocal = {
+  get(code){ const b = store("base") || {}; return b[code] || null; },
+  set(code, dados){ const b = store("base") || {}; b[code] = { ...dados, salvoEm: Date.now() }; store("base", b); }
+};
+const semIngredientes = d => !d || !(d.ingredients_text_pt || d.ingredients_text);
+
 function setCode(k, code){
   code = String(code || "").replace(/\D/g, "");
   if (code.length < 8){ statusEl.className = "status warn"; statusEl.textContent = "Código incompleto. Confere os números."; return; }
   statusEl.className = "status"; statusEl.textContent = "";
   prod[k] = { code, status: "loading" }; renderSlot(k); render();
-  buscar(code).then(d => { if (!prod[k] || prod[k].code !== code) return; prod[k] = { code, status: d ? "ok" : "miss", data: d }; renderSlot(k); render(); })
-    .catch(() => { if (!prod[k] || prod[k].code !== code) return; prod[k] = { code, status: "erro" }; renderSlot(k); render(); });
+  const local = baseLocal.get(code);
+  buscar(code).then(d => {
+    if (!prod[k] || prod[k].code !== code) return;
+    if (d && local && semIngredientes(d)) d = { ...d, ingredients_text_pt: local.ingredients_text_pt, _lido: true };
+    if (!d && local) d = local;
+    prod[k] = { code, status: d ? "ok" : "miss", data: d }; renderSlot(k); render();
+  }).catch(() => {
+    if (!prod[k] || prod[k].code !== code) return;
+    prod[k] = local ? { code, status: "ok", data: local } : { code, status: "erro" }; renderSlot(k); render();
+  });
 }
 function renderSlot(k){
   const box = document.querySelector(`[data-found="${k}"]`), pick = document.querySelector(`[data-pick="${k}"]`);
@@ -235,12 +260,84 @@ function renderSlot(k){
   if (p.status === "ok" && p.data.image_front_small_url){ const im = el("img"); im.src = p.data.image_front_small_url; im.alt = ""; f.append(im); }
   const t = el("div");
   if (p.status === "loading") t.append(el("div","nm","Buscando…"), el("div","sub",p.code));
-  if (p.status === "ok") t.append(el("div","nm",nomeProd(p.data)), el("div","sub",[p.data.quantity, p.code].filter(Boolean).join(" · ")));
-  if (p.status === "miss") t.append(el("div","nm","Produto não cadastrado na base"), el("div","sub",p.code + " · tenta outro produto"));
+  if (p.status === "ok") t.append(el("div","nm",nomeProd(p.data)), el("div","sub",[p.data.quantity, p.code, p.data._lido ? "lido do rótulo" : ""].filter(Boolean).join(" · ")));
+  if (p.status === "miss") t.append(el("div","nm","Produto não cadastrado na base"), el("div","sub",p.code + " · lê os ingredientes do rótulo abaixo"));
   if (p.status === "erro") t.append(el("div","nm","Sem conexão"), el("div","sub","Confere a internet e escaneia de novo"));
   f.append(t);
   const x = el("button","x","×"); x.setAttribute("aria-label","Trocar produto"); x.onclick = () => { prod[k] = null; renderSlot(k); render(); };
   f.append(x); box.append(f);
+  if (p.status === "miss" || (p.status === "ok" && semIngredientes(p.data))) box.append(painelLeitura(k, p));
+}
+
+/* ---------- ler ingredientes do rótulo (sem IA, de graça) ----------
+   App Android/iPhone: leitor de texto nativo do Google (ML Kit), no próprio aparelho.
+   Site no iPhone: "Escanear Texto" da Apple, direto no campo. */
+const CAPX = window.Capacitor, NATIVO = !!(CAPX && CAPX.isNativePlatform && CAPX.isNativePlatform());
+let mlkit = null;
+if (NATIVO){ try { mlkit = (CAPX.Plugins && CAPX.Plugins.CapacitorPluginMlKitTextRecognition) || CAPX.registerPlugin("CapacitorPluginMlKitTextRecognition"); } catch (e) { mlkit = null; } }
+
+function painelLeitura(k, p){
+  const w = el("div","ler");
+  const aviso = p.status === "ok" ? "A base não tem os ingredientes desse produto." : "Lê os ingredientes do rótulo que eu analiso:";
+  w.append(el("p","ler-t",aviso));
+  if (mlkit){
+    const lab = el("label","scanbtn ler-btn"); lab.append("📸 Fotografar ingredientes");
+    const inp = el("input"); inp.type = "file"; inp.accept = "image/*"; inp.setAttribute("capture","environment"); inp.hidden = true;
+    inp.onchange = async () => { const f = inp.files && inp.files[0]; inp.value = ""; if (f) await lerFotoNativo(k, f); };
+    lab.append(inp); w.append(lab);
+  } else {
+    const ta = el("textarea","ler-ta"); ta.rows = 4; ta.placeholder = "Toque aqui → Escanear Texto → aponte pros ingredientes → Inserir";
+    ta.setAttribute("aria-label","Ingredientes do rótulo");
+    const ok = el("button","scanbtn ler-btn","Usar esses ingredientes");
+    ok.onclick = () => usarIngredientes(k, ta.value);
+    const dica = el("details","how"); dica.append(el("summary",null,"Não aparece o Escanear Texto?"),
+      el("p",null,"Toque no campo e depois toque de novo (ou segure) pra abrir o menu com \"Escanear Texto\". Precisa de iPhone XS ou mais novo. Também dá pra digitar ou colar os ingredientes."));
+    w.append(ta, dica, ok);
+  }
+  return w;
+}
+async function ocrNativo(file){
+  const bmp = await createImageBitmap(file);
+  let melhor = "";
+  for (const rot of [0, 90, 270, 180]){
+    const lado = rot % 180 !== 0, esc = Math.min(1, 2000 / Math.max(bmp.width, bmp.height));
+    const w = Math.round(bmp.width * esc), h = Math.round(bmp.height * esc);
+    const c = document.createElement("canvas"); c.width = lado ? h : w; c.height = lado ? w : h;
+    const g = c.getContext("2d"); g.translate(c.width / 2, c.height / 2); g.rotate(rot * Math.PI / 180); g.drawImage(bmp, -w / 2, -h / 2, w, h);
+    const r = await mlkit.detectText({ base64Image: c.toDataURL("image/jpeg", 0.9).split(",")[1], rotation: 0 });
+    const txt = (r && r.text) || "";
+    if (txt.length > melhor.length) melhor = txt;
+    if (/ingrediente/i.test(txt) && txt.length > 40) return txt;
+  }
+  return melhor;
+}
+async function lerFotoNativo(k, file){
+  statusEl.className = "status"; statusEl.textContent = "Lendo os ingredientes…";
+  for (let tentativa = 0; tentativa < 4; tentativa++){
+    try{
+      const txt = await ocrNativo(file);
+      statusEl.textContent = "";
+      if (txt.trim().length < 15){ statusEl.className = "status warn"; statusEl.textContent = "Não consegui ler. Tira mais de perto, reto e sem reflexo."; return; }
+      usarIngredientes(k, txt); return;
+    }catch(e){
+      // 1ª vez: o Android ainda está baixando o leitor do Google
+      statusEl.textContent = "Preparando o leitor (só na primeira vez)…";
+      await new Promise(r => setTimeout(r, 3000));
+    }
+  }
+  statusEl.className = "status warn"; statusEl.textContent = "O leitor ainda não ficou pronto. Confere a internet e tenta de novo em 1 minuto.";
+}
+function usarIngredientes(k, texto){
+  texto = String(texto || "").trim();
+  if (texto.length < 10){ statusEl.className = "status warn"; statusEl.textContent = "Faltam os ingredientes. Escaneia ou digita."; return; }
+  const p = prod[k]; if (!p) return;
+  const base = p.status === "ok" && p.data ? p.data : { product_name: "Produto " + p.code };
+  const dados = { ...base, ingredients_text_pt: texto, _lido: true };
+  baseLocal.set(p.code, { product_name: dados.product_name, product_name_pt: dados.product_name_pt, brands: dados.brands, quantity: dados.quantity, image_front_small_url: dados.image_front_small_url, ingredients_text_pt: texto, _lido: true });
+  prod[k] = { code: p.code, status: "ok", data: dados };
+  statusEl.className = "status"; statusEl.textContent = "";
+  renderSlot(k); render();
+  if (mode === "one") goBtn.click();
 }
 function ready(){ const ok = k => prod[k] && prod[k].status === "ok"; return mode === "one" ? ok("A") : ok("A") && ok("B"); }
 function render(){ goBtn.textContent = mode === "one" ? "Analisar" : "Comparar"; goBtn.disabled = !ready() || busy; }
@@ -312,7 +409,7 @@ $("#scanClose").onclick = fecharScanner;
 // desliga a câmera se o app for pra segundo plano (não fica com a câmera ligada à toa)
 document.addEventListener("visibilitychange", () => { if (document.hidden && rodando) fecharScanner(); });
 // botão voltar do Android: fecha o leitor, depois o resultado, e só então sai do app
-const CAP = window.Capacitor, NO_APP = !!(CAP && CAP.isNativePlatform && CAP.isNativePlatform());
+const CAP = CAPX, NO_APP = NATIVO;
 if (NO_APP){
   let AppPl = null;
   try { AppPl = (CAP.Plugins && CAP.Plugins.App) || (CAP.registerPlugin && CAP.registerPlugin("App")); } catch (e) {}
@@ -568,13 +665,13 @@ $("#clearHist").onclick = () => { store("hist", []); renderHist(); };
 renderHist();
 
 
-function fonte(code){ const p = el("p","src"); p.append("Fonte: "); const a = el("a",null,"Open Food Facts"); a.href = "https://br.openfoodfacts.org/produto/" + code; a.target = "_blank"; a.rel = "noopener"; p.append(a); return p; }
+function fonte(code, lido){ const p = el("p","src"); if (lido){ p.append("Ingredientes lidos do rótulo no seu celular."); return p; } p.append("Fonte: "); const a = el("a",null,"Open Food Facts"); a.href = "https://br.openfoodfacts.org/produto/" + code; a.target = "_blank"; a.rel = "noopener"; p.append(a); return p; }
 
 goBtn.onclick = () => {
   if (!ready() || busy) return;
   statusEl.className = "status"; statusEl.textContent = "";
   const isBaby = baby.checked;
-  if (mode === "one"){ showOne(analisarProduto(prod.A.data, isBaby)); result.querySelector(".card").append(fonte(prod.A.code)); }
+  if (mode === "one"){ showOne(analisarProduto(prod.A.data, isBaby)); result.querySelector(".card").append(fonte(prod.A.code, prod.A.data._lido)); }
   else showTwo(comparar(analisarProduto(prod.A.data, isBaby), analisarProduto(prod.B.data, isBaby), isBaby));
 };
 render();
