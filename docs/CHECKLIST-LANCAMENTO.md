@@ -32,7 +32,8 @@
 - [ ] Anúncios (AdMob): tela de consentimento e declaração na loja
 
 ## 6. Lojas
-- [ ] Google Play: conta de desenvolvedor (US$ 25, uma vez), APK/AAB assinado, política de privacidade publicada
+- [ ] Google Play: conta de desenvolvedor (US$ 25, uma vez), AAB assinado, política de privacidade publicada
+- [ ] Criar chave de publicação própria e guardar fora do repo (a `levaounao-debug.keystore` do repo é só pra teste)
 - [ ] App Store: conta (US$ 99/ano), build no Mac, política de privacidade publicada
 - [ ] Classificação etária, descrição sem promessa de saúde ("ajuda a comparar rótulos", nunca "cura" ou "emagrece")
 
