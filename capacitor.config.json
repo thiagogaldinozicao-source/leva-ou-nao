@@ -1,0 +1,8 @@
+{
+  "appId": "br.com.zicao.levaounao",
+  "appName": "Leva ou não",
+  "webDir": "www",
+  "backgroundColor": "#000000",
+  "android": { "backgroundColor": "#000000" },
+  "ios": { "backgroundColor": "#000000", "contentInset": "never" }
+}

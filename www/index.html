@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Leva ou não">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" href="icons/icon-192.png">
+<title>Leva ou não?</title>
+<style>
+@font-face{font-family:"Bebas Neue";font-weight:400;font-display:swap;src:url(fonts/bebas-neue-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Barlow";font-weight:400;font-display:swap;src:url(fonts/barlow-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Barlow";font-weight:500;font-display:swap;src:url(fonts/barlow-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:"Barlow";font-weight:600;font-display:swap;src:url(fonts/barlow-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"Barlow";font-weight:700;font-display:swap;src:url(fonts/barlow-latin-700-normal.woff2) format("woff2")}
+/* Sempre tema escuro, padrão Zicão */
+:root, :root[data-theme="dark"], :root[data-theme="light"]{
+  --bg:#000000; --card:#121212; --card2:#1A1A1A; --line:#2A2A2A;
+  --ink:#FFFFFF; --muted:#A8A8A8; --gold:#EBB533; --gold-l:#F4CB63;
+  --go:#3FCB7A; --go-bg:#0F2A1B; --wait:#F4CB63; --wait-bg:#2E2410; --stop:#FF6B5E; --stop-bg:#321311;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --bg:#000000; } }
+*,*::before,*::after{box-sizing:border-box}
+html{background:#000;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Barlow",system-ui,-apple-system,sans-serif;
+  font-size:17px;line-height:1.45;-webkit-font-smoothing:antialiased;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+main{max-width:520px;margin:0 auto;padding:18px 16px 40px}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;border-bottom:2px solid var(--gold);padding-bottom:10px;margin-bottom:16px}
+h1{font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:2.8rem;line-height:.9;letter-spacing:.06em;color:var(--gold);margin:0}
+header p{margin:0;color:var(--muted);font-size:.85rem;text-align:right;max-width:170px}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--card);padding:5px;border-radius:14px;margin-bottom:16px}
+.tabs button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:12px;background:transparent;color:var(--muted);cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--gold);color:#000}
+.slot{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:12px}
+.slot h2{font-family:"Bebas Neue",sans-serif;font-weight:400;letter-spacing:.08em;font-size:1.4rem;color:var(--gold);margin:0 0 10px}
+.shoot{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:74px;border:2px dashed #3A3A3A;
+  border-radius:14px;background:var(--card2);color:var(--ink);cursor:pointer;padding:12px;font-weight:600}
+.shoot .cam{font-size:1.6rem}
+.shoot small{display:block;color:var(--muted);font-weight:400;font-size:.85rem}
+input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.thumbs{display:flex;gap:8px;flex-wrap:wrap}
+.thumbs:not(:empty){margin-bottom:10px}
+.thumb{position:relative;width:78px;height:78px;border-radius:12px;overflow:hidden;border:1px solid var(--line)}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb button{position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.75);color:#fff;font-size:15px;line-height:26px;padding:0;cursor:pointer}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 0 16px;padding:12px 14px;background:var(--card);border-radius:14px;border:1px solid var(--line)}
+.row small{display:block;color:var(--muted);font-size:.85rem}
+.switch{position:relative;width:52px;height:30px;flex:none}
+.switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:1}
+.switch i{position:absolute;inset:0;border-radius:30px;background:#333;transition:background .2s}
+.switch i::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:transform .2s}
+.switch input:checked + i{background:var(--gold)}
+.switch input:checked + i::after{transform:translateX(22px)}
+.go{width:100%;border:0;border-radius:16px;padding:17px;font-family:"Bebas Neue",sans-serif;font-size:1.6rem;letter-spacing:.08em;background:var(--gold);color:#000;cursor:pointer}
+.go:disabled{opacity:.35;cursor:default}
+button:focus-visible,.shoot:focus-within{outline:3px solid var(--gold-l);outline-offset:2px}
+.status{margin:14px 0 0;color:var(--muted);text-align:center;min-height:1.4em}
+.status.warn{color:var(--stop);font-weight:600}
+.res{margin-top:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;margin-bottom:12px}
+.stamp{display:inline-block;font-family:"Bebas Neue",sans-serif;font-size:2rem;letter-spacing:.05em;line-height:1;padding:9px 14px 6px;border-radius:12px;border:3px solid currentColor;transform:rotate(-2deg);margin-bottom:10px}
+.comprar .stamp,.stamp.comprar{color:var(--go);background:var(--go-bg)}
+.moderacao .stamp,.stamp.moderacao{color:var(--wait);background:var(--wait-bg)}
+.evitar .stamp,.stamp.evitar{color:var(--stop);background:var(--stop-bg)}
+.pname{font-weight:700;font-size:1.1rem;margin:2px 0 6px}
+.summary{margin:0 0 12px;color:#E6E6E6}
+.talk{margin:0 0 14px;padding:12px 14px;border-left:3px solid var(--gold);background:var(--card2);border-radius:0 12px 12px 0;color:#DDD;font-size:.95rem}
+.list{list-style:none;padding:0;margin:0 0 10px}
+.list li{padding:7px 0 7px 26px;position:relative;border-top:1px solid var(--line)}
+.list li::before{position:absolute;left:2px;top:7px;font-weight:800}
+.good li::before{content:"✓";color:var(--go)}
+.bad li::before{content:"✕";color:var(--stop)}
+.baby{margin-top:8px;padding:11px 13px;border-radius:12px;font-weight:700}
+.baby.ok{background:var(--go-bg);color:var(--go)}
+.baby.no{background:var(--stop-bg);color:var(--stop)}
+.baby span{display:block;font-weight:400;color:var(--ink);margin-top:2px}
+.ing{margin-top:12px;font-size:.9rem;color:var(--muted)}
+.ing summary{cursor:pointer;color:var(--ink);font-weight:600}
+.winner{border:2px solid var(--gold)}
+.winner .crown{font-family:"Bebas Neue",sans-serif;letter-spacing:.08em;color:var(--gold);font-size:1.5rem;margin:0 0 4px}
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.vs .card{padding:14px;margin:0}
+.vs .tag{font-family:"Bebas Neue",sans-serif;letter-spacing:.08em;color:var(--muted);font-size:1.1rem}
+.vs .stamp{font-size:1.25rem;padding:6px 9px 4px;border-width:2px}
+.vs .pname{font-size:.98rem}
+.vs .summary{font-size:.92rem;margin:0}
+.again{width:100%;border:1px solid var(--line);border-radius:14px;padding:14px;font:inherit;font-weight:600;background:transparent;color:var(--ink);cursor:pointer;margin-top:4px}
+.hist{margin-top:30px}
+.hist h2{font-family:"Bebas Neue",sans-serif;font-weight:400;letter-spacing:.08em;color:var(--gold);font-size:1.4rem;margin:0 0 6px}
+.hist ul{list-style:none;padding:0;margin:0}
+.hist li{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.dot{font-weight:700;white-space:nowrap}
+.dot.comprar{color:var(--go)} .dot.moderacao{color:var(--wait)} .dot.evitar{color:var(--stop)}
+.clear{background:none;border:0;color:var(--muted);font:inherit;font-size:.85rem;text-decoration:underline;cursor:pointer;padding:6px 0}
+.fine{margin-top:26px;font-size:.8rem;color:var(--muted)}
+.hidden{display:none!important}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Leva ou não?</h1>
+    <p>Foto do rótulo, veredito na hora. Nenhuma foto fica salva.</p>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" id="tabOne" aria-selected="true">Analisar 1</button>
+    <button role="tab" id="tabTwo" aria-selected="false">Comparar 2</button>
+  </div>
+
+  <section class="slot" id="slotA">
+    <h2 id="slotATitle">Produto</h2>
+    <div class="thumbs" data-thumbs="A"></div>
+    <label class="shoot" data-shoot="A">
+      <span class="cam" aria-hidden="true">📷</span>
+      <span><span data-shoot-title="A">Fotografar ingredientes</span><small>Tabela nutricional ajuda também</small></span>
+      <input type="file" accept="image/*" capture="environment" data-input="A">
+    </label>
+  </section>
+
+  <section class="slot hidden" id="slotB">
+    <h2>Produto B</h2>
+    <div class="thumbs" data-thumbs="B"></div>
+    <label class="shoot" data-shoot="B">
+      <span class="cam" aria-hidden="true">📷</span>
+      <span><span data-shoot-title="B">Fotografar ingredientes</span><small>Do outro produto</small></span>
+      <input type="file" accept="image/*" capture="environment" data-input="B">
+    </label>
+  </section>
+
+  <div class="row">
+    <div>Modo bebê<small>Liga quando for algo só pra ele: fica mais rigoroso</small></div>
+    <label class="switch"><input type="checkbox" id="baby" aria-label="Modo bebê"><i></i></label>
+  </div>
+
+  <button class="go" id="go" disabled>Analisar</button>
+  <p class="status" id="status" role="status"></p>
+
+  <section id="result" class="res hidden" aria-live="polite"></section>
+
+  <section class="hist hidden" id="hist">
+    <h2>Últimos que você olhou</h2>
+    <ul id="histList"></ul>
+    <button class="clear" id="clearHist">Limpar lista</button>
+  </section>
+
+  <p class="fine">As fotos ficam só na tela enquanto você analisa e somem ao fechar. A lista acima guarda só nome e veredito. A leitura é feita no próprio celular; se a foto sair torta ou com reflexo, tira de novo mais de perto. Não substitui pediatra ou nutricionista.</p>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const goBtn = $("#go"), statusEl = $("#status"), result = $("#result"), baby = $("#baby");
+let mode = "one", sample = null, busy = false, maxTotal = 2;
+const photos = { A: [], B: [] };
+
+function store(k, v){ try{ if(v===undefined) return JSON.parse(localStorage.getItem(k)); localStorage.setItem(k, JSON.stringify(v)); }catch(e){ return null; } }
+baby.checked = store("baby2") ?? false;
+baby.onchange = () => store("baby2", baby.checked);
+
+function perSlot(){ return mode === "one" ? Math.min(2, maxTotal) : Math.max(1, Math.min(2, Math.floor(maxTotal/2))); }
+
+function renderSlot(k){
+  const box = document.querySelector(`[data-thumbs="${k}"]`); box.innerHTML = "";
+  photos[k].forEach((f, i) => {
+    const d = document.createElement("div"); d.className = "thumb";
+    const img = document.createElement("img"); img.src = f.url; img.alt = "Foto " + (i+1);
+    const x = document.createElement("button"); x.textContent = "×"; x.setAttribute("aria-label","Remover foto");
+    x.onclick = () => { URL.revokeObjectURL(f.url); photos[k].splice(i,1); render(); };
+    d.append(img, x); box.append(d);
+  });
+  document.querySelector(`[data-shoot="${k}"]`).classList.toggle("hidden", photos[k].length >= perSlot());
+  document.querySelector(`[data-shoot-title="${k}"]`).textContent = photos[k].length ? "Adicionar outra foto" : "Fotografar ingredientes";
+}
+function ready(){ return mode === "one" ? photos.A.length > 0 : photos.A.length > 0 && photos.B.length > 0; }
+function render(){
+  renderSlot("A"); renderSlot("B");
+  goBtn.textContent = mode === "one" ? "Analisar" : "Comparar";
+  goBtn.disabled = !ready() || busy;
+}
+function clearPhotos(){ ["A","B"].forEach(k => { photos[k].forEach(f => URL.revokeObjectURL(f.url)); photos[k] = []; }); }
+
+document.querySelectorAll("[data-input]").forEach(inp => {
+  inp.onchange = () => {
+    const k = inp.dataset.input, f = inp.files && inp.files[0];
+    if (f) { const ph = { file: f, url: URL.createObjectURL(f) }; photos[k].push(ph); if (!aiImg) lerJa(ph).catch(() => {}); }
+    inp.value = ""; render();
+  };
+});
+
+function setMode(m){
+  mode = m;
+  $("#tabOne").setAttribute("aria-selected", m === "one");
+  $("#tabTwo").setAttribute("aria-selected", m === "two");
+  $("#slotB").classList.toggle("hidden", m === "one");
+  $("#slotATitle").textContent = m === "one" ? "Produto" : "Produto A";
+  ["A","B"].forEach(k => { while (photos[k].length > perSlot()){ URL.revokeObjectURL(photos[k].pop().url); } });
+  result.classList.add("hidden"); statusEl.textContent = "";
+  render();
+}
+$("#tabOne").onclick = () => setMode("one");
+$("#tabTwo").onclick = () => setMode("two");
+
+const CRITERIOS = (isBaby) => `A pessoa está no supermercado fazendo compras pra família (adultos e uma criança de 2 anos que já come quase tudo que os pais comem) e prefere alimentos o mais naturais possível.
+Critérios (use bom senso e compare com a categoria do produto):
+- Bom: lista curta de ingredientes reconhecíveis (comida de verdade), sem açúcar adicionado ou com pouco.
+- Ruim: açúcar/xarope de glicose entre os primeiros ingredientes ou açúcar adicionado alto (%VD alto na porção); adoçantes artificiais (aspartame, sucralose, acessulfame, neotame, ciclamato, sacarina); corantes artificiais (tartrazina, amarelo crepúsculo, vermelho 40, caramelo IV etc.); vários conservantes (benzoato, sorbato, nitrito/nitrato); gordura vegetal hidrogenada/trans; aromatizante artificial ou "idêntico ao natural"; soro de leite como 1º ingrediente em produto que parece leite; % de fruta muito baixo em "suco"; muitos espessantes/estabilizantes.
+- Um aditivo leve isolado (ex.: um conservante em ricota, vitamina C como antioxidante) não condena o produto sozinho: pese o conjunto.
+${isBaby ? "- MODO BEBÊ LIGADO: o produto é só pra criança de 2 anos. Seja mais rigoroso: ideal sem açúcar adicionado, sem adoçantes, sem corantes artificiais, sem cafeína, sódio moderado." : ""}
+Vereditos: "comprar" (pode levar tranquilo), "moderacao" (ok de vez em quando / tem ressalvas), "evitar" (deixa na prateleira).
+Escreva em português do Brasil, frases curtas e simples, jeito de conversa.`;
+
+function promptOne(isBaby){
+  return `Analise a(s) foto(s) do rótulo de UM produto (ingredientes e/ou tabela nutricional).
+${CRITERIOS(isBaby)}
+Se não der pra ler os ingredientes, use legivel=false e diga no resumo o que fotografar.
+Responda SOMENTE com JSON:
+{"legivel": true, "produto": "nome/tipo", "veredito": "comprar|moderacao|evitar", "resumo": "1-2 frases", "comentario": "2-3 frases de papo sobre o produto: o que ele é, uma curiosidade ou dica de uso/alternativa mais natural. Tom leve de conversa", "pontos_bons": ["..."], "pontos_ruins": ["..."], ${isBaby ? '"bebe": {"serve": true, "motivo": "1 frase"}' : '"bebe": null'}, "ingredientes": "ingredientes lidos do rótulo"}`;
+}
+function promptTwo(isBaby, nA, nB){
+  return `Compare DOIS produtos. As primeiras ${nA} imagem(ns) são do PRODUTO A; as ${nB} seguinte(s) são do PRODUTO B.
+${CRITERIOS(isBaby)}
+Diga qual dos dois é melhor pra levar pelos critérios. Se não der pra ler algum, marque legivel=false nele.
+Responda SOMENTE com JSON:
+{"a": {"legivel": true, "produto": "nome/tipo", "veredito": "comprar|moderacao|evitar", "resumo": "1 frase"}, "b": {"legivel": true, "produto": "nome/tipo", "veredito": "comprar|moderacao|evitar", "resumo": "1 frase"}, "melhor": "a|b|empate", "motivo": "1-2 frases explicando a escolha", "comentario": "2-3 frases de papo sobre esses produtos: o que são, uma curiosidade ou dica. Tom leve de conversa", "diferencas": ["diferença principal", "..."], ${isBaby ? '"bebe": "1 frase: qual serve (ou se nenhum serve) pro bebê"' : '"bebe": null'}}`;
+}
+
+const LABEL = {comprar:"Pode levar", moderacao:"Com moderação", evitar:"Deixa na prateleira"};
+const vOk = v => ["comprar","moderacao","evitar"].includes(v) ? v : "moderacao";
+function el(tag, cls, text){ const e = document.createElement(tag); if(cls) e.className = cls; if(text!=null) e.textContent = text; return e; }
+function list(arr, cls){ if (!Array.isArray(arr) || !arr.length) return null; const ul = el("ul","list "+cls); arr.forEach(t => ul.append(el("li",null,String(t)))); return ul; }
+function againBtn(){
+  const b = el("button","again","Analisar outro");
+  b.onclick = () => { clearPhotos(); result.classList.add("hidden"); statusEl.textContent = ""; render(); window.scrollTo({top:0,behavior:"smooth"}); };
+  return b;
+}
+function show(){ result.classList.remove("hidden"); result.scrollIntoView({behavior:"smooth", block:"start"}); }
+
+function showOne(r){
+  result.innerHTML = "";
+  const c = el("div","card");
+  if (!r || r.legivel === false){
+    c.append(el("p","pname","Não consegui ler o rótulo"), el("p","summary",(r && r.resumo) || "Tire mais de perto a lista de ingredientes, com luz e sem reflexo."));
+  } else {
+    const v = vOk(r.veredito); c.classList.add(v);
+    c.append(el("div","stamp",LABEL[v]));
+    if (r.produto) c.append(el("p","pname",r.produto));
+    if (r.resumo) c.append(el("p","summary",r.resumo));
+    if (r.comentario) c.append(el("p","talk","💬 " + r.comentario));
+    [list(r.pontos_bons,"good"), list(r.pontos_ruins,"bad")].forEach(x => x && c.append(x));
+    if (r.bebe && typeof r.bebe === "object"){
+      const b = el("div","baby " + (r.bebe.serve ? "ok" : "no"), r.bebe.serve ? "👶 Serve pro bebê" : "👶 Não indicado pro bebê");
+      if (r.bebe.motivo) b.append(el("span",null,r.bebe.motivo)); c.append(b);
+    }
+    if (r.ingredientes){ const d = el("details","ing"); d.append(el("summary",null,"Ingredientes lidos"), el("p",null,r.ingredientes)); c.append(d); }
+    saveHist(r.produto || "Produto", v);
+  }
+  result.append(c, againBtn()); show();
+}
+
+function showTwo(r){
+  result.innerHTML = "";
+  const a = (r && r.a) || {}, b = (r && r.b) || {};
+  const best = r && ["a","b"].includes(r.melhor) ? r.melhor : null;
+  const top = el("div","card winner");
+  const winName = best === "a" ? (a.produto || "Produto A") : best === "b" ? (b.produto || "Produto B") : null;
+  top.append(el("p","crown", winName ? "Leva o " + (best === "a" ? "A" : "B") : "Empate"));
+  if (winName) top.append(el("p","pname",winName));
+  if (r && r.motivo) top.append(el("p","summary",r.motivo));
+  if (r && r.comentario) top.append(el("p","talk","💬 " + r.comentario));
+  const dl = list(r && r.diferencas, "good"); if (dl) top.append(dl);
+  if (r && typeof r.bebe === "string" && r.bebe) { const bb = el("div","baby ok","👶 Pro bebê"); bb.append(el("span",null,r.bebe)); top.append(bb); }
+  const vs = el("div","vs");
+  [["A",a],["B",b]].forEach(([t,p]) => {
+    const c = el("div","card");
+    c.append(el("div","tag","Produto " + t));
+    if (p.legivel === false){ c.append(el("p","summary","Não deu pra ler. Tire mais de perto.")); }
+    else {
+      const v = vOk(p.veredito);
+      c.append(el("div","stamp " + v, LABEL[v]));
+      if (p.produto) c.append(el("p","pname",p.produto));
+      if (p.resumo) c.append(el("p","summary",p.resumo));
+      saveHist(p.produto || ("Produto " + t), v);
+    }
+    vs.append(c);
+  });
+  result.append(top, vs, againBtn()); show();
+}
+
+function saveHist(name, v){
+  const h = store("hist") || [];
+  h.unshift({name: String(name).slice(0,60), v});
+  store("hist", h.slice(0,12)); renderHist();
+}
+function renderHist(){
+  const h = store("hist") || [];
+  $("#hist").classList.toggle("hidden", !h.length);
+  const ul = $("#histList"); ul.innerHTML = "";
+  h.forEach(x => { const li = el("li"); li.append(el("span",null,x.name), el("span","dot "+x.v, LABEL[x.v]||"")); ul.append(li); });
+}
+$("#clearHist").onclick = () => { store("hist", []); renderHist(); };
+renderHist();
+
+/* ====================== LEITURA NO CELULAR (OCR) ====================== */
+let ocrWorker = null, ocrLoading = null;
+function loadScript(src){ return new Promise((ok, bad) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = () => bad(new Error("script")); document.head.append(s); }); }
+async function getOcr(onStep){
+  if (ocrWorker) return ocrWorker;
+  if (!ocrLoading) ocrLoading = (async () => {
+    onStep && onStep("Preparando o leitor (só na 1ª vez, pode demorar um pouco)…");
+    if (!window.Tesseract) await loadScript(new URL("./ocr/tesseract.min.js", location.href).href);
+    const base = new URL("./", location.href).href;
+    const w = await Tesseract.createWorker("por", 1, {
+      workerPath: base + "ocr/worker.min.js",
+      corePath: base + "ocr/",
+      langPath: base + "ocr/",
+      workerBlobURL: false,
+      gzip: true,
+      cacheMethod: "none"
+    });
+    ocrWorker = w; return w;
+  })().catch(e => { ocrLoading = null; throw e; });
+  return ocrLoading;
+}
+async function prep(file, rot, max = 1600, filtro = true){
+  const url = URL.createObjectURL(file);
+  try{
+    const img = await new Promise((ok, bad) => { const i = new Image(); i.onload = () => ok(i); i.onerror = bad; i.src = url; });
+    const sc = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+    const w = Math.round(img.naturalWidth * sc), h = Math.round(img.naturalHeight * sc);
+    const c = document.createElement("canvas"); const side = rot % 180 !== 0;
+    c.width = side ? h : w; c.height = side ? w : h;
+    const g = c.getContext("2d");
+    g.translate(c.width/2, c.height/2); g.rotate(rot * Math.PI / 180);
+    if (filtro) g.filter = "grayscale(1) contrast(1.35)";
+    g.drawImage(img, -w/2, -h/2, w, h);
+    return c;
+  } finally { URL.revokeObjectURL(url); }
+}
+const nrm = s => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+function textScore(d){
+  const t = nrm(d.text); let s = d.confidence || 0;
+  if (/ingrediente/.test(t)) s += 40;
+  if (/(acucar|leite|agua|sal|oleo|farinha|sodio|carboidrato)/.test(t)) s += 15;
+  return s;
+}
+const CAP = window.Capacitor;
+const NATIVE = !!(CAP && CAP.isNativePlatform && CAP.isNativePlatform());
+let mlkit = null;
+if (NATIVE) { try { mlkit = CAP.registerPlugin ? CAP.registerPlugin("CapacitorPluginMlKitTextRecognition") : CAP.Plugins.CapacitorPluginMlKitTextRecognition; } catch (e) { mlkit = null; } }
+
+// um passe de leitura numa rotação; devolve {text, sc}
+async function passo(file, rot, onStep){
+  if (mlkit){
+    try{
+      const c = await prep(file, rot, 1800, false);
+      const b64 = c.toDataURL("image/jpeg", 0.9).split(",")[1];
+      const r = await mlkit.detectText({ base64Image: b64, rotation: 0 });
+      const text = r && r.text || "";
+      return { text, sc: textScore({ text, confidence: Math.min(90, text.length / 6) }) };
+    }catch(e){ /* leitor do Google ainda baixando: usa o embutido desta vez */ }
+  }
+  const w = await getOcr(onStep);
+  const { data } = await w.recognize(await prep(file, rot, 2000, true));
+  return { text: data.text, sc: textScore(data) };
+}
+// lê a foto: tenta reto; só gira se a leitura sair ruim
+async function readPhoto(file, onStep){
+  onStep && onStep("Lendo o texto da foto…");
+  let best = await passo(file, 0, onStep);
+  if (best.sc >= 70) return best.text;
+  for (const rot of [180, 90, 270]){
+    onStep && onStep("Foto meio torta, girando pra ler…");
+    const r = await passo(file, rot, onStep);
+    if (r.sc > best.sc) best = r;
+    if (best.sc >= 70) break;
+  }
+  return best.text;
+}
+// cada foto começa a ser lida assim que entra; o Analisar só espera terminar
+function lerJa(ph){ if (!ph.leitura) ph.leitura = readPhoto(ph.file).catch(e => { ph.leitura = null; throw e; }); return ph.leitura; }
+async function readAll(files, onStep){
+  let out = "";
+  for (const f of files){ const ph = (photos.A.concat(photos.B)).find(p => p.file === f); out += "\n" + await (ph ? lerJa(ph) : readPhoto(f, onStep)); }
+  return out.trim();
+}
+
+/* ====================== REGRAS (sem internet de IA) ====================== */
+const has = (t, re) => re.test(t);
+function ingredientesDe(raw){
+  const t = nrm(raw).replace(/\s+/g, " ");
+  const i = t.search(/ingredientes?\s*[:.;]?/);
+  if (i < 0) {
+    const hits = (t.match(/(acucar|xarope|sucralose|esulfame|aspartame|conservador|corante|aromatizante|aroma|espessante|estabilizante|acidulante|farinha|soro de leite|gordura)/g) || []).length;
+    if (hits >= 3) return { achou: true, semOrdem: true, texto: t.slice(0, 1500), lista: [] };
+  }
+  let seg = i >= 0 ? t.slice(i).replace(/^ingredientes?\s*[:.;]?\s*/, "") : t;
+  seg = seg.replace(/(fabricado e distribuido por|fabricado por|distribuido por|fabricado|embalado por)/g, " ");
+  const stop = seg.search(/(alergicos|alergenicos|contiene|contem gluten|nao contem gluten|no contiene|contem lactose|informacao nutricional|conservar|conservacao|validade|produzido por|porcao)/);
+  if (stop > 20) seg = seg.slice(0, stop);
+  seg = seg.slice(0, 700);
+  return { achou: i >= 0, texto: seg.trim(), lista: seg.split(/[,;]/).map(x => x.trim()).filter(x => x.length > 1) };
+}
+const TIPOS = [
+  [/bebida lactea/, "Bebida láctea"], [/achocolatado/, "Achocolatado"], [/refrigerante/, "Refrigerante"],
+  [/agua de coco/, "Água de coco"], [/nectar|refresco/, "Refresco/néctar"], [/suco/, "Suco"], [/ricota/, "Ricota"],
+  [/iogurte/, "Iogurte"], [/requeijao/, "Requeijão"], [/queijo/, "Queijo"], [/biscoito|bolacha/, "Biscoito"],
+  [/barra|castanha|tamara/, "Barrinha"], [/azeite/, "Azeite"], [/cereal|aveia/, "Cereal"], [/salsicha|presunto|mortadela|linguica/, "Embutido"],
+  [/cafe/, "Café"], [/leite/, "Leite/derivado"], [/pao/, "Pão"], [/macarrao|massa/, "Massa"], [/molho/, "Molho"]
+];
+function avaliar(raw, isBaby){
+  const ing = ingredientesDe(raw); const t = ing.texto; const full = nrm(raw);
+  const vdAdd = full.match(/acucares adicionados[^%]{0,30}?(\d{1,3})\s*%/);
+  const soTabela = !ing.achou && !!vdAdd;
+  if (!ing.achou && !vdAdd) return { legivel: false, resumo: "Não achei a lista de ingredientes na foto. Tira mais de perto a parte escrita \"Ingredientes\", com luz e sem reflexo." };
+  const L = ing.lista, top3 = L.slice(0, 3).join(" | ");
+  const bons = [], ruins = [], dicas = []; let pts = 0;
+  const bad = (p, msg, dica) => { pts += p; ruins.push(msg); if (dica) dicas.push(dica); };
+
+  const acuRe = /(a[cg]ucar|azucar|xarope|jarabe|sacarose|glicose|glucosa|frutose|fructosa|maltodextrina|acucar invertido|dextrose)/;
+  const acucarCedo = acuRe.test(top3), temAcucar = acuRe.test(t);
+  const vd = vdAdd ? parseInt(vdAdd[1]) : null;
+  if (vd != null && vd >= 20) bad(2, "Muito açúcar adicionado (" + vd + "% do dia numa porção)", "Uma porção já leva " + vd + "% do açúcar adicionado que dá pra comer no dia todo.");
+  else if (vd != null && vd >= 8) bad(1, "Açúcar adicionado: " + vd + "% do dia por porção");
+  if (soTabela) {} else if (acucarCedo) bad(2, "Açúcar/xarope entre os primeiros ingredientes", "Quando o açúcar aparece no começo da lista, ele é um dos ingredientes que mais tem.");
+  else if (temAcucar) { if (vd == null) bad(1, "Tem açúcar adicionado"); }
+  else if (vd == null || vd === 0) bons.push("Sem açúcar adicionado");
+
+  const ado = ["aspartame","sucralose","acessulfame","acesulfame","esulfame","neotame","ciclamato","sacarina"].filter(x => t.includes(x));
+  if (ado.length || /edulcorante/.test(t)) bad(2, "Adoçante artificial" + (ado.length ? " (" + [...new Set(ado.map(x => x === "esulfame" || x === "acesulfame" ? "acessulfame" : x))].join(", ") + ")" : ""), ado.includes("aspartame") ? "Aspartame é o adoçante mais ligado a queixa de dor de cabeça." : "Adoçante artificial deixa doce sem açúcar, mas não é o que a gente quer no natural.");
+  else bons.push("Sem adoçante artificial");
+
+  const cor = ["tartrazina","amarelo crepusculo","vermelho 40","bordeaux","ponceau","azul brilhante","azorrubina","eritrosina","caramelo iv","caramelo iii","indigotina"].filter(x => t.includes(x));
+  if (cor.length || /corante artificial/.test(t)) bad(2, "Corante artificial" + (cor.length ? " (" + cor.join(", ") + ")" : ""), "Tartrazina e amarelo crepúsculo são corantes que em alguns países exigem alerta pra criança.");
+  else if (/corante/.test(t)) ruins.push("Tem corante (parece natural)");
+
+  const cons = ["benzoato","sorbato","nitrito","nitrato","dicarbonato","metabissulfito","propionato","bissulfito"].filter(x => t.includes(x));
+  if (!cons.length && /conservador|conservante/.test(t)) cons.push("conservador");
+  if (cons.length >= 2) bad(2, "Vários conservantes (" + cons.join(", ") + ")");
+  else if (cons.length === 1) bad(1, cons[0] === "conservador" ? "Tem conservante" : "Tem conservante (" + cons[0] + ")");
+  else bons.push("Sem conservante");
+
+  if (/hidrogenada/.test(t)) bad(2, "Gordura hidrogenada", "Gordura hidrogenada é das piores coisas pra ter no rótulo.");
+  else if (/gordura vegetal|oleo de palma|aceite vegetal|aceite de palma/.test(t)) bad(1, "Gordura vegetal/palma");
+
+  if (/(artificial|identico ao natural)/.test(t) && /arom/.test(t)) bad(1, "Aromatizante artificial", "Aroma artificial imita o sabor, não é a fruta de verdade.");
+  if (/glutamato|realcador de sabor/.test(t)) bad(1, "Realçador de sabor (glutamato)");
+  if (/^.{0,12}soro de le/.test(L[0] || "")) bad(2, "Soro de leite é o 1º ingrediente", "Soro de leite em 1º lugar quer dizer bebida láctea, não leite de verdade.");
+
+  const suco = t.match(/suco[^%]{0,40}?\(?\s*(\d+[.,]?\d*)\s*%/);
+  if (suco && parseFloat(suco[1].replace(",", ".")) < 10) bad(2, "Pouquíssima fruta (" + suco[1] + "%)", "Rótulo com fruta desenhada e só " + suco[1] + "% de suco é praticamente água com açúcar.");
+
+  const aditivos = (t.match(/(goma|carragena|carboximetilcelulose|polifosfato|edta|fosfato|citrato trissodico|lecitina|espessante|estabilizante|emulsificante|amido modificado)/g) || []).length;
+  if (aditivos >= 4) bad(1, "Muitos espessantes/estabilizantes (" + aditivos + ")");
+
+  if (/cafeina|guarana/.test(t) && isBaby) bad(2, "Tem cafeína");
+
+  const n = L.length;
+  if (soTabela) { ruins.push("Não consegui ler os ingredientes, só a tabela"); dicas.push("Pra análise completa, tira foto da lista de ingredientes também."); }
+  if (!soTabela && n && n <= 5 && pts === 0) { bons.unshift("Lista curtinha (" + n + " ingredientes), comida de verdade"); dicas.unshift("Lista curta com tudo que dá pra reconhecer: esse é o tipo que vale levar."); }
+  else if (!soTabela && n >= 14) bad(1, "Lista longa (" + n + " ingredientes)");
+
+  let v = pts >= 3 ? "evitar" : pts >= 1 ? "moderacao" : "comprar";
+  if (isBaby && pts >= 2) v = "evitar";
+  const tipo = (TIPOS.find(([re]) => re.test(full)) || [0, "Produto"])[1];
+  const resumo = v === "comprar" ? "Rótulo limpo, pode levar tranquilo." : v === "moderacao" ? "Não é dos piores, mas tem ressalvas. De vez em quando tá ok." : "Muita coisa industrial aqui. Melhor deixar na prateleira.";
+  const comentario = (dicas.length ? dicas.slice(0, 2).join(" ") : "Nada que chame atenção no rótulo.") + (tipo !== "Produto" ? "" : "");
+  const out = { legivel: true, produto: tipo, veredito: v, resumo, comentario, pontos_bons: bons.slice(0, 4), pontos_ruins: ruins.slice(0, 5), ingredientes: (soTabela || ing.semOrdem) ? "" : ing.texto.slice(0, 600), _pts: pts, _n: n };
+  if (isBaby) out.bebe = { serve: v === "comprar", motivo: v === "comprar" ? "Sem açúcar adicionado, adoçante ou corante artificial." : "Tem coisa que é melhor evitar pra idade dele." };
+  return out;
+}
+function comparar(a, b, isBaby){
+  const lg = x => x && x.legivel !== false;
+  let melhor = "empate";
+  if (lg(a) && lg(b)) melhor = a._pts < b._pts ? "a" : b._pts < a._pts ? "b" : (a._n < b._n ? "a" : b._n < a._n ? "b" : "empate");
+  else if (lg(a)) melhor = "a"; else if (lg(b)) melhor = "b";
+  const w = melhor === "a" ? a : melhor === "b" ? b : null, l = melhor === "a" ? b : melhor === "b" ? a : null;
+  const dif = [];
+  if (w && l && lg(l)) { l.pontos_ruins.filter(x => !w.pontos_ruins.includes(x)).slice(0, 3).forEach(x => dif.push("O outro tem: " + x.toLowerCase())); }
+  return {
+    a: { legivel: lg(a), produto: a && a.produto, veredito: a && a.veredito, resumo: a && a.resumo },
+    b: { legivel: lg(b), produto: b && b.produto, veredito: b && b.veredito, resumo: b && b.resumo },
+    melhor, motivo: w ? "Rótulo mais limpo, com menos coisa industrial." : "Os dois ficaram parecidos pelo rótulo.",
+    comentario: w && w.comentario, diferencas: dif,
+    bebe: isBaby ? (w && w.veredito === "comprar" ? "O escolhido serve pro bebê." : "Nenhum dos dois é ideal pro bebê.") : null
+  };
+}
+
+/* ====================== ANÁLISE ====================== */
+let aiText = false, aiImg = false;
+const ERR = {
+  rate_limited:"Muitas análises seguidas. Espera um pouco e tenta de novo.",
+  invalid_json:"A resposta veio embaralhada. Toca de novo.",
+  ocr_load:"Não consegui carregar o leitor de texto. Confere a internet e tenta de novo."
+};
+async function iaTexto(prompt, texto){
+  return sample.json(prompt + "\n\nNão há foto: abaixo está o TEXTO lido do rótulo por OCR (pode ter erros de leitura, interprete com bom senso):\n\n" + texto.slice(0, 12000), { cache: false });
+}
+goBtn.onclick = async () => {
+  if (!ready() || busy) return;
+  statusEl.className = "status";
+  busy = true; render(); result.classList.add("hidden");
+  const step = t => { statusEl.textContent = t; };
+  const isBaby = baby.checked;
+  try{
+    if (aiImg){
+      step(mode === "one" ? "Lendo o rótulo… uns segundos" : "Lendo os dois rótulos… uns segundos");
+      if (mode === "one") showOne(await sample.json(promptOne(isBaby), { images: photos.A.map(p => p.file), cache: false }));
+      else showTwo(await sample.json(promptTwo(isBaby, photos.A.length, photos.B.length), { images: [...photos.A, ...photos.B].map(p => p.file), cache: false }));
+    } else {
+      let tA, tB;
+      try{
+        tA = await readAll(photos.A.map(p => p.file), step);
+        if (mode === "two") tB = await readAll(photos.B.map(p => p.file), step);
+      }catch(e){ throw { code: "ocr_load" }; }
+      if (aiText){
+        step("Analisando…");
+        try{
+          if (mode === "one") { showOne(await iaTexto(promptOne(isBaby), tA)); }
+          else { showTwo(await iaTexto(promptTwo(isBaby, 1, 1).replace(/As primeiras .*? PRODUTO B\./, "Os textos dos dois produtos estão separados abaixo."), "PRODUTO A:\n" + tA + "\n\nPRODUTO B:\n" + tB)); }
+          statusEl.textContent = ""; return;
+        }catch(e){ if (e && e.code === "rate_limited") throw e; /* cai pras regras */ }
+      }
+      if (mode === "one") showOne(avaliar(tA, isBaby));
+      else showTwo(comparar(avaliar(tA, isBaby), avaliar(tB, isBaby), isBaby));
+    }
+    statusEl.textContent = "";
+  }catch(e){
+    statusEl.className = "status warn";
+    statusEl.textContent = ERR[e && e.code] || "Deu problema na análise. Tenta de novo.";
+  }finally{ busy = false; render(); }
+};
+
+sample = null; maxTotal = 4;
+(async () => {
+  try{
+    const s = window.claude && window.claude.use ? await window.claude.use("sample") : null;
+    if (!s) return;
+    const lim = await s.limits().catch(() => null);
+    sample = s; aiText = true; aiImg = !!(lim && lim.images);
+  }catch(e){}
+})();
+// adianta o download do leitor pra 1ª análise sair mais rápida
+setTimeout(() => { if (!aiImg && !mlkit) getOcr().catch(() => {}); }, 300);
+
+render();
+</script>
+</body>
+</html>

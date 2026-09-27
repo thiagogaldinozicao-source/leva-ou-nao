@@ -1,0 +1,21 @@
+{
+  "name": "leva-ou-nao",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Tira foto do rótulo e diz se vale levar",
+  "scripts": {
+    "sync": "cap sync",
+    "android": "cap sync android && cap open android",
+    "ios": "cap sync ios && cap open ios",
+    "web": "npx serve www"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/ios": "^8.5.2",
+    "@pantrist/capacitor-plugin-ml-kit-text-recognition": "^8.1.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.2"
+  }
+}
