@@ -186,7 +186,7 @@ button:focus-visible,.shoot:focus-within{outline:3px solid var(--gold-l);outline
   <div class="box" aria-hidden="true"></div>
   <div class="bar"><p id="scanMsg">Aponte pro código de barras</p><button id="scanClose">Cancelar</button></div>
 </div>
-<script src="lib/zxing.min.js"></script>
+<script src="lib/zxing-reader.js"></script>
 <script>
 const $ = s => document.querySelector(s);
 const goBtn = $("#go"), statusEl = $("#status"), result = $("#result"), baby = $("#baby");
@@ -248,39 +248,77 @@ function render(){ goBtn.textContent = mode === "one" ? "Analisar" : "Comparar";
 document.querySelectorAll("[data-ok]").forEach(b => b.onclick = () => { const k = b.dataset.ok; setCode(k, document.querySelector(`[data-code="${k}"]`).value); });
 document.querySelectorAll("[data-code]").forEach(i => i.addEventListener("keydown", e => { if (e.key === "Enter") setCode(i.dataset.code, i.value); }));
 
-/* ---------- leitor de código de barras ---------- */
-const Z = window.ZXing;
-function reader(){
-  const hints = new Map();
-  hints.set(Z.DecodeHintType.POSSIBLE_FORMATS, [Z.BarcodeFormat.EAN_13, Z.BarcodeFormat.EAN_8, Z.BarcodeFormat.UPC_A, Z.BarcodeFormat.UPC_E]);
-  hints.set(Z.DecodeHintType.TRY_HARDER, true);
-  return new Z.BrowserMultiFormatReader(hints, 200);
+/* ---------- leitor de código de barras ----------
+   Android (Chrome): leitor nativo do sistema (BarcodeDetector).
+   iPhone: ZXing C++ em WebAssembly, lendo só a faixa do meio da imagem várias vezes por segundo. */
+const FORMATOS = ["EAN13", "EAN8", "UPCA", "UPCE"];
+let nativo = null;
+if ("BarcodeDetector" in window){ try { nativo = new BarcodeDetector({ formats: ["ean_13", "ean_8", "upc_a", "upc_e"] }); } catch (e) { nativo = null; } }
+const ZW = window.ZXingWASM;
+if (ZW) ZW.prepareZXingModule({ overrides: { locateFile: (path, prefix) => path.endsWith(".wasm") ? new URL("lib/" + path, location.href).href : prefix + path }, fireImmediately: true });
+async function detectar(src){
+  if (nativo){ try { const r = await nativo.detect(src); if (r && r[0]) return r[0].rawValue; } catch (e) {} }
+  if (!ZW) return null;
+  let data = src;
+  if (!(src instanceof Blob) && !(src instanceof ImageData)){ const c = src; data = c.getContext("2d").getImageData(0, 0, c.width, c.height); }
+  const r = await ZW.readBarcodes(data, { formats: FORMATOS, tryHarder: true, maxNumberOfSymbols: 1 });
+  return r && r[0] && r[0].isValid !== false ? r[0].text : null;
 }
-let rd = null, alvo = null;
-function fecharScanner(){ try{ rd && rd.reset(); }catch(e){} rd = null; $("#scanner").classList.add("hidden"); }
+const video = $("#cam"), cv = document.createElement("canvas"), cx = cv.getContext("2d", { willReadFrequently: true });
+let stream = null, rodando = false, alvo = null, tDica = null;
+function fecharScanner(){
+  rodando = false; clearTimeout(tDica);
+  if (stream){ stream.getTracks().forEach(t => t.stop()); stream = null; }
+  video.srcObject = null; $("#scanner").classList.add("hidden");
+}
 async function abrirScanner(k){
-  if (!Z){ statusEl.className = "status warn"; statusEl.textContent = "Leitor não carregou. Digita o número do código."; return; }
+  if (!nativo && !ZW){ statusEl.className = "status warn"; statusEl.textContent = "Leitor não carregou. Digita o número do código."; return; }
   alvo = k; $("#scanMsg").textContent = "Aponte pro código de barras"; $("#scanner").classList.remove("hidden");
-  rd = reader();
   try{
-    await rd.decodeFromConstraints({ video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } } }, $("#cam"), (res, err) => {
-      if (res && rd){ const code = res.getText(); if (navigator.vibrate) navigator.vibrate(60); fecharScanner(); setCode(alvo, code); }
-    });
+    stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } } });
+    const tr = stream.getVideoTracks()[0];
+    try { await tr.applyConstraints({ advanced: [{ focusMode: "continuous" }] }); } catch (e) {}
+    video.srcObject = stream; await video.play();
   }catch(e){
-    fecharScanner();
-    statusEl.className = "status warn";
-    statusEl.textContent = "Não consegui abrir a câmera. Libera a câmera pro app ou usa o 📷 / digita o número.";
+    fecharScanner(); statusEl.className = "status warn";
+    statusEl.textContent = "Não consegui abrir a câmera. Libera a câmera pro site (Ajustes → Safari → Câmera) ou digita o número.";
+    return;
   }
+  tDica = setTimeout(() => { if (rodando) $("#scanMsg").textContent = "Não tá lendo? Afasta um pouco (uns 15 cm) pra câmera focar, e deixa o código deitado na faixa."; }, 5000);
+  rodando = true; let volta = 0;
+  const passo = async () => {
+    if (!rodando) return;
+    const vw = video.videoWidth, vh = video.videoHeight;
+    if (vw && vh){
+      // a cada 4 tentativas lê a imagem inteira; nas outras, só a faixa do meio (mais rápido e mais nítido)
+      const full = (volta++ % 4) === 3;
+      const sw = full ? vw : Math.round(vw * 0.9), sh = full ? vh : Math.round(vh * 0.45);
+      const sx = Math.round((vw - sw) / 2), sy = Math.round((vh - sh) / 2);
+      const esc = Math.min(1, 1280 / sw);
+      cv.width = Math.round(sw * esc); cv.height = Math.round(sh * esc);
+      cx.drawImage(video, sx, sy, sw, sh, 0, 0, cv.width, cv.height);
+      try{
+        const code = await detectar(cv);
+        if (code && rodando){ if (navigator.vibrate) navigator.vibrate(60); fecharScanner(); setCode(alvo, code); return; }
+      }catch(e){}
+    }
+    setTimeout(passo, 60);
+  };
+  passo();
 }
 $("#scanClose").onclick = fecharScanner;
 document.querySelectorAll("[data-scan]").forEach(b => b.onclick = () => abrirScanner(b.dataset.scan));
 document.querySelectorAll("[data-photo]").forEach(inp => inp.onchange = async () => {
-  const f = inp.files && inp.files[0]; inp.value = ""; if (!f || !Z) return;
-  const k = inp.dataset.photo, url = URL.createObjectURL(f);
+  const f = inp.files && inp.files[0]; inp.value = ""; if (!f) return;
+  const k = inp.dataset.photo;
   statusEl.className = "status"; statusEl.textContent = "Lendo o código da foto…";
-  try{ const r = await reader().decodeFromImageUrl(url); statusEl.textContent = ""; setCode(k, r.getText()); }
-  catch(e){ statusEl.className = "status warn"; statusEl.textContent = "Não achei código de barras nessa foto. Tira mais de perto, reto."; }
-  finally{ URL.revokeObjectURL(url); }
+  try{
+    let code = null;
+    if (ZW) code = await detectar(f).catch(() => null);
+    if (!code){ const bmp = await createImageBitmap(f); const esc = Math.min(1, 1600 / Math.max(bmp.width, bmp.height)); cv.width = Math.round(bmp.width * esc); cv.height = Math.round(bmp.height * esc); cx.drawImage(bmp, 0, 0, cv.width, cv.height); code = await detectar(cv); }
+    if (!code) throw 0;
+    statusEl.textContent = ""; setCode(k, code);
+  }catch(e){ statusEl.className = "status warn"; statusEl.textContent = "Não achei código de barras nessa foto. Tira mais de perto, reto e com luz."; }
 });
 
 function setMode(m){
