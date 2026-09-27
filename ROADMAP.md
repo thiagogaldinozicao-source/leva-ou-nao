@@ -16,6 +16,11 @@ Hoje: uso pessoal do Thiago (site no GitHub Pages + APK Android automático).
 - **Diferenciais:** ranking do corredor ("melhores achocolatados"), sugestão de troca mais natural, lista de compras, perfis (bebê, diabético, sem glúten/lactose)
 - **Métricas:** % de códigos encontrados, tempo até o resultado
 
+## Concorrência
+- **Yuka** (França): +85 mi de usuários, chegou ao Brasil em jul/2026 com 600 mil produtos; grátis + Premium; nota 0–100 (60% nutrição, 30% aditivos, 10% orgânico)
+- **Open Food Facts** (app da base aberta), **Fooducate** (EUA)
+- Nosso diferencial: comparar 2 na prateleira e dizer qual levar, modo bebê/criança, linguagem brasileira de conversa, regras da Anvisa (lupa "ALTO EM"), sugestão de troca mais natural
+
 ## Aprendizados
 - iPhone não deixa página mandar foto pra IA do Claude → por isso código de barras
 - Leitor de texto dentro da página (Tesseract) é fraco pra rótulo de comida (plástico curvo, letra miúda)
