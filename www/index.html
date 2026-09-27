@@ -216,7 +216,7 @@ async function buscar(code){
   p.catch(() => cache.delete(code));
   return p;
 }
-const nomeProd = d => [d.product_name_pt || d.product_name || d.generic_name_pt || "Produto", d.brands && d.brands.split(",")[0].trim()].filter(Boolean).join(" · ");
+const nomeProd = d => { const n = d.product_name_pt || d.product_name || d.generic_name_pt || "Produto", m = d.brands && d.brands.split(",")[0].trim(); return m && !nrm(n).includes(nrm(m)) ? n + " · " + m : n; };
 
 function setCode(k, code){
   code = String(code || "").replace(/\D/g, "");
