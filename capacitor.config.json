@@ -3,6 +3,18 @@
   "appName": "Leva ou não",
   "webDir": "www",
   "backgroundColor": "#000000",
-  "android": { "backgroundColor": "#000000" },
-  "ios": { "backgroundColor": "#000000", "contentInset": "never" }
+  "android": {
+    "backgroundColor": "#000000"
+  },
+  "ios": {
+    "backgroundColor": "#000000",
+    "contentInset": "never"
+  },
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "css",
+      "initialViewportFitValueHint": "cover",
+      "style": "DARK"
+    }
+  }
 }

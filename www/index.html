@@ -281,7 +281,9 @@ async function abrirScanner(k){
     video.srcObject = stream; await video.play();
   }catch(e){
     fecharScanner(); statusEl.className = "status warn";
-    statusEl.textContent = "Não consegui abrir a câmera. Libera a câmera pro site (Ajustes → Safari → Câmera) ou digita o número.";
+    statusEl.textContent = NO_APP
+      ? "Câmera bloqueada. Libera em Configurações → Apps → Leva ou não → Permissões → Câmera, ou digita o número."
+      : "Não consegui abrir a câmera. Libera a câmera pro site (Ajustes → Safari → Câmera) ou digita o número.";
     return;
   }
   tDica = setTimeout(() => { if (rodando) $("#scanMsg").textContent = "Não tá lendo? Afasta um pouco (uns 15 cm) pra câmera focar, e deixa o código deitado na faixa."; }, 5000);
@@ -307,6 +309,20 @@ async function abrirScanner(k){
   passo();
 }
 $("#scanClose").onclick = fecharScanner;
+// desliga a câmera se o app for pra segundo plano (não fica com a câmera ligada à toa)
+document.addEventListener("visibilitychange", () => { if (document.hidden && rodando) fecharScanner(); });
+// botão voltar do Android: fecha o leitor, depois o resultado, e só então sai do app
+const CAP = window.Capacitor, NO_APP = !!(CAP && CAP.isNativePlatform && CAP.isNativePlatform());
+if (NO_APP){
+  let AppPl = null;
+  try { AppPl = (CAP.Plugins && CAP.Plugins.App) || (CAP.registerPlugin && CAP.registerPlugin("App")); } catch (e) {}
+  if (AppPl && AppPl.addListener) AppPl.addListener("backButton", () => {
+    if (!$("#scanner").classList.contains("hidden")) { fecharScanner(); return; }
+    if (!result.classList.contains("hidden")) { result.classList.add("hidden"); window.scrollTo({ top: 0, behavior: "smooth" }); return; }
+    if (mode === "two") { setMode("one"); return; }
+    AppPl.exitApp();
+  });
+}
 document.querySelectorAll("[data-scan]").forEach(b => b.onclick = () => abrirScanner(b.dataset.scan));
 document.querySelectorAll("[data-photo]").forEach(inp => inp.onchange = async () => {
   const f = inp.files && inp.files[0]; inp.value = ""; if (!f) return;

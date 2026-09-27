@@ -7,8 +7,8 @@ android {
         applicationId "br.com.zicao.levaounao"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode((System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInteger())
+        versionName "0.1." + (System.getenv("GITHUB_RUN_NUMBER") ?: "0")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,7 +16,19 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        // chave fixa: permite instalar a versão nova por cima da antiga sem desinstalar
+        fixa {
+            storeFile file("levaounao-debug.keystore")
+            storePassword "levaounao"
+            keyAlias "levaounao"
+            keyPassword "levaounao"
+        }
+    }
     buildTypes {
+        debug {
+            signingConfig signingConfigs.fixa
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
