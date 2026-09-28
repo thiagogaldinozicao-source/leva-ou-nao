@@ -1,4 +1,6 @@
 node_modules/
+# log/estado local do scripts/vm-run.sh (testes rodam na VM de teste)
+.vm-run/
 .DS_Store
 *.log
 android/.gradle/

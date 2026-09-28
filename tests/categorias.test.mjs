@@ -21,7 +21,9 @@ test("categoria: sem _categoria ou desconhecida = alimento, e alimento não pass
 test("pet: 'vitamina E 110 UI' do enriquecimento não é corante E110", () => {
   const r = C.avaliar(racao("Frango, arroz, gordura de frango, vitamina E 110 UI, vitamina A"));
   assert.ok(!tem(r.pontos_ruins, /Corante/), r.pontos_ruins.join(" | "));
-  assert.ok(r.pontos_bons.includes("Sem corante artificial"));
+  // sem corante = 0 ponto = pode levar (E110 de verdade vale 2: teste abaixo). Não checa a lista pontos_bons: ela
+  // mostra no máximo 4 itens (tela mínima) e aqui "Fórmula curtinha" + "1º é proteína" + açúcar + conservante enchem.
+  assert.equal(r.veredito, "comprar");
 });
 
 test("pet: corante E110 de verdade conta como ressalva", () => {
