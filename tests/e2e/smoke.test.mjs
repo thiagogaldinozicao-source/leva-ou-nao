@@ -104,7 +104,7 @@ describe("Leva ou não? no navegador", { concurrency: true }, () => {
   it("Comparar 2: iogurte natural × com açúcar → leva o A", T, async t => {
     const { page, fim } = await abre(t);
     await page.click("#tabTwo");
-    assert.equal(await page.locator("#tabTwo").getAttribute("aria-selected"), "true");
+    assert.equal(await page.locator("#tabTwo").getAttribute("aria-pressed"), "true");
     assert.equal(await page.locator("#slotB").isVisible(), true);
     await digita(page, fx["iogurte-natural"].code, "A");
     await digita(page, fx["iogurte-acucar"].code, "B");
@@ -142,7 +142,7 @@ describe("Leva ou não? no navegador", { concurrency: true }, () => {
 
   it("modo bebê: liga, persiste e decide (papinha serve, Nescau não)", T, async t => {
     const { page, fim } = await abre(t);
-    await page.click("label.switch");
+    await page.click("label.row:has(#baby)");   // a linha inteira liga (alvo de toque), não só o trilho
     assert.equal(await page.locator("#baby").isChecked(), true);
     await page.reload({ waitUntil: "load" });
     assert.equal(await page.locator("#baby").isChecked(), true, "modo bebê volta ligado");
@@ -195,8 +195,12 @@ describe("Leva ou não? no navegador", { concurrency: true }, () => {
     await digita(page, fx.agua.code);
     assert.match(await page.locator('[data-found="A"]').innerText(), /Sem conexão/);
     await page.unroute(/\/api\/v2\/product\//);
-    await page.click('[data-found="A"] .x');
-    assert.equal(await analisa(page, fx.agua.code), "Pode levar");
+    await page.click('[data-found="A"] [aria-label="Tentar de novo"]');   // ↻ no próprio cartão: 1 toque, sem redigitar
+    await page.waitForFunction(() => /Água mineral/.test(document.querySelector('[data-found="A"]')?.innerText || ""));
+    await page.waitForFunction(() => !document.querySelector("#go").disabled);
+    await page.click("#go");
+    await page.locator("#result:not(.hidden) .card").first().waitFor();
+    assert.equal(await page.locator("#result .stamp").first().textContent(), "Pode levar");
     await fim();
   });
 
@@ -233,7 +237,8 @@ describe("Leva ou não? no navegador", { concurrency: true }, () => {
           .map(e => [e, e.getBoundingClientRect()])
           .filter(([, r]) => r.width > 0 && (r.left < -1 || r.right > w + 1))
           .map(([e]) => e.outerHTML.slice(0, 80));
-        const rgb = s => (s.match(/[\d.]+/g) || []).slice(0, 4).map(Number);
+        // color-mix() sai do getComputedStyle como "color(srgb r g b / a)" em 0..1, não rgb() em 0..255
+        const rgb = s => { const n = (s.match(/[\d.]+/g) || []).slice(0, 4).map(Number); return s.startsWith("color(srgb") ? [...n.slice(0, 3).map(v => v * 255), ...n.slice(3)] : n; };
         const fundo = e => { for (; e; e = e.parentElement) { const c = rgb(getComputedStyle(e).backgroundColor); if (c.length < 4 || c[3] > 0) return c; } return [255, 255, 255]; };
         const lum = ([r, g, b]) => [r, g, b].map(v => (v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4).reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);
         const st = document.querySelector("#result .stamp");
@@ -260,7 +265,8 @@ describe("Leva ou não? no navegador", { concurrency: true }, () => {
     t.after(() => s2.desce().catch(() => {}));
     const { page, fim } = await abre(t, { url: s2.url, permitido: /icon-512\.png|status of 500/ });
     const sw = await page.evaluate(async () => {
-      const reg = await navigator.serviceWorker.ready;
+      const reg = await navigator.serviceWorker.ready, w = reg.active;   // ready = já é o ativo, mas pode estar "activating"
+      if (w.state !== "activated") await new Promise(ok => w.addEventListener("statechange", () => w.state === "activated" && ok()));
       const nomes = await caches.keys();
       const c = await caches.open(nomes.find(n => n.startsWith("levaounao-")));
       return { estado: reg.active && reg.active.state, cache: (await c.keys()).map(r => new URL(r.url).pathname) };
