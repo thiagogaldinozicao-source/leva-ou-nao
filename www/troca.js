@@ -47,8 +47,14 @@ globalThis.Troca = (() => {
     const l = hierarquia(p), c = cat == null ? escolheCategoria(p, pais) : cat;
     if (c == null) return null;
     const pp = l.filter(t => t !== c && paisDe(pais, c).includes(t));
-    return pp.length ? maisEspecifica(pp, pais, l) : null;
+    if (!pp.length) return null;
+    // Primeiro o pai que divide mais palavras com a categoria (o "o que é": instant-chocolate-powders → cocoa-and-chocolate-powders),
+    // não o do modificador (→ instant-beverages, que trouxe café como troca do Nescau). Empate = o mais específico.
+    const pc = palavras(c), comum = t => palavras(t).filter(w => pc.includes(w)).length, max = Math.max(...pp.map(comum));
+    return maisEspecifica(pp.filter(t => comum(t) === max), pais, l);
   }
+  // Palavras do tag sem idioma, sem conectivo e no singular grosseiro (powders = powder).
+  const palavras = t => t.replace(/^[a-z]{2}:/, "").split("-").filter(w => w && !/^(and|with|of|the|de|e|com)$/.test(w)).map(w => w.replace(/s$/, ""));
 
   // Mais escaneados primeiro (unique_scans_n) e só os vendidos no Brasil.
   function urlBusca(cat){

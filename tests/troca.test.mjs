@@ -59,13 +59,17 @@ test("escolheCategoria: só conta ancestral que está na lista do produto; ciclo
   for (const p of [null, undefined, {}, { categories_tags: [] }]) assert.equal(T.escolheCategoria(p, PAIS_NESCAU), null);
 });
 
-test("categoriaPai: o pai (taxonomia) que está na lista e tem mais ancestrais; sem pai na lista = null", () => {
-  // pais de instant-chocolate-powders: cocoa-and-chocolate-powders (1 ancestral na lista) e instant-beverages (2) => o segundo
-  assert.equal(T.categoriaPai(NESCAU, "en:instant-chocolate-powders", PAIS_NESCAU), "en:instant-beverages");
+test("categoriaPai: o pai (taxonomia) que está na lista e divide mais palavras com a categoria; empate = mais ancestrais; sem pai na lista = null", () => {
+  // pais de instant-chocolate-powders: cocoa-and-chocolate-powders (chocolate+powder) e instant-beverages (instant, e 1 ancestral a mais).
+  // Ganha o primeiro: pelo segundo o "Tem melhor?" do Nescau sugeria café (Nescafé, Melitta).
+  assert.equal(T.categoriaPai(NESCAU, "en:instant-chocolate-powders", PAIS_NESCAU), "en:cocoa-and-chocolate-powders");
   assert.equal(T.categoriaPai(NESCAU, "en:instant-beverages", PAIS_NESCAU), "en:beverage-preparations");
   assert.equal(T.categoriaPai(NESCAU, "en:beverages-and-beverages-preparations", PAIS_NESCAU), null);   // raiz
   assert.equal(T.categoriaPai(NESCAU, "en:nao-esta-na-lista", PAIS_NESCAU), null);
-  assert.equal(T.categoriaPai(NESCAU, undefined, PAIS_NESCAU), "en:instant-beverages");   // sem cat = a escolhida
+  assert.equal(T.categoriaPai(NESCAU, undefined, PAIS_NESCAU), "en:cocoa-and-chocolate-powders");   // sem cat = a escolhida
+  // empate de palavras (0 × 0) => o com mais ancestrais na lista, como antes
+  const empate = { "en:colas": { parents: ["en:sodas", "en:carbonated-drinks"] }, "en:carbonated-drinks": { parents: ["en:beverages"] }, "en:sodas": {} };
+  assert.equal(T.categoriaPai({ categories_tags: ["en:beverages", "en:sodas", "en:carbonated-drinks", "en:colas"] }, "en:colas", empate), "en:carbonated-drinks");
   assert.equal(T.categoriaPai({}, "en:x", PAIS_NESCAU), null);
   assert.equal(T.categoriaPai(NESCAU, "en:instant-chocolate-powders", {}), null);         // sem taxonomia não inventa pai
   // pai fora da lista do produto não vale (a lista do produto é o universo)
