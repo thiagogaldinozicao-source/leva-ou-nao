@@ -16,7 +16,8 @@ Plano técnico por fases (API, foto do rótulo, segurança, lojas): `docs/ROADMA
 - **Sem IA (decisão 2026-09-28):** o rótulo é lido no aparelho e o servidor organiza por regras; custo R$ 0
 - **Receita:** anúncios leves (AdMob) no plano grátis + assinatura sem anúncio e sem limite
 - **Lojas:** Google Play (US$ 25 uma vez), App Store (US$ 99/ano); política de privacidade (LGPD) e aviso "não substitui nutricionista"
-- **Diferenciais:** ranking do corredor ("melhores achocolatados"), sugestão de troca mais natural, lista de compras, perfis (bebê, diabético, sem glúten/lactose)
+- **Diferenciais (feitos em 2026-09-28):** perfis 🌾 sem glúten / 🥛 sem lactose / 🍬 pouco açúcar (na dúvida o app diz "atenção", nunca "pode"; nada de promessa médica, por isso "pouco açúcar" e não "diabético") e "🔁 Tem melhor?" (1 toque: até 3 da mesma categoria no Brasil que saem "Pode levar"; é o ranking do corredor e a troca numa coisa só)
+- **Fora (decisão 2026-09-28):** lista de compras. Pede tela nova, e a regra é uma tela só
 - **Métricas:** % de códigos encontrados, tempo até o resultado
 
 ## Jurídico (pronto pra quando for lançar)
