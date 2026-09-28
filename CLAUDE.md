@@ -18,13 +18,21 @@ Produto sem cadastro → ler ingredientes do rótulo (Android: ML Kit no aparelh
 - Resposta = resultado. Sem preâmbulo, sem recapitular o diff.
 
 ## Mapa
-- `www/index.html` — o app inteiro (HTML + CSS + JS num arquivo só). `www/lib/` = ZXing wasm (não editar).
-  Faixas (em 2026-09-28; mudou? `grep -n` antes): CSS 16-133 · HTML 135-197 · JS 198-678:
-  busca OFF 209-227 · baseLocal 229-236 · renderSlot 238-270 · OCR/rótulo 272-341 · scanner ZXing 348-435 ·
-  **motor de regras 450-550** · analisarProduto 552-587 · tela resultado 589-651 · histórico 653-665.
+- `www/index.html` — casca do app (HTML + CSS + JS de tela; motor e regras foram pra arquivos próprios). `www/lib/` = ZXing wasm (não editar).
+  Faixas (em 2026-09-28; mudou? `grep -n '/\* ----------'` antes): CSS 21-139 · HTML 141-205 · JS 206-653:
+  busca própria/bases abertas 217-283 · baseLocal + renderSlot 286-327 · OCR/rótulo (painel + ML Kit/iOS) 329-427 ·
+  scanner ZXing/BarcodeDetector 429-529 · tela de resultado (usa `Regras`/`Categorias`) 531-624 · histórico 625-651.
+- `www/regras.js` — motor de regras de ALIMENTO (NOVA, açúcar, adoçante, corante, conservante) → `globalThis.Regras`.
+- `www/categorias.js` — veredito de cosmético/pet/limpeza e informação (sem veredito) de remédio → `globalThis.Categorias`.
+- `www/rotulo.js` — parser por regras do texto lido no rótulo (ingredientes, alérgenos, "ALTO EM") → `globalThis.Rotulo`; mesmo arquivo usado pela API (`api/src/index.js`).
+- `www/sw.js` — service worker do site: cache-first em `lib/fonts/icons`, rede-primeiro no shell; nunca intercepta Open Food Facts/irmãs nem a API.
+- `www/offline.js` — registra o `sw.js` (só no site, não no app empacotado).
+- `www/_headers` — headers do GitHub Pages (CSP igual à `<meta>` do `index.html`, cache).
+- `tests/` — `node --test` puro: `regras.test.mjs` roda `www/regras.js` como script clássico via `vm`; `fixtures/` = produtos reais (JSON) pros casos.
 - `android/` — Capacitor 8 (id `br.com.zicao.levaounao`). `capacitor.config.json`.
 - `.github/workflows/site.yml` — `www/` → GitHub Pages a cada push na main.
 - `.github/workflows/android.yml` — APK → Releases quando muda `www/`, `android/` ou deps.
+- `api/` — Cloudflare Worker + D1, sem IA (`api/README.md` tem o passo a passo). `src/index.js` = rotas (`GET /v1/produto/{ean}`, `POST /v1/rotulo-texto`, `POST /v1/metrica`, cron que devolve ao Open Food Facts); `src/util.js` = funções puras (EAN, comparação de ingredientes); `src/remedio.js` = busca na tabela CMED (D1); `migrations/` = schema D1; `scripts/importa-cmed.mjs` = carrega a lista de preços CMED/Anvisa no D1.
 - `docs/` — checklist de lançamento, privacidade, termos, pesquisas.
 
 ## Produto (decide toda mudança de tela)

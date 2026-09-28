@@ -192,7 +192,7 @@ button:focus-visible,.shoot:focus-within{outline:3px solid var(--gold-l);outline
     <button class="clear" id="clearHist">Limpar lista</button>
   </section>
 
-  <p class="fine">Nada é salvo além do nome e veredito na lista acima. Dados do Open Food Facts, base aberta e colaborativa. Não substitui pediatra ou nutricionista.</p>
+  <p class="fine">Nada é salvo além do nome e veredito na lista acima. Dados do Open Food Facts, Open Beauty Facts, Open Pet Food Facts e Open Products Facts (bases abertas e colaborativas, licença ODbL) e da CMED/Anvisa (preços de remédio). Não substitui pediatra ou nutricionista.</p>
 </main>
 
 <div id="scanner" class="hidden" role="dialog" aria-label="Leitor de código de barras">
@@ -323,7 +323,8 @@ function renderSlot(k){
   f.append(t);
   const x = el("button","x","×"); x.setAttribute("aria-label","Trocar produto"); x.onclick = () => { prod[k] = null; renderSlot(k); render(); };
   f.append(x); box.append(f);
-  if (p.status === "miss" || (p.status === "ok" && semIngredientes(p.data))) box.append(painelLeitura(k, p));
+  const cat = p.data && p.data._categoria;
+  if (cat !== "remedio" && (p.status === "miss" || (p.status === "ok" && semIngredientes(p.data)))) box.append(painelLeitura(k, p));
 }
 
 /* ---------- ler ingredientes do rótulo (sem IA, de graça) ----------
