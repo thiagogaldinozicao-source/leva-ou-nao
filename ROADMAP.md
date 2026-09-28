@@ -12,8 +12,8 @@ Plano técnico por fases (API, foto do rótulo, segurança, lojas): `docs/ROADMA
 - Produto sem cadastro: leitura dos ingredientes do rótulo sem IA (ML Kit no app, Escanear Texto no site) + base própria no aparelho (`baseLocal`)
 
 ## Pra vender / monetizar
-- **Cobertura BR:** trocar `baseLocal` (aparelho) por servidor (Supabase grátis no início): o que um usuário ler do rótulo fica disponível pra todos. Opcional: enviar pro Open Food Facts também
-- **IA:** comentário e leitura de rótulo sem cadastro via servidor próprio (chave da API nunca no app)
+- **Cobertura BR:** trocar `baseLocal` (aparelho) por servidor (Cloudflare Workers + D1, grátis): o que um usuário ler do rótulo fica disponível pra todos. Opcional: enviar pro Open Food Facts também
+- **Sem IA (decisão 2026-09-28):** o rótulo é lido no aparelho e o servidor organiza por regras; custo R$ 0
 - **Receita:** anúncios leves (AdMob) no plano grátis + assinatura sem anúncio e sem limite
 - **Lojas:** Google Play (US$ 25 uma vez), App Store (US$ 99/ano); política de privacidade (LGPD) e aviso "não substitui nutricionista"
 - **Diferenciais:** ranking do corredor ("melhores achocolatados"), sugestão de troca mais natural, lista de compras, perfis (bebê, diabético, sem glúten/lactose)
