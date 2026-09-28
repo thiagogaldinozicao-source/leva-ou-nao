@@ -134,6 +134,10 @@ button:focus-visible,.shoot:focus-within{outline:3px solid var(--gold-l);outline
 .how{margin:6px 0 0;font-size:.88rem;color:var(--muted)}
 .how summary{cursor:pointer;color:var(--gold-l);font-weight:600}
 .how p{margin:6px 0 0}
+.trocab{display:block;min-height:44px;margin:0 0 10px;padding:8px 14px;border:1px solid var(--gold);border-radius:12px;background:transparent;color:var(--gold-l);font:inherit;font-weight:600;cursor:pointer}
+.trocab:disabled{opacity:.6}
+.troca p{margin:0 0 10px;color:var(--muted)}
+.trocal{display:flex;justify-content:space-between;gap:10px;width:100%;min-height:48px;align-items:center;padding:10px 0;border:0;border-top:1px solid var(--line);background:transparent;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
 .hidden{display:none!important}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -203,6 +207,7 @@ button:focus-visible,.shoot:focus-within{outline:3px solid var(--gold-l);outline
 <script src="categorias.js"></script>
 <script src="lib/zxing-reader.js"></script>
 <script src="regras.js"></script>
+<script src="troca.js"></script>
 <script>
 const $ = s => document.querySelector(s);
 const goBtn = $("#go"), statusEl = $("#status"), result = $("#result"), baby = $("#baby");
@@ -292,7 +297,7 @@ const baseLocal = {
 };
 const semIngredientes = d => !d || !(d.ingredients_text_pt || d.ingredients_text);
 
-function setCode(k, code){
+function setCode(k, code, abrir){
   code = String(code || "").replace(/\D/g, "");
   if (code.length < 8){ statusEl.className = "status warn"; statusEl.textContent = "Código incompleto. Confere os números."; return; }
   statusEl.className = "status"; statusEl.textContent = "";
@@ -303,6 +308,7 @@ function setCode(k, code){
     if (d && local && semIngredientes(d)) d = { ...d, ingredients_text_pt: local.ingredients_text_pt, _lido: true };
     if (!d && local) d = local;
     prod[k] = { code, status: d ? "ok" : "miss", data: d }; renderSlot(k); render();
+    if (abrir && ready()) goBtn.click();   // vindo de "Tem melhor?": já abre o veredito, como o rótulo lido faz
   }).catch(() => {
     if (!prod[k] || prod[k].code !== code) return;
     prod[k] = local ? { code, status: "ok", data: local } : { code, status: "erro" }; renderSlot(k); render();
@@ -584,7 +590,55 @@ function cartao(r, p){
   if (p) c.append(fonte(p.code, p.data && p.data._lido, cat));
   return c;
 }
-function showOne(r, p){ result.innerHTML = ""; result.append(cartao(r, p), againBtn()); show(); }
+/* "Tem melhor?": categoria do produto no Open Food Facts, só o que o motor aprova (troca.js). Lista crua em
+   sessionStorage por categoria; o veredito é refeito a cada toque (modo bebê pode ter mudado). */
+const PRAZO_TROCA = 10000;   // a busca do OFF é mais lenta que a de produto
+async function trocaLista(cat){
+  const k = "troca:" + cat;
+  try { const c = JSON.parse(sessionStorage.getItem(k)); if (Array.isArray(c)) return c; } catch (e) {}
+  const l = await comPrazo(PRAZO_TROCA, async signal => {
+    let res;
+    try { res = await fetch(Troca.urlBusca(cat), { signal }); } catch (e) { throw new Error("net"); }
+    if (!res.ok) throw new Error("http");   // a busca do OFF devolve 503 quando está sobrecarregada
+    const j = await res.json();
+    return Array.isArray(j && j.products) ? j.products : [];
+  });
+  try { sessionStorage.setItem(k, JSON.stringify(l)); } catch (e) {}
+  return l;
+}
+async function trocaAcha(d, code){
+  const analisar = x => analisarProduto(x, baby.checked);
+  let cat = Troca.categoriaDe(d);
+  for (let i = 0; i < 2 && cat; i++){   // a categoria e, se nada servir, a de cima (1 vez)
+    const m = Troca.melhores(await trocaLista(cat), analisar, code, 3);
+    if (m.length) return m;
+    cat = Troca.categoriaPai(d, cat);
+  }
+  return [];
+}
+function trocaBox(p){
+  const box = el("div","troca"), b = el("button","trocab","🔁 Tem melhor?"), out = el("div");
+  b.onclick = async () => {
+    b.disabled = true; b.textContent = "Buscando…"; out.textContent = "";
+    let m;
+    try { m = await trocaAcha(p.data, p.code); }
+    catch (e) { b.disabled = false; b.textContent = "🔁 Tem melhor?"; out.append(el("p",null,"Sem conexão agora.")); return; }
+    b.remove();
+    if (!m.length){ out.append(el("p",null,"Não achei melhor por aqui.")); return; }
+    m.forEach(x => {
+      const row = el("button","trocal");
+      row.append(el("span",null,nomeProd({ product_name_pt: x.nome, brands: x.marca })), el("span","dot " + x.veredito,LABEL[x.veredito]));
+      row.onclick = () => { result.classList.add("hidden"); window.scrollTo({top:0,behavior:"smooth"}); setCode("A", x.code, true); };
+      out.append(row);
+    });
+  };
+  box.append(b, out); return box;
+}
+function showOne(r, p){
+  result.innerHTML = ""; const c = cartao(r, p), st = c.querySelector(".stamp");
+  if (st && p && p.data && r._cat === "alimento" && vOk(r.veredito) !== "comprar" && Troca.categoriaDe(p.data)) st.after(trocaBox(p));
+  result.append(c, againBtn()); show();
+}
 // Comparar 2 só dentro da mesma categoria; remédio não compara: mostra o card de cada um.
 function showCards(rs, ps, nota){
   result.innerHTML = "";

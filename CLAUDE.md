@@ -24,6 +24,7 @@ Produto sem cadastro → ler ingredientes do rótulo (Android: ML Kit no aparelh
   scanner ZXing/BarcodeDetector 429-529 · tela de resultado (usa `Regras`/`Categorias`) 531-624 · histórico 625-651.
 - `www/regras.js` — motor de regras de ALIMENTO (NOVA, açúcar, adoçante, corante, conservante) → `globalThis.Regras`.
 - `www/categorias.js` — veredito de cosmético/pet/limpeza e informação (sem veredito) de remédio → `globalThis.Categorias`.
+- `www/troca.js` — "🔁 Tem melhor?": categoria do produto (OFF) → URL da busca no OFF (Brasil, mais escaneados) → até 3 trocas com "Pode levar" → `globalThis.Troca`; puro, o fetch e o botão ficam no `index.html` (`trocaBox`).
 - `www/rotulo.js` — parser por regras do texto lido no rótulo (ingredientes, alérgenos, "ALTO EM") → `globalThis.Rotulo`; mesmo arquivo usado pela API (`api/src/index.js`).
 - `www/sw.js` — service worker do site: cache-first em `lib/fonts/icons`, rede-primeiro no shell; nunca intercepta Open Food Facts/irmãs nem a API.
 - `www/offline.js` — registra o `sw.js` (só no site, não no app empacotado).
