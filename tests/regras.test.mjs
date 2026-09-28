@@ -8,6 +8,7 @@ import vm from "node:vm";
 const raiz = new URL("../", import.meta.url);
 // regras.js é script clássico (igual no navegador): roda no contexto global e deixa globalThis.Regras.
 vm.runInThisContext(readFileSync(new URL("www/regras.js", raiz), "utf8"), { filename: "www/regras.js" });
+vm.runInThisContext(readFileSync(new URL("www/rotulo.js", raiz), "utf8"), { filename: "www/rotulo.js" });   // a lupa lida do rótulo entra por d._rotulo.altoEm
 const { ingredientesDe, avaliar, comparar, analisarProduto } = globalThis.Regras;
 
 const fx = nome => JSON.parse(readFileSync(new URL(`tests/fixtures/${nome}.json`, raiz), "utf8"));
@@ -68,7 +69,8 @@ test("biscoito recheado: açúcar, gordura vegetal, NOVA 4 → deixa na pratelei
   const r = analisarProduto(fx("biscoito-recheado"), false);
   assert.equal(r.veredito, "evitar");
   assert.ok(r.pontos_ruins.includes("Gordura vegetal/palma"));
-  assert.ok(tem(r.pontos_ruins, /^Gordura saturada alta: 9 g/));
+  assert.ok(tem(r.pontos_ruins, /^Alto em gordura saturada: 9 g em 100 g/));   // lupa da Anvisa (≥ 6 g/100 g), no lugar do limite próprio de antes
+  assert.deepEqual(r.lupa, ["gordura"]);
 });
 
 test("papinha de fruta no modo bebê → pode levar e serve pro bebê", () => {
@@ -301,4 +303,120 @@ test("bebê depois dos perfis: 'serve' só se o veredito final é comprar", () =
   assert.equal(analisarProduto(fx("nescau"), true, GL).bebe.motivo, "Tem coisa que é melhor evitar pra idade dele.");
   // sem bebê, sem chave
   assert.equal("bebe" in analisarProduto(trigo, false, GL), false);
+});
+
+// ---- lupa "ALTO EM" (RDC 429/2020 + IN 75/2020, Anexo XV): açúcar adicionado 15 g|7,5 g, gordura saturada 6 g|3 g, sódio 600 mg|300 mg (por 100 g | 100 ml)
+const lp = extra => analisarProduto(prodT({ nova_group: 2, ingredients_text_pt: "Arroz, sal", ...extra }), false);   // NOVA 2: sem ponto de NOVA e sem a vedação do NOVA 1
+const nut = (o, quantity) => lp({ quantity, nutriments: o });
+
+test("lupa, sólido: limite exato conta (≥), logo abaixo não; um por nutriente", () => {
+  assert.deepEqual(nut({ "added-sugars_100g": 15 }, "200 g").lupa, ["acucar"]);
+  assert.deepEqual(nut({ "added-sugars_100g": 14.9 }, "200 g").lupa, []);
+  assert.deepEqual(nut({ "saturated-fat_100g": 6 }, "200 g").lupa, ["gordura"]);
+  assert.deepEqual(nut({ "saturated-fat_100g": 5.9 }, "200 g").lupa, []);
+  assert.deepEqual(nut({ sodium_100g: 0.6 }, "200 g").lupa, ["sodio"]);      // OFF traz sódio em g: 0,6 g = 600 mg
+  assert.deepEqual(nut({ sodium_100g: 0.599 }, "200 g").lupa, []);
+  assert.deepEqual(nut({ salt_100g: 1.5 }, "200 g").lupa, ["sodio"]);        // sem sódio, sal ÷ 2,5: 1,5 g de sal = 600 mg de sódio
+  assert.deepEqual(nut({ salt_100g: 1.4 }, "200 g").lupa, []);
+  assert.deepEqual(nut({ "added-sugars_100g": 20, "saturated-fat_100g": 8, sodium_100g: 0.9 }, "1 kg").lupa, ["acucar", "gordura", "sodio"]);   // ordem fixa da Anvisa
+  const r = nut({ "saturated-fat_100g": 9, sodium_100g: 0.72 }, "200 g");
+  assert.deepEqual(r.pontos_ruins, ["Alto em gordura saturada: 9 g em 100 g", "Alto em sódio: 720 mg em 100 g"]);
+});
+
+test("lupa, líquido (ml/l na quantity): limites pela metade, e o mesmo número em g não acusa", () => {
+  assert.deepEqual(nut({ "added-sugars_100g": 7.5 }, "350 ml").lupa, ["acucar"]);
+  assert.deepEqual(nut({ "added-sugars_100g": 7.4 }, "350 ml").lupa, []);
+  assert.deepEqual(nut({ "added-sugars_100g": 7.5 }, "350 g").lupa, []);
+  assert.deepEqual(nut({ "saturated-fat_100g": 3 }, "1 L").lupa, ["gordura"]);
+  assert.deepEqual(nut({ "saturated-fat_100g": 3 }, "1,5 litros").lupa, ["gordura"]);
+  assert.deepEqual(nut({ sodium_100g: 0.3 }, "2 x 200ml").lupa, ["sodio"]);
+  assert.deepEqual(nut({ sodium_100g: 0.29 }, "2 x 200ml").lupa, []);
+  assert.equal(nut({ "saturated-fat_100g": 4 }, "1 L").pontos_ruins[0], "Alto em gordura saturada: 4 g em 100 ml");
+  assert.deepEqual(nut({ sodium_100g: 0.4 }, "1 lata").lupa, []);                 // "lata" não é litro: sem unidade = sólido
+});
+
+test("lupa, líquido sem unidade: categoria de bebida decide (sem pó), sem nada = sólido", () => {
+  const sod = extra => lp({ nutriments: { sodium_100g: 0.4 }, ...extra }).lupa;
+  assert.deepEqual(sod({ categories_tags: ["en:beverages", "en:sodas"] }), ["sodio"]);
+  assert.deepEqual(sod({ categories_tags: ["en:beverages", "en:instant-beverages"] }), []);
+  assert.deepEqual(sod({ categories_tags: ["en:beverages"], quantity: "400 g" }), []);   // unidade escrita manda
+  assert.deepEqual(sod({}), []);
+});
+
+test("lupa, sem dado = sem lupa: açúcar total alto sem added-sugars não vira lupa de açúcar", () => {
+  assert.deepEqual(lp({}).lupa, []);
+  assert.deepEqual(lp({ nutriments: {} }).lupa, []);
+  assert.deepEqual(lp({ nutriments: { "added-sugars_100g": "", "saturated-fat_100g": null, sodium_100g: "abc" } }).lupa, []);
+  const r = lp({ ingredients_text_pt: "Açúcar, cacau", nutriments: { sugars_100g: 60 } }, "200 g");
+  assert.deepEqual(r.lupa, []);
+  assert.ok(tem(r.pontos_ruins, /^Muito açúcar: 60 g/));      // a linha antiga do açúcar total segue valendo, sem se passar por lupa
+  assert.equal("lupa" in analisarProduto(prodT({}), false), true);
+  assert.deepEqual(analisarProduto(prodT({}), false).lupa, []);
+});
+
+test("lupa entra no veredito: 1 ponto por nutriente, sem contar 2x o que já contava", () => {
+  assert.equal(nut({ "saturated-fat_100g": 5.9 }, "200 g").veredito, "comprar");
+  const g = nut({ "saturated-fat_100g": 6 }, "200 g");
+  assert.equal(g.veredito, "moderacao"); assert.equal(g._pts, 1);
+  const s = lp({ nutriments: { salt_100g: 2 } });                 // sal 2 g = 800 mg de sódio: antes "Muito sal" (+1), agora a lupa no lugar (+1, não +2)
+  assert.deepEqual(s.lupa, ["sodio"]); assert.equal(s._pts, 1);
+  assert.equal(s.pontos_ruins.some(x => /^Muito sal/.test(x)), false);
+  const liq = lp({ quantity: "1 L", nutriments: { salt_100g: 1 } });   // 1 g de sal = 400 mg de sódio: só a lupa de líquido pega
+  assert.deepEqual(liq.lupa, ["sodio"]); assert.equal(liq._pts, 1);
+  const tri = nut({ "added-sugars_100g": 20, "saturated-fat_100g": 8, sodium_100g: 0.9 }, "200 g");
+  assert.equal(tri.veredito, "evitar");
+});
+
+test("lupa: fixtures do repo — só o biscoito recheado ganha lupa, e nenhum veredito mudou", () => {
+  const esperado = { agua: "comprar", "biscoito-recheado": "evitar", "iogurte-acucar": "evitar", "iogurte-natural": "comprar", nescau: "evitar", papinha: "comprar", "refrigerante-zero": "evitar", "suco-caixa": "evitar", toddy: "evitar" };
+  for (const nome of FIXTURES) {
+    const r = analisarProduto(fx(nome), false);
+    assert.equal(r.veredito, esperado[nome], nome);
+    assert.deepEqual(r.lupa, nome === "biscoito-recheado" ? ["gordura"] : [], nome);
+  }
+});
+
+test("lupa vedada (IN 75, Anexo XVI): in natura, queijo, azeite, sal não levam lupa; com açúcar adicionado na lista, levam", () => {
+  const ve = extra => analisarProduto(prodT({ nutriments: { "saturated-fat_100g": 20, sodium_100g: 0.9 }, ...extra }), false).lupa;
+  assert.deepEqual(ve({ nova_group: 1, ingredients_text_pt: "Castanha-do-pará" }), []);
+  assert.deepEqual(ve({ nova_group: 3, ingredients_text_pt: "Leite, sal, coalho", categories_tags: ["en:dairies", "en:cheeses"] }), []);
+  assert.deepEqual(ve({ nova_group: 2, ingredients_text_pt: "Azeite de oliva", categories_tags: ["en:olive-oils"] }), []);
+  assert.deepEqual(ve({ nova_group: 2, ingredients_text_pt: "Sal", categories_tags: ["en:salts"] }), []);
+  assert.deepEqual(ve({ nova_group: 4, ingredients_text_pt: "Leite, açúcar, polpa de morango", categories_tags: ["en:yogurts"], nutriments: { "added-sugars_100g": 16, "saturated-fat_100g": 3 } }), ["acucar"]);
+  assert.deepEqual(ve({ nova_group: 4, ingredients_text_pt: "Manteiga, sal", categories_tags: ["en:butters"] }), ["gordura", "sodio"]);   // manteiga não está no Anexo XVI
+  // a vedação só cala número do OFF; a lupa que o rótulo mostra (nutriente ausente no OFF) é fato da embalagem e vale
+  assert.deepEqual(ve({ nova_group: 3, ingredients_text_pt: "Leite, sal", categories_tags: ["en:cheeses"], _rotulo: { altoEm: ["sodio"] } }), []);
+  assert.deepEqual(ve({ nova_group: 3, ingredients_text_pt: "Leite, sal", categories_tags: ["en:cheeses"], nutriments: {}, _rotulo: { altoEm: ["sodio"] } }), ["sodio"]);
+});
+
+test("lupa lida do rótulo: vale quando o OFF não tem o nutriente; número do OFF manda quando existe", () => {
+  const ler = txt => Rotulo.ler(txt);
+  const lido = ler("ALTO EM AÇÚCAR ADICIONADO E SÓDIO\nIngredientes: farinha de trigo, açúcar, sal.");
+  assert.deepEqual(lido.altoEm, ["acucar_adicionado", "sodio"]);
+  const d = extra => analisarProduto(prodT({ nova_group: 4, ingredients_text_pt: lido.ingredientes || "Farinha de trigo, açúcar, sal", _rotulo: lido, ...extra }), false);
+  const r = d({});
+  assert.deepEqual(r.lupa, ["acucar", "sodio"]);
+  assert.deepEqual(r.pontos_ruins.slice(0, 2), ["Alto em açúcar adicionado (lido no rótulo)", "Alto em sódio (lido no rótulo)"]);
+  assert.deepEqual(d({ nutriments: { sodium_100g: 0.1 } }).lupa, ["acucar"]);            // OFF tem sódio e ele é baixo: o número manda; açúcar adicionado o OFF não tem, vale o rótulo
+  assert.deepEqual(analisarProduto(prodT({ ingredients_text_pt: "Arroz, sal", _rotulo: ler("Ingredientes: arroz, sal.") }), false).lupa, []);   // rótulo sem lupa
+});
+
+test("pontuação do açúcar: 'não contém açúcar' / 'sem adição de açúcares' não conta como açúcar adicionado (mesma régua do perfil)", () => {
+  // OCR (avaliar): antes "Tem açúcar adicionado" e "açúcar entre os primeiros" por casar a palavra crua
+  for (const neg of ["Não contém açúcar.", "Sem adição de açúcares.", "Zero açúcar adicionado.", "Açúcares totais 0 g"]) {
+    const r = avaliar("Ingredientes: farinha de arroz, sal. " + neg, false);
+    assert.equal(r._pts, 0, neg);
+    assert.equal(r.veredito, "comprar", neg);
+    assert.ok(r.pontos_bons.includes("Sem açúcar adicionado"), neg);
+  }
+  // açúcar de verdade continua contando, mesmo com negação em outra frase
+  assert.equal(avaliar("Ingredientes: açúcar, farinha, sal.", false)._pts >= 2, true);
+  assert.equal(avaliar("Ingredientes: farinha, sal, amido, óleo, mel. Sem adição de açúcar refinado.", false).pontos_ruins.includes("Tem açúcar adicionado"), true);
+  // OFF (analisarProduto): "Muito açúcar" só com açúcar adicionado na lista
+  const acu = ing => analisarProduto(prodT({ nova_group: 2, ingredients_text_pt: ing, nutriments: { sugars_100g: 30 } }), false);
+  assert.equal(tem(acu("Arroz, sal. Não contém açúcar").pontos_ruins, /^Muito açúcar/), false);
+  assert.equal(tem(acu("Castanha de caju. Sem adição de açúcares").pontos_ruins, /^Muito açúcar/), false);
+  assert.equal(acu("Arroz, sal. Não contém açúcar")._pts, 0);
+  assert.equal(tem(acu("Arroz, xarope de glicose").pontos_ruins, /^Muito açúcar: 30 g/), true);
+  assert.equal(tem(acu("Arroz, mel").pontos_ruins, /^Muito açúcar: 30 g/), true);
 });

@@ -32,7 +32,7 @@ const TIPOS = [
    Glúten NUNCA dá "ok" por falta de dado (falso "sem glúten" machuca celíaco): "ok" só com selo ou
    "não contém glúten" escrito (Lei 10.674/2003); na dúvida, "atencao".
    Lactose (RDC 136/2017 "CONTÉM LACTOSE"): traço de leite não conta, intolerância é por dose.
-   Pouco açúcar: adoçante não penaliza; o motor não sabe o que é líquido, então vale a régua do sólido. */
+   Pouco açúcar: adoçante não penaliza; no perfil vale sempre a régua do sólido (só a lupa separa líquido: ehLiquido). */
 const PERFIS = ["gluten", "lactose", "acucar"];
 const NEG = "(?:nao cont[e3]m|sem|zero|isent[oa] de|livre de|sin) ?(?:de )?";
 const TRACOS = /(?<![a-z])(?:podem? conter|tracos? de)(?:(?!(?<![a-z])(?:nao )?cont[e3]m(?![a-z])|alergic)[^.;]){0,160}/g;
@@ -108,8 +108,8 @@ function avaliar(raw, isBaby, limpo, perfis){
   const bons = [], ruins = [], dicas = []; let pts = 0;
   const bad = (p, msg, dica) => { pts += p; ruins.push(msg); if (dica) dicas.push(dica); };
 
-  const acuRe = /(a[cg]ucar|azucar|xarope|jarabe|sacarose|glicose|glucosa|frutose|fructosa|maltodextrina|acucar invertido|dextrose)/;
-  const acucarCedo = acuRe.test(top3), temAcucar = acuRe.test(t);
+  // Mesma régua do perfil (acucarAdicionado): "não contém açúcar" / "sem adição de açúcares" não é açúcar adicionado.
+  const acucarCedo = acucarAdicionado(top3), temAcucar = acucarAdicionado(t);
   const vd = vdAdd ? parseInt(vdAdd[1]) : null;
   if (vd != null && vd >= 20) bad(2, "Muito açúcar adicionado (" + vd + "% do dia numa porção)", "Uma porção já leva " + vd + "% do açúcar adicionado que dá pra comer no dia todo.");
   else if (vd != null && vd >= 8) bad(1, "Açúcar adicionado: " + vd + "% do dia por porção");
@@ -190,6 +190,42 @@ function comparar(a, b, isBaby, perfis){
   return res;
 }
 
+/* Lupa frontal "ALTO EM" (RDC 429/2020 + IN 75/2020, Anexo XV):
+   https://www.in.gov.br/en/web/dou/-/instrucao-normativa-in-n-75-de-8-de-outubro-de-2020-282071143
+   Limite = [sólido/semissólido por 100 g, líquido por 100 ml], "maior ou igual" (limite exato conta). Sódio em mg, o resto em g.
+   Açúcar: só o `added-sugars_100g` do OFF (total não vira adicionado: chute acusaria fruta e leite). */
+const LUPA_LIM = { acucar: [15, 7.5], gordura: [6, 3], sodio: [600, 300] };
+const LUPA_NOME = { acucar: "açúcar adicionado", gordura: "gordura saturada", sodio: "sódio" };
+const LUPA_ROT = { acucar_adicionado: "acucar", gordura_saturada: "gordura", sodio: "sodio" };   // ids do rotulo.js → os daqui
+/* Líquido pelo que o OFF traz: unidade da `quantity` (ml/l) manda; g/kg = sólido; sem unidade, categoria de bebida (sem pó).
+   Sem nada = sólido, que é o limite MAIOR: na dúvida a lupa não acusa a mais. */
+function ehLiquido(d){
+  const q = nrm(d.quantity);
+  if (/\d\s*(?:ml|cl|dl|l|lt|lts|litros?|litres?|liters?)(?![a-z])/.test(q)) return true;
+  if (/\d\s*(?:kg|g|gr|grs|gramas?|mg)(?![a-z])/.test(q)) return false;
+  const tags = (Array.isArray(d.categories_tags) ? d.categories_tags : []).join(" ");
+  return /en:(?:beverages|waters|sodas|juices-and-nectars|drinkable-yogurts|dairy-drinks|milks|plant-based-milks)(?:\s|$)/.test(tags) && !/powder|instant|preparation|dry|mix/.test(tags);
+}
+/* IN 75, Anexo XVI: nestes alimentos a lupa é VEDADA (desde que sem ingrediente que agregue açúcar adicionado, gordura saturada ou sódio):
+   in natura (NOVA 1), leites e leite em pó, leites fermentados, queijos, ovos, farinhas, azeite/óleos, sal, fórmulas infantis, suplementos, bebida alcoólica.
+   O OFF não diz "sem adição": NOVA 1 já é isso; pelas categorias, só vale sem açúcar na lista. Só cala, nunca acusa. */
+const LUPA_VEDADA = /en:(?:cheeses|milks|dried-milks|powdered-milks|fermented-milks|yogurts|eggs|flours|olive-oils|vegetable-oils|salts|infant-formulas|dietary-supplements|alcoholic-beverages)(?:\s|$)/;
+function lupaDe(d, ing){
+  const n = d.nutriments || {}, num = k => { const v = n[k]; return v == null || v === "" || !isFinite(+v) ? null : +v; };
+  const na = num("sodium_100g"), sal = num("salt_100g");
+  const dado = { acucar: num("added-sugars_100g"), gordura: num("saturated-fat_100g"), sodio: na != null ? na * 1000 : sal != null ? sal / 2.5 * 1000 : null };
+  const cat = (Array.isArray(d.categories_tags) ? d.categories_tags : []).join(" ");
+  const vedada = +d.nova_group === 1 || (LUPA_VEDADA.test(cat) && !(ing && acucarAdicionado(ingredientesDe(ing, true).texto)));
+  const lido = (d._rotulo && Array.isArray(d._rotulo.altoEm) ? d._rotulo.altoEm : []).map(k => LUPA_ROT[k]);
+  const liq = ehLiquido(d), un = liq ? "100 ml" : "100 g", res = [];
+  for (const id of ["acucar", "gordura", "sodio"]) {
+    const v = dado[id];
+    if (v == null) { if (lido.includes(id)) res.push({ id, txt: "Alto em " + LUPA_NOME[id] + " (lido no rótulo)" }); continue; }   // sem o nutriente no OFF, vale a lupa que o rótulo mostra
+    if (!vedada && v >= LUPA_LIM[id][liq ? 1 : 0] - 1e-9) res.push({ id, txt: "Alto em " + LUPA_NOME[id] + ": " + +v.toFixed(id === "sodio" ? 0 : 1) + (id === "sodio" ? " mg" : " g") + " em " + un });
+  }
+  return res;
+}
+
 const ENUM = { e951:"aspartame", e955:"sucralose", e950:"acessulfame", e961:"neotame", e952:"ciclamato", e954:"sacarina",
   e102:"tartrazina", e110:"amarelo crepusculo", e129:"vermelho 40", e124:"ponceau", e133:"azul brilhante", e150c:"caramelo iii", e150d:"caramelo iv", e122:"azorrubina", e127:"eritrosina", e132:"indigotina",
   e211:"benzoato", e212:"benzoato", e202:"sorbato", e200:"sorbato", e250:"nitrito", e252:"nitrato", e251:"nitrato", e242:"dicarbonato", e223:"metabissulfito", e282:"propionato", e621:"glutamato" };
@@ -207,11 +243,17 @@ function analisarProduto(d, isBaby, perfis){
   else if (nova === 3){ pts += 1; ruins.unshift("Processado (NOVA 3)"); }
   else if (nova === 1){ bons.unshift("Alimento in natura ou minimamente processado (NOVA 1)"); }
   const n = d.nutriments || {};
-  const acu = n.sugars_100g, sal = n.salt_100g, gs = n["saturated-fat_100g"];
-  const acucarAdd = !ing || /(a[cg]ucar|xarope|sacarose|glicose|frutose|maltodextrina|dextrose|mel\b)/.test(nrm(ing));
-  if (acu != null && acu >= 22.5 && acucarAdd){ pts += 1; ruins.push("Muito açúcar: " + (+acu).toFixed(0) + " g em 100 g"); }
-  if (sal != null && sal >= 1.5){ pts += 1; ruins.push("Muito sal: " + (+sal).toFixed(1) + " g em 100 g"); }
-  if (gs != null && gs >= 5){ ruins.push("Gordura saturada alta: " + (+gs).toFixed(0) + " g em 100 g"); }
+  const acu = n.sugars_100g, sal = n.salt_100g;
+  // mesma régua do perfil: "sem açúcar" não conta. Texto inteiro do OFF (já é a lista): ingredientesDe corta antes
+  // de "ingrediente" e em 700 chars, e o açúcar sumia
+  const addIng = !!ing && acucarAdicionado(ing);
+  const acucarAdd = !ing || addIng;
+  // Lupa (Anvisa) no lugar da linha antiga do mesmo nutriente: 1 ponto cada, sem contar 2x. Sem lupa, "Muito açúcar"/"Muito sal" seguem valendo.
+  // A gordura saturada só fala pela lupa (era um limite próprio de 5 g, sem ponto): 6 g/100 g sólido, 3 g/100 ml líquido.
+  const lupa = lupaDe(d, ing), temLupa = id => lupa.some(x => x.id === id);
+  if (acu != null && acu >= 22.5 && acucarAdd && !temLupa("acucar")){ pts += 1; ruins.push("Muito açúcar: " + (+acu).toFixed(0) + " g em 100 g"); }
+  if (sal != null && sal >= 1.5 && !temLupa("sodio")){ pts += 1; ruins.push("Muito sal: " + (+sal).toFixed(1) + " g em 100 g"); }
+  pts += lupa.length; ruins.unshift(...lupa.map(x => x.txt));
   let v = pts >= 3 ? "evitar" : pts >= 1 ? "moderacao" : "comprar";
   if (isBaby && pts >= 2) v = "evitar";
   const coment = [];
@@ -221,9 +263,8 @@ function analisarProduto(d, isBaby, perfis){
   const resumo = v === "comprar" ? "Pode levar tranquilo." : v === "moderacao" ? "Não é dos piores, mas tem ressalvas. De vez em quando tá ok." : "Muita coisa industrial aqui. Melhor deixar na prateleira.";
   const out = { legivel: true, produto: nomeProd(d), imagem: d.image_front_small_url || "", veredito: v, resumo,
     comentario: coment.slice(0, 2).join(" ") || (ing ? "Rótulo sem nada que chame atenção." : ""), pontos_bons: bons.slice(0, 4), pontos_ruins: [...new Set(ruins)].slice(0, 6),
-    ingredientes: ing.slice(0, 700), _pts: pts, _n: r._n || 0 };
-  // texto inteiro do OFF (já é a lista): ingredientesDe corta antes de "ingrediente" e em 700 chars, e açúcar sumia
-  aplicarPerfis(out, perfis, d, ing, !!ing, !!ing && acucarAdicionado(ing));
+    ingredientes: ing.slice(0, 700), lupa: lupa.map(x => x.id), _pts: pts, _n: r._n || 0 };
+  aplicarPerfis(out, perfis, d, ing, !!ing, addIng);
   if (isBaby) out.bebe = bebeDe(out, v);
   return out;
 }
