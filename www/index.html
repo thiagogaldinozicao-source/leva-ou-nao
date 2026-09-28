@@ -209,6 +209,9 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:1}
 .sobre-btn:hover{color:var(--gold-t)}
 dialog.sobre{width:min(calc(100% - 2 * var(--s4)),480px);max-height:calc(100vh - 2 * var(--s4));max-height:calc(100dvh - 2 * var(--s4));padding:0;border:1px solid var(--edge);border-radius:var(--r-xl);background:var(--card);color:var(--ink);overflow:auto}
 dialog.sobre::backdrop{background:rgba(0,0,0,.7)}
+/* sem <dialog> (iOS < 15.4) o navegador não esconde o fechado nem sobrepõe o aberto: as 2 regras fazem isso */
+dialog.sobre:not([open]){display:none}
+.sobre.solto{display:block;position:fixed;top:var(--s4);left:0;right:0;z-index:10;margin:0 auto;box-shadow:0 0 0 100vmax rgba(0,0,0,.7)}
 .sobre-corpo{padding:20px}
 .sobre h2{font-family:"Bebas Neue",sans-serif;font-weight:400;letter-spacing:.08em;font-size:1.5rem;line-height:1.1;color:var(--gold-t);margin:0 0 var(--s3)}
 .sobre p{margin:0 0 var(--s3);color:var(--ink2);font-size:.95rem}
@@ -855,7 +858,7 @@ render();
 const sobre = $("#sobre"), sobreBtn = $("#sobreBtn");
 const sobreAberto = () => sobre.hasAttribute("open");
 function fechaSobre(){ if (sobre.close) sobre.close(); else { sobre.removeAttribute("open"); sobreBtn.focus(); } }   // sem <dialog> (iOS < 15.4): só atributo
-sobreBtn.onclick = () => { if (sobre.showModal) sobre.showModal(); else sobre.setAttribute("open", ""); };
+sobreBtn.onclick = () => { if (sobre.showModal) sobre.showModal(); else { sobre.classList.add("solto"); sobre.setAttribute("open", ""); } };
 $("#sobreFechar").onclick = fechaSobre;
 sobre.addEventListener("close", () => sobreBtn.focus());
 sobre.addEventListener("click", e => { if (e.target === sobre) fechaSobre(); });   // toque no fundo escuro fecha
