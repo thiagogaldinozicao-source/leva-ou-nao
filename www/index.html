@@ -618,17 +618,23 @@ async function trocaLista(cat){
   const k = "troca:" + cat;
   try { const c = JSON.parse(sessionStorage.getItem(k)); if (Array.isArray(c)) return c; } catch (e) {}
   const l = await comPrazo(PRAZO_TROCA, async signal => {
-    let res;
-    try { res = await fetch(Troca.urlBusca(cat), { signal }); } catch (e) { throw new Error("net"); }
-    if (!res.ok) throw new Error("http");   // a busca do OFF devolve 503 quando está sobrecarregada
-    const j = await res.json();
-    return Array.isArray(j && j.products) ? j.products : [];
+    // a busca do OFF devolve 503 em boa parte das chamadas (sobrecarga, medido 09-28), e o 503 vem SEM CORS: no
+    // navegador vira erro de rede. Os dois = tenta de novo sozinho, dentro do prazo.
+    const falha = () => new Error(navigator.onLine === false ? "net" : "http");
+    for (let i = 0; ; i++){
+      if (navigator.onLine === false) throw falha();
+      let res = null;
+      try { res = await fetch(Troca.urlBusca(cat), { signal }); } catch (e) { if (signal.aborted) throw falha(); }
+      if (res && res.ok){ const j = await res.json(); return Array.isArray(j && j.products) ? j.products : []; }
+      if (i >= 3 || (res && res.status !== 503 && res.status !== 429)) throw falha();
+      await new Promise(r => setTimeout(r, 700 * (i + 1)));
+    }
   });
   try { sessionStorage.setItem(k, JSON.stringify(l)); } catch (e) {}
   return l;
 }
 async function trocaAcha(d, code){
-  const analisar = x => analisarProduto(x, baby.checked);
+  const analisar = x => analisarProduto(x, baby.checked, perfisAtuais());
   let cat = Troca.categoriaDe(d);
   for (let i = 0; i < 2 && cat; i++){   // a categoria e, se nada servir, a de cima (1 vez)
     const m = Troca.melhores(await trocaLista(cat), analisar, code, 3);
@@ -643,7 +649,7 @@ function trocaBox(p){
     b.disabled = true; b.textContent = "Buscando…"; out.textContent = "";
     let m;
     try { m = await trocaAcha(p.data, p.code); }
-    catch (e) { b.disabled = false; b.textContent = "🔁 Tem melhor?"; out.append(el("p",null,"Sem conexão agora.")); return; }
+    catch (e) { b.disabled = false; b.textContent = "🔁 Tem melhor?"; out.append(el("p",null,e.message === "http" ? "Busca ocupada agora. Toca de novo." : "Sem conexão agora.")); return; }
     b.remove();
     if (!m.length){ out.append(el("p",null,"Não achei melhor por aqui.")); return; }
     m.forEach(x => {
