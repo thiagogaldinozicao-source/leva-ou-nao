@@ -11,7 +11,7 @@ import { eanValido, parecidos, semIngredientes, bytes, diaBrasilia } from "./uti
 const Rotulo = globalThis.Rotulo;
 
 // mesmos campos que o app pede (www/index.html, const FIELDS)
-const FIELDS = "product_name,product_name_pt,generic_name_pt,brands,quantity,image_front_small_url,ingredients_text_pt,ingredients_text,additives_tags,nova_group,nutriscore_grade,nutriments,categories_tags";
+const FIELDS = "product_name,product_name_pt,generic_name_pt,brands,quantity,image_front_small_url,ingredients_text_pt,ingredients_text,additives_tags,nova_group,nutriscore_grade,nutriments,categories_tags,allergens_tags,traces_tags,labels_tags";
 const TRINTA_DIAS = 30 * 24 * 3600 * 1000;
 const CACHE_OK_S = 3600, CACHE_SEM_S = 900;
 
