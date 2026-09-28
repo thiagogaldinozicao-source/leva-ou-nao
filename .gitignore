@@ -10,3 +10,6 @@ android/capacitor-cordova-android-plugins/build/
 ios/App/Pods/
 ios/App/build/
 ios/DerivedData/
+# chave de assinatura nunca entra no repo (vai nos secrets do GitHub)
+*.keystore
+*.jks
