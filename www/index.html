@@ -614,32 +614,48 @@ function cartao(r, p){
 /* "Tem melhor?": categoria do produto no Open Food Facts, só o que o motor aprova (troca.js). Lista crua em
    sessionStorage por categoria; o veredito é refeito a cada toque (modo bebê pode ter mudado). */
 const PRAZO_TROCA = 10000;   // a busca do OFF é mais lenta que a de produto
-async function trocaLista(cat){
-  const k = "troca:" + cat;
-  try { const c = JSON.parse(sessionStorage.getItem(k)); if (Array.isArray(c)) return c; } catch (e) {}
-  const l = await comPrazo(PRAZO_TROCA, async signal => {
-    // a busca do OFF devolve 503 em boa parte das chamadas (sobrecarga, medido 09-28), e o 503 vem SEM CORS: no
-    // navegador vira erro de rede. Os dois = tenta de novo sozinho, dentro do prazo.
+// GET no OFF com prazo e retentativa: a busca devolve 503 em boa parte das chamadas (sobrecarga, medido 09-28), e o 503
+// vem SEM CORS: no navegador vira erro de rede. Os dois = tenta de novo sozinho, dentro do prazo.
+function offJson(url){
+  return comPrazo(PRAZO_TROCA, async signal => {
     const falha = () => new Error(navigator.onLine === false ? "net" : "http");
     for (let i = 0; ; i++){
       if (navigator.onLine === false) throw falha();
       let res = null;
-      try { res = await fetch(Troca.urlBusca(cat), { signal }); } catch (e) { if (signal.aborted) throw falha(); }
-      if (res && res.ok){ const j = await res.json(); return Array.isArray(j && j.products) ? j.products : []; }
+      try { res = await fetch(url, { signal }); } catch (e) { if (signal.aborted) throw falha(); }
+      if (res && res.ok){ try { return await res.json(); } catch (e) { throw falha(); } }
       if (i >= 3 || (res && res.status !== 503 && res.status !== 429)) throw falha();
       await new Promise(r => setTimeout(r, 700 * (i + 1)));
     }
   });
+}
+async function trocaLista(cat){
+  const k = "troca:" + cat;
+  try { const c = JSON.parse(sessionStorage.getItem(k)); if (Array.isArray(c)) return c; } catch (e) {}
+  const j = await offJson(Troca.urlBusca(cat)), l = Array.isArray(j && j.products) ? j.products : [];
   try { sessionStorage.setItem(k, JSON.stringify(l)); } catch (e) {}
   return l;
 }
+// Pais de cada categoria do produto (taxonomia do OFF): sem ela não dá pra saber qual tag é a mais específica.
+// Falhou = mesmo erro da busca ("Toca de novo"); NUNCA cai no último tag (foi ele que trouxe Pepsi pro Nescau).
+async function trocaPais(d, code){
+  const k = "taxo:" + code;
+  try { const c = JSON.parse(sessionStorage.getItem(k)); if (c && typeof c === "object" && !Array.isArray(c)) return c; } catch (e) {}
+  const url = Troca.urlTaxonomia(d);
+  if (!url) return {};
+  const j = await offJson(url);
+  if (!j || typeof j !== "object" || Array.isArray(j)) throw new Error("http");
+  try { sessionStorage.setItem(k, JSON.stringify(j)); } catch (e) {}
+  return j;
+}
 async function trocaAcha(d, code){
   const analisar = x => analisarProduto(x, baby.checked, perfisAtuais());
-  let cat = Troca.categoriaDe(d);
+  const pais = await trocaPais(d, code);
+  let cat = Troca.escolheCategoria(d, pais);
   for (let i = 0; i < 2 && cat; i++){   // a categoria e, se nada servir, a de cima (1 vez)
     const m = Troca.melhores(await trocaLista(cat), analisar, code, 3);
     if (m.length) return m;
-    cat = Troca.categoriaPai(d, cat);
+    cat = Troca.categoriaPai(d, cat, pais);
   }
   return [];
 }

@@ -39,13 +39,17 @@ const TRACOS = /(?<![a-z])(?:podem? conter|tracos? de)(?:(?!(?<![a-z])(?:nao )?c
 const GL_NEG = new RegExp("(?<![a-z])" + NEG + "glute[nm](?![a-z])|glute[nm][ -]free", "g");
 const GL_SIM = /(?<![a-z])cont[e3]m ?glute[nm](?![a-z])/;
 const GL_GRAO = /(?<![a-z])(trigo(?![ -]sarraceno)|centeio|cevada|malte|aveia|espelta|semolina(?! de (?:milho|arroz))|glute[nm]|centeno|cebada|avena|wheat|barley|rye|oats?|malt|spelt)(?![a-z])/;
-const LC_NEG = new RegExp("(?<![a-z])(?:" + NEG + "|0 ?% ?(?:de )?)lactose(?![a-z])|lactose[ -]free", "g");
+const LC_NEG = new RegExp("(?<![a-z])(?:" + NEG + "|(?<![\\d.,])0(?:[.,]0+)? ?% ?(?:de )?)lactose(?![a-z])|lactose[ -]free", "g");
 const LC_SIM = /(?<![a-z])cont[e3]m ?lactose(?![a-z])/;
 const LEITE_NEG = /(?<![a-z])(?:nao cont[e3]m|sem|isent[oa] de|livre de) (?:leite|derivados de leite|lacteos)(?![a-z])/g;
-const LACTEO = /(?<![a-z])(soro de leite|creme de leite|leites?(?![ -]de[ -](?:coco|amendoas?|soja|aveia|arroz|castanhas?|caju|amendoim))(?! vegeta)|lactose|manteiga(?! de (?:cacau|amendoim|karite|castanhas?))|queijos?|requeijao|iogurtes?|leitelho|whey|composto lacteo|solidos (?:lacteos|de leite)|nata)(?![a-z])/;
-const ACU_ADD = /(a[cg]ucar|azucar|xarope|jarabe|sacarose|glicose|glucosa|frutose|fructosa|maltodextrina|dextrose|melado|melaco|rapadura|(?<![a-z])mel(?![a-z]))/;
+const LACTEO = /(?<![a-z])(soro de leite|creme de leite|leites?(?![ -]de[ -](?:coco|amendoas?|soja|aveia|arroz|castanhas?|caju|amendoim))(?! vegeta)|lactose|manteiga(?! de (?:cacau|amendoim|karite|castanhas?))|queijos?|requeijao|iogurtes?|leitelho|whey|composto lacteo|solidos (?:lacteos|de leite)|nata|(?<!(?:coconut|almond|soy|soya|oat|rice|cashew|hazelnut|peanut|pea|hemp|nut|plant) )milks?|buttermilk|cheeses?|(?<!(?:cocoa|cacao|peanut|shea|almond|nut|cashew|coconut) )butter|(?<!coconut )cream(?! of (?:tartar|coconut))|yogh?urts?)(?![a-z])/;
+const ACU_ADD = /(a[cg]ucar|azucar|xarope|jarabe|sacarose|glicose|glucosa|frutose|fructosa|maltodextrina|dextrose|melado|melaco|rapadura|(?<![a-z])mel(?![a-z])|(?<![a-z])(?:sugars?|syrups?|honey|glucose|fructose|maltodextrin|sucrose|molasses)(?![a-z]))/;
+// Negação e tabela não são açúcar adicionado: "não contém açúcar", "sem adição de açúcares", "no added sugar", "sugar free", "açúcares totais 0 g".
+const ACU_NEG = new RegExp("(?<![a-z])(?:" + NEG + "(?:adicao de )?a[cgz]ucar(?:es)?(?: adicionados?)?|(?:no|without|zero|free of) (?:added )?sugars?|sugars?[ -]free)(?![a-z])|a[cg]ucares totais", "g");
+const acucarAdicionado = txt => ACU_ADD.test(nrm(txt).replace(ACU_NEG, " "));
 const NOME_ING = { gluten: "glúten", glutem: "glúten", centeno: "centeio", cebada: "cevada", avena: "aveia", wheat: "trigo", barley: "cevada", rye: "centeio", oat: "aveia", oats: "aveia",
-  malt: "malte", spelt: "espelta", leites: "leite", queijos: "queijo", iogurtes: "iogurte", requeijao: "requeijão", "composto lacteo": "composto lácteo", "solidos lacteos": "sólidos lácteos", "solidos de leite": "sólidos de leite" };
+  malt: "malte", spelt: "espelta", milk: "leite", milks: "leite", cheese: "queijo", cheeses: "queijo", butter: "manteiga", cream: "creme", buttermilk: "leitelho",
+  yogurt: "iogurte", yoghurt: "iogurte", yogurts: "iogurte", yoghurts: "iogurte", leites: "leite", queijos: "queijo", iogurtes: "iogurte", requeijao: "requeijão", "composto lacteo": "composto lácteo", "solidos lacteos": "sólidos lácteos", "solidos de leite": "sólidos de leite" };
 const estadoPerfil = (estado, motivo) => ({ estado, motivo });
 function perfilGluten(c){
   const lim = c.sem.replace(GL_NEG, " ");
@@ -90,6 +94,11 @@ function aplicarPerfis(out, perfis, d, texto, temIng, add){
   if (out.veredito !== v0) out.resumo = out.veredito === "evitar" ? "Não serve pro seu perfil." : "Pelo rótulo tá bom, mas confira pro seu perfil.";
 }
 
+/* 👶 é calculado DEPOIS dos perfis: "serve" só se o veredito final é comprar (senão sairia "serve" ao lado de "Deixa na prateleira"). v0 = veredito antes dos perfis. */
+function bebeDe(out, v0){
+  const serve = out.veredito === "comprar";
+  return { serve, motivo: serve ? "Sem açúcar adicionado, adoçante ou corante artificial." : out.veredito !== v0 ? (out.veredito === "evitar" ? "Não serve pro seu perfil alimentar." : "Confira o rótulo pro seu perfil alimentar.") : "Tem coisa que é melhor evitar pra idade dele." };
+}
 function avaliar(raw, isBaby, limpo, perfis){
   const ing = ingredientesDe(raw, limpo); const t = ing.texto; const full = nrm(raw);
   const vdAdd = full.match(/acucares adicionados[^%]{0,30}?(\d{1,3})\s*%/);
@@ -148,8 +157,8 @@ function avaliar(raw, isBaby, limpo, perfis){
   const resumo = v === "comprar" ? "Rótulo limpo, pode levar tranquilo." : v === "moderacao" ? "Não é dos piores, mas tem ressalvas. De vez em quando tá ok." : "Muita coisa industrial aqui. Melhor deixar na prateleira.";
   const comentario = (dicas.length ? dicas.slice(0, 2).join(" ") : "Nada que chame atenção no rótulo.") + (tipo !== "Produto" ? "" : "");
   const out = { legivel: true, produto: tipo, veredito: v, resumo, comentario, pontos_bons: bons.slice(0, 4), pontos_ruins: ruins.slice(0, 5), ingredientes: (soTabela || ing.semOrdem) ? "" : ing.texto.slice(0, 600), _pts: pts, _n: n };
-  if (isBaby) out.bebe = { serve: v === "comprar", motivo: v === "comprar" ? "Sem açúcar adicionado, adoçante ou corante artificial." : "Tem coisa que é melhor evitar pra idade dele." };
-  aplicarPerfis(out, perfis, {}, raw, ing.achou, (!soTabela && ACU_ADD.test(t)) || (vd != null && vd > 0));
+  aplicarPerfis(out, perfis, {}, raw, ing.achou, (!soTabela && acucarAdicionado(t)) || (vd != null && vd > 0));
+  if (isBaby) out.bebe = bebeDe(out, v);
   return out;
 }
 /* Com perfil ligado, quem falha num perfil ("nao") perde pra quem passa, antes da contagem de pontos. */
@@ -213,8 +222,8 @@ function analisarProduto(d, isBaby, perfis){
   const out = { legivel: true, produto: nomeProd(d), imagem: d.image_front_small_url || "", veredito: v, resumo,
     comentario: coment.slice(0, 2).join(" ") || (ing ? "Rótulo sem nada que chame atenção." : ""), pontos_bons: bons.slice(0, 4), pontos_ruins: [...new Set(ruins)].slice(0, 6),
     ingredientes: ing.slice(0, 700), _pts: pts, _n: r._n || 0 };
-  if (isBaby) out.bebe = { serve: v === "comprar", motivo: v === "comprar" ? "Sem açúcar adicionado, adoçante ou corante artificial." : "Tem coisa que é melhor evitar pra idade dele." };
-  aplicarPerfis(out, perfis, d, ing, !!ing, !!ing && ACU_ADD.test(nrm(ing)));
+  aplicarPerfis(out, perfis, d, ing, !!ing, !!ing && acucarAdicionado(ingredientesDe(ing, true).texto));
+  if (isBaby) out.bebe = bebeDe(out, v);
   return out;
 }
 

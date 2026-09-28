@@ -10,17 +10,44 @@ globalThis.Troca = (() => {
   // Só o que analisarProduto lê (ingredientes, aditivos, NOVA, nutrientes, alérgenos/traços/selos dos perfis) + o que a linha mostra.
   const CAMPOS = ["code", "product_name", "product_name_pt", "brands", "ingredients_text_pt", "ingredients_text", "additives_tags", "nova_group", "nutriments", "allergens_tags", "traces_tags", "labels_tags"];
 
-  // Hierarquia do OFF, do geral pro específico. Prefere as tags `en:` (as únicas que a busca entende sempre).
+  // Tags de categoria do OFF (a ordem NÃO é geral→específico: mistura ramos). Prefere as `en:` (as únicas que a busca entende sempre).
   function hierarquia(p){
     const h = p && (Array.isArray(p.categories_hierarchy) && p.categories_hierarchy.length ? p.categories_hierarchy : p.categories_tags);
     const l = (Array.isArray(h) ? h : []).filter(t => typeof t === "string" && t.trim()).map(t => t.trim());
     const en = l.filter(t => t.startsWith("en:"));
     return en.length ? en : l;
   }
+  // Só diz se o produto TEM categoria (mostra o botão). NÃO serve pra escolher a busca: o último tag do OFF mistura ramos
+  // (Nescau termina em en:sweetened-beverages e trouxe Pepsi). Quem escolhe é escolheCategoria, com a taxonomia.
   const categoriaDe = p => { const l = hierarquia(p); return l.length ? l[l.length - 1] : null; };
-  function categoriaPai(p, cat){
-    const l = hierarquia(p), i = l.indexOf(cat == null ? categoriaDe(p) : cat);
-    return i > 0 ? l[i - 1] : null;
+
+  // Taxonomia do OFF (tag -> pais): 1 chamada com todos os tags do produto. Sem tag = null.
+  function urlTaxonomia(p){
+    const l = hierarquia(p);
+    if (!l.length) return null;
+    return "https://world.openfoodfacts.org/api/v2/taxonomy?tagtype=categories&tags=" +
+      l.map(t => encodeURIComponent(t).replace(/%3A/gi, ":")).join(",") + "&fields=parents&include_parents=0&include_children=0";
+  }
+  const paisDe = (pais, t) => { const x = pais && typeof pais === "object" ? pais[t] : null; return x && Array.isArray(x.parents) ? x.parents : []; };
+  // Quantos tags da própria lista do produto estão acima de `t` (ancestrais transitivos pela taxonomia).
+  function nAncestrais(t, pais, lista){
+    const vis = new Set(), pilha = [t];
+    while (pilha.length) for (const q of paisDe(pais, pilha.pop())) if (q !== t && !vis.has(q)) { vis.add(q); pilha.push(q); }
+    return lista.filter(x => vis.has(x)).length;
+  }
+  // Entre os candidatos (na ordem da lista): o com MAIS ancestrais; empate = o mais à direita.
+  function maisEspecifica(cands, pais, lista){
+    let melhor = null, n = -1;
+    for (const t of cands){ const k = nAncestrais(t, pais, lista); if (k >= n){ melhor = t; n = k; } }
+    return melhor;
+  }
+  const escolheCategoria = (p, pais) => { const l = hierarquia(p); return l.length ? maisEspecifica(l, pais, l) : null; };
+  // O pai de `cat` (pela taxonomia) que também está na lista do produto, o mais específico; nenhum = null.
+  function categoriaPai(p, cat, pais){
+    const l = hierarquia(p), c = cat == null ? escolheCategoria(p, pais) : cat;
+    if (c == null) return null;
+    const pp = l.filter(t => t !== c && paisDe(pais, c).includes(t));
+    return pp.length ? maisEspecifica(pp, pais, l) : null;
   }
 
   // Mais escaneados primeiro (unique_scans_n) e só os vendidos no Brasil.
@@ -51,5 +78,5 @@ globalThis.Troca = (() => {
     return out;
   }
 
-  return { CAMPOS, categoriaDe, categoriaPai, urlBusca, melhores };
+  return { CAMPOS, categoriaDe, escolheCategoria, categoriaPai, urlTaxonomia, urlBusca, melhores };
 })();

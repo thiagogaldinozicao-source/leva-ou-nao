@@ -212,11 +212,11 @@ test("pouco açúcar: adicionado ou muito açúcar natural → não; adoçante n
   assert.deepEqual(perfil(analisarProduto(prodT({ nutriments: { sugars_100g: 3 } }), false, ACU), "acucar"), { id: "acucar", estado: "atencao", motivo: "Não deu pra confirmar" });
 });
 
-test("vários perfis: um por ligado, na ordem glúten → lactose → açúcar; modo bebê não muda", () => {
+test("vários perfis: um por ligado, na ordem glúten → lactose → açúcar; bebê segue o veredito final", () => {
   const r = analisarProduto(fx("agua"), true, { gluten: true, lactose: true, acucar: true });
   assert.deepEqual(r.perfis.map(p => [p.id, p.estado]), [["gluten", "atencao"], ["lactose", "ok"], ["acucar", "ok"]]);
   assert.equal(r.veredito, "moderacao");
-  assert.equal(r.bebe.serve, true); // bebê avalia o rótulo, não o perfil
+  assert.equal(r.bebe.serve, false); // bebê segue o veredito FINAL (perfil já rebaixou pra moderação): nada de "serve" ao lado de ressalva
   const ocr = avaliar("Ingredientes: farinha de trigo, leite, açúcar. CONTÉM GLÚTEN.", false, false, { gluten: true, lactose: true });
   assert.deepEqual(ocr.perfis.map(p => p.estado), ["nao", "nao"]);
   assert.equal(ocr.veredito, "evitar");
@@ -235,4 +235,67 @@ test("comparar 2 com perfil: quem falha perde; os dois falham → nenhum serve",
   const dois = comparar(analisarProduto(trigo, false, GL), analisarProduto(fx("biscoito-recheado"), false, GL), false, GL);
   assert.equal(dois.melhor, "a");
   assert.deepEqual(dois.perfis, { estado: "nao", motivo: "Nenhum dos dois serve pro seu perfil." });
+});
+
+test("pouco açúcar: 'não contém açúcar', 'sem adição de açúcares' e 'Açúcares totais 0 g' do OCR não viram açúcar adicionado", () => {
+  const ac = (txt, limpo = false) => perfil(avaliar(txt, false, limpo, ACU), "acucar");
+  for (const txt of ["Ingredientes: farinha de arroz, sal. Não contém açúcar.",
+    "Ingredientes: arroz integral, sal marinho. Valor energético 350 kcal. Açúcares totais 0 g",
+    "Ingredientes: água, suco de limão. Sem adição de açúcares.", "Ingredientes: aveia, cacau. ZERO AÇÚCAR ADICIONADO"])
+    assert.notEqual(ac(txt).estado, "nao", txt);
+  for (const txt of ["Water, lemon. No added sugar.", "Water, lemon. Sugar free", "Water. Without sugar"]) assert.notEqual(ac(txt, true).estado, "nao", txt);
+  const p = ing => perfil(analisarProduto(prodT({ ingredients_text_pt: ing }), false, ACU), "acucar");
+  assert.notEqual(p("Arroz, sal. Não contém açúcar").estado, "nao");
+  assert.notEqual(p("Castanha de caju. Sem adição de açúcares").estado, "nao");
+  // a negação só apaga a própria frase: açúcar de verdade na lista continua reprovando
+  assert.equal(ac("Ingredientes: farinha, açúcar, sal.").estado, "nao");
+  assert.equal(ac("Ingredientes: aveia, mel. Açúcares totais 12 g").estado, "nao");
+  assert.equal(ac("Water, sugar. No added sugar", true).estado, "nao");
+  assert.equal(p("Cereal, xarope de glicose. Sem adição de açúcar").estado, "nao");
+  assert.equal(p("Arroz, mel").motivo, "Tem açúcar adicionado");
+});
+
+test("lactose: '10% lactose' não vira 'sem lactose'; '0%' e '0,0%' continuam valendo", () => {
+  const lc = ing => perfil(analisarProduto(prodT({ ingredients_text_pt: ing }), false, LAC), "lactose");
+  assert.equal(lc("Leite, cacau. Com 10% de lactose").estado, "nao");
+  assert.equal(lc("Leite em pó, maltodextrina. Contém 20% lactose").estado, "nao");
+  assert.equal(lc("Leite em pó. 1,0% lactose").estado, "nao");
+  assert.equal(lc("Leite integral, lactase. 0% lactose").estado, "ok");
+  assert.equal(lc("Leite integral, lactase. 0,0% de lactose").estado, "ok");
+});
+
+test("inglês: milk/cheese/butter/cream/yogurt = lactose; sugar/syrup/honey/glucose/fructose/dextrose/maltodextrin = açúcar adicionado", () => {
+  const en = (ing, perfis) => analisarProduto(prodT({ ingredients_text: ing }), false, perfis);
+  for (const ing of ["Water, skim milk, salt", "Wheat flour, butter, salt", "Cheddar cheese, water", "Sweet cream, salt", "Yoghurt, fruit", "Buttermilk", "Whey protein", "Milk chocolate, lactose"])
+    assert.equal(perfil(en(ing, LAC), "lactose").estado, "nao", ing);
+  assert.equal(perfil(en("Whole milk powder", LAC), "lactose").motivo, "Tem leite nos ingredientes");   // nome em português na tela
+  // leites vegetais, manteiga de cacau/amendoim e creme de tártaro não são lactose (igual às exceções em português)
+  for (const ing of ["Coconut milk, water", "Almond milk, salt", "Soy milk", "Oat milk, calcium", "Cocoa butter, cocoa mass", "Peanut butter", "Shea butter", "Cream of tartar, flour", "Coconut cream"])
+    assert.equal(perfil(en(ing, LAC), "lactose").estado, "ok", ing);
+  for (const ing of ["Water, sugar", "Corn syrup", "Honey, oats", "Glucose-fructose syrup", "Dextrose, salt", "Maltodextrin, salt", "Cane sugar"])
+    assert.equal(perfil(en(ing, ACU), "acucar").estado, "nao", ing);
+  for (const ing of ["Water, sea salt", "Peanuts, salt", "Sugarcane"]) assert.notEqual(perfil(en(ing, ACU), "acucar").estado, "nao", ing);
+});
+
+test("bebê depois dos perfis: 'serve' só se o veredito final é comprar", () => {
+  const trigo = prodT({ ingredients_text_pt: "Arroz, farinha de trigo. Contém glúten." });
+  const sem = analisarProduto(trigo, true), com = analisarProduto(trigo, true, GL);
+  assert.equal(sem.veredito, "comprar");
+  assert.equal(sem.bebe.serve, true);                       // sem perfil, igual a antes
+  assert.equal(com.veredito, "evitar");
+  assert.deepEqual(com.bebe, { serve: false, motivo: "Não serve pro seu perfil alimentar." });   // não sai "serve" ao lado de "Deixa na prateleira"
+  const atencao = analisarProduto(prodT({ ingredients_text_pt: "Arroz" }), true, GL);
+  assert.equal(atencao.veredito, "moderacao");
+  assert.deepEqual(atencao.bebe, { serve: false, motivo: "Confira o rótulo pro seu perfil alimentar." });
+  const ok = analisarProduto(prodT({ ingredients_text_pt: "Arroz. Sem glúten." }), true, GL);
+  assert.equal(ok.veredito, "comprar");
+  assert.equal(ok.bebe.serve, true);
+  // OCR (avaliar): mesma regra
+  const ocr = avaliar("Ingredientes: farinha de trigo, água. Contém glúten.", true, false, GL);
+  assert.equal(ocr.veredito, "evitar");
+  assert.equal(ocr.bebe.serve, false);
+  // já reprovado pelo motor (sem perfil mexer): motivo de antes
+  assert.equal(analisarProduto(fx("nescau"), true, GL).bebe.motivo, "Tem coisa que é melhor evitar pra idade dele.");
+  // sem bebê, sem chave
+  assert.equal("bebe" in analisarProduto(trigo, false, GL), false);
 });

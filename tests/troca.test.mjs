@@ -11,31 +11,86 @@ vm.runInThisContext(fonteRegras, { filename: "www/regras.js" });
 vm.runInThisContext(readFileSync(new URL("www/troca.js", raiz), "utf8"), { filename: "www/troca.js" });
 const T = globalThis.Troca;
 
-// Hierarquia real do Nescau no OFF (2026-09-28): do geral pro específico.
-const NESCAU = ["en:beverages-and-beverages-preparations", "en:cocoa-and-its-products", "en:beverage-preparations",
-  "en:cocoa-and-chocolate-powders", "en:instant-beverages", "en:instant-chocolate-powders"];
+// Nescau (7891000352175) como o OFF entrega em 2026-09-28: categories_tags na ordem do OFF, que MISTURA ramos
+// (termina em en:sweetened-beverages, do ramo bebidas, e trouxe "Pepsi cola" como troca).
+const NESCAU_TAGS = ["en:beverages-and-beverages-preparations", "en:plant-based-foods-and-beverages", "en:beverages", "en:plant-based-foods",
+  "en:dairies", "en:fermented-foods", "en:fermented-milk-products", "en:snacks", "en:cereals-and-potatoes", "en:sweet-snacks",
+  "en:cereals-and-their-products", "en:cocoa-and-its-products", "en:beverage-preparations", "en:instant-beverages",
+  "en:cocoa-and-chocolate-powders", "en:instant-chocolate-powders", "en:sweetened-beverages", "pt:Achocolatado-em-po", "pt:Bebidas achocolatadas"];
+const NESCAU = { categories_tags: NESCAU_TAGS, categories_hierarchy: NESCAU_TAGS };
+// Resposta real de /api/v2/taxonomy?tagtype=categories&tags=<os en: acima>&fields=parents (sem `parents` = raiz).
+const PAIS_NESCAU = {
+  "en:beverage-preparations": { parents: ["en:beverages-and-beverages-preparations"] }, "en:beverages": { parents: ["en:beverages-and-beverages-preparations"] },
+  "en:beverages-and-beverages-preparations": {}, "en:cereals-and-potatoes": { parents: ["en:plant-based-foods"] },
+  "en:cereals-and-their-products": { parents: ["en:cereals-and-potatoes"] }, "en:cocoa-and-chocolate-powders": { parents: ["en:cocoa-and-its-products"] },
+  "en:cocoa-and-its-products": {}, "en:dairies": {}, "en:fermented-foods": {}, "en:fermented-milk-products": { parents: ["en:dairies", "en:fermented-foods"] },
+  "en:instant-beverages": { parents: ["en:beverage-preparations"] }, "en:instant-chocolate-powders": { parents: ["en:cocoa-and-chocolate-powders", "en:instant-beverages"] },
+  "en:plant-based-foods": { parents: ["en:plant-based-foods-and-beverages"] }, "en:plant-based-foods-and-beverages": {}, "en:snacks": {},
+  "en:sweet-snacks": { parents: ["en:snacks"] }, "en:sweetened-beverages": { parents: ["en:beverages"] }
+};
 
-test("categoriaDe: a mais específica = último da hierarquia; sem categoria = null", () => {
-  assert.equal(T.categoriaDe({ categories_hierarchy: NESCAU, categories_tags: ["en:outra"] }), "en:instant-chocolate-powders");
-  assert.equal(T.categoriaDe({ categories_tags: ["en:beverages", "en:cocoa-and-chocolate-powders"] }), "en:cocoa-and-chocolate-powders");
-  assert.equal(T.categoriaDe({ categories_hierarchy: [], categories_tags: ["en:snacks"] }), "en:snacks");
+test("categoriaDe: só diz se TEM categoria (botão); sem categoria = null; prefere tag en:", () => {
+  assert.equal(T.categoriaDe({ categories_tags: ["en:beverages", "en:cocoa", "pt:achocolatado-em-po"] }), "en:cocoa");
+  assert.equal(T.categoriaDe({ categories_tags: ["pt:doces", "pt:achocolatado"] }), "pt:achocolatado");   // só tem pt: => usa
   for (const p of [null, undefined, {}, { categories_tags: [] }, { categories_tags: "en:x" }, { categories_tags: ["", "  "] }])
     assert.equal(T.categoriaDe(p), null);
 });
 
-test("categoriaDe: prefere tag en: (a busca entende), mesmo que a última seja de outro idioma", () => {
-  assert.equal(T.categoriaDe({ categories_tags: ["en:beverages", "en:cocoa", "pt:achocolatado-em-po"] }), "en:cocoa");
-  assert.equal(T.categoriaDe({ categories_tags: ["pt:doces", "pt:achocolatado"] }), "pt:achocolatado");   // só tem pt: => usa
+test("escolheCategoria: Nescau = en:instant-chocolate-powders (não o último tag en:sweetened-beverages, que trouxe a Pepsi)", () => {
+  assert.equal(NESCAU_TAGS.filter(t => t.startsWith("en:")).pop(), "en:sweetened-beverages");   // a armadilha do último tag
+  assert.equal(T.escolheCategoria(NESCAU, PAIS_NESCAU), "en:instant-chocolate-powders");
+  assert.equal(T.escolheCategoria({ categories_tags: NESCAU_TAGS }, PAIS_NESCAU), "en:instant-chocolate-powders");
 });
 
-test("categoriaPai: a anterior na hierarquia; a primeira não tem pai", () => {
-  const p = { categories_hierarchy: NESCAU };
-  assert.equal(T.categoriaPai(p, "en:instant-chocolate-powders"), "en:instant-beverages");
-  assert.equal(T.categoriaPai(p, "en:instant-beverages"), "en:cocoa-and-chocolate-powders");
-  assert.equal(T.categoriaPai(p, "en:beverages-and-beverages-preparations"), null);
-  assert.equal(T.categoriaPai(p, "en:nao-esta-na-lista"), null);
-  assert.equal(T.categoriaPai(p), "en:instant-beverages");   // sem cat = a mais específica
-  assert.equal(T.categoriaPai({}, "en:x"), null);
+test("escolheCategoria: a ordem dos tags não muda a escolha (ancestrais decidem); empate = o mais à direita", () => {
+  const inv = { categories_tags: NESCAU_TAGS.slice().reverse() };
+  assert.equal(T.escolheCategoria(inv, PAIS_NESCAU), "en:instant-chocolate-powders");
+  // 2 raízes sem parentesco (0 ancestrais cada): fica a da direita
+  assert.equal(T.escolheCategoria({ categories_tags: ["en:snacks", "en:dairies"] }, PAIS_NESCAU), "en:dairies");
+  // sem taxonomia (vazia/ausente) todos empatam em 0 => o mais à direita
+  for (const pais of [{}, null, undefined]) assert.equal(T.escolheCategoria({ categories_tags: ["en:a", "en:b", "en:c"] }, pais), "en:c");
+});
+
+test("escolheCategoria: só conta ancestral que está na lista do produto; ciclo na taxonomia não trava", () => {
+  const pais = { "en:filho": { parents: ["en:fora-da-lista"] }, "en:outro": { parents: ["en:raiz"] }, "en:raiz": {} };
+  assert.equal(T.escolheCategoria({ categories_tags: ["en:raiz", "en:outro", "en:filho"] }, pais), "en:outro");   // filho: 0 na lista; outro: 1 (raiz)
+  const ciclo = { "en:a": { parents: ["en:b"] }, "en:b": { parents: ["en:a"] } };
+  assert.equal(T.escolheCategoria({ categories_tags: ["en:a", "en:b"] }, ciclo), "en:b");
+  for (const p of [null, undefined, {}, { categories_tags: [] }]) assert.equal(T.escolheCategoria(p, PAIS_NESCAU), null);
+});
+
+test("categoriaPai: o pai (taxonomia) que está na lista e tem mais ancestrais; sem pai na lista = null", () => {
+  // pais de instant-chocolate-powders: cocoa-and-chocolate-powders (1 ancestral na lista) e instant-beverages (2) => o segundo
+  assert.equal(T.categoriaPai(NESCAU, "en:instant-chocolate-powders", PAIS_NESCAU), "en:instant-beverages");
+  assert.equal(T.categoriaPai(NESCAU, "en:instant-beverages", PAIS_NESCAU), "en:beverage-preparations");
+  assert.equal(T.categoriaPai(NESCAU, "en:beverages-and-beverages-preparations", PAIS_NESCAU), null);   // raiz
+  assert.equal(T.categoriaPai(NESCAU, "en:nao-esta-na-lista", PAIS_NESCAU), null);
+  assert.equal(T.categoriaPai(NESCAU, undefined, PAIS_NESCAU), "en:instant-beverages");   // sem cat = a escolhida
+  assert.equal(T.categoriaPai({}, "en:x", PAIS_NESCAU), null);
+  assert.equal(T.categoriaPai(NESCAU, "en:instant-chocolate-powders", {}), null);         // sem taxonomia não inventa pai
+  // pai fora da lista do produto não vale (a lista do produto é o universo)
+  assert.equal(T.categoriaPai({ categories_tags: ["en:filho"] }, "en:filho", { "en:filho": { parents: ["en:fora"] } }), null);
+});
+
+test("urlTaxonomia: tags en: do produto separados por vírgula, só `parents`; sem tag = null", () => {
+  const u = new URL(T.urlTaxonomia(NESCAU));
+  assert.equal(u.origin + u.pathname, "https://world.openfoodfacts.org/api/v2/taxonomy");
+  assert.equal(u.searchParams.get("tagtype"), "categories");
+  assert.equal(u.searchParams.get("fields"), "parents");
+  assert.equal(u.searchParams.get("include_parents"), "0");
+  assert.equal(u.searchParams.get("include_children"), "0");
+  assert.deepEqual(u.searchParams.get("tags").split(","), NESCAU_TAGS.filter(t => t.startsWith("en:")));   // sem os pt:
+  for (const p of [null, undefined, {}, { categories_tags: [] }]) assert.equal(T.urlTaxonomia(p), null);
+  assert.equal(new URL(T.urlTaxonomia({ categories_tags: ["en:a&b=1"] })).searchParams.get("tags"), "en:a&b=1");   // símbolo vai codificado
+});
+
+test("index.html: trocaAcha escolhe a categoria pela taxonomia e não cai no último tag se ela falhar", () => {
+  const html = readFileSync(new URL("www/index.html", raiz), "utf8");
+  const corpo = html.slice(html.indexOf("async function trocaAcha"), html.indexOf("function trocaBox"));
+  assert.ok(corpo.includes("await trocaPais(") && corpo.includes("Troca.escolheCategoria(d, pais)") && corpo.includes("Troca.categoriaPai(d, cat, pais)"));
+  assert.ok(!corpo.includes("categoriaDe"), "trocaAcha voltou a usar o último tag (categoriaDe)");
+  const tp = html.slice(html.indexOf("async function trocaPais"), html.indexOf("async function trocaAcha"));
+  assert.ok(tp.includes("await offJson(url)") && !/catch \(e\) \{\s*return/.test(tp), "falha da taxonomia tem que propagar, não virar {}");
 });
 
 test("urlBusca: OFF v2, só Brasil, mais escaneados primeiro, 40 por página", () => {
