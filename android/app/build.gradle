@@ -1,5 +1,8 @@
 apply plugin: 'com.android.application'
 
+// Assinatura de release: as 4 variáveis abaixo, nada mais. Faltou alguma => build release falha (nunca usa chave do repo).
+def assinaturaFaltando = ["LEVA_KEYSTORE_PATH", "LEVA_KEYSTORE_PASSWORD", "LEVA_KEY_ALIAS", "LEVA_KEY_PASSWORD"].findAll { !System.getenv(it) }
+
 android {
     namespace = "br.com.zicao.levaounao"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -17,19 +20,23 @@ android {
         }
     }
     signingConfigs {
-        // chave fixa: permite instalar a versão nova por cima da antiga sem desinstalar
-        fixa {
-            storeFile file("levaounao-debug.keystore")
-            storePassword "levaounao"
-            keyAlias "levaounao"
-            keyPassword "levaounao"
+        // chave de publicação: vem SÓ do ambiente (no CI, dos secrets do GitHub). Nenhuma chave mora no repo.
+        // Mesma chave em toda versão = o app novo instala por cima do antigo.
+        release {
+            if (!assinaturaFaltando) {
+                storeFile file(System.getenv("LEVA_KEYSTORE_PATH"))
+                storePassword System.getenv("LEVA_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("LEVA_KEY_ALIAS")
+                keyPassword System.getenv("LEVA_KEY_PASSWORD")
+            }
         }
     }
     buildTypes {
-        debug {
-            signingConfig signingConfigs.fixa
-        }
+        // debug: sem signingConfig = chave debug padrão do Android (~/.android/debug.keystore)
         release {
+            if (!assinaturaFaltando) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
@@ -55,6 +62,16 @@ dependencies {
 }
 
 apply from: 'capacitor.build.gradle'
+
+// Falha cedo e clara em qualquer build release (assembleRelease, bundleRelease...) sem a chave. Debug não é afetado.
+tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+    doFirst {
+        if (assinaturaFaltando) {
+            throw new GradleException("Build release sem chave de assinatura. Faltam as variáveis de ambiente: " +
+                assinaturaFaltando.join(", ") + ". Passo a passo em docs/CHECKLIST-LANCAMENTO.md (Chave de assinatura).")
+        }
+    }
+}
 
 try {
     def servicesJSON = file('google-services.json')
