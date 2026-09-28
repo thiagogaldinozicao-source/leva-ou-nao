@@ -260,6 +260,77 @@ describe("Leva ou não? no navegador", { concurrency: true }, () => {
     });
   }
 
+  // ⓘ Sobre: <dialog> nativo com a atribuição ODbL, o aviso, o e-mail de contestação (prazo) e os links das páginas de texto.
+  for (const tema of ["dark", "light"]) {
+    it(`ⓘ Sobre (${tema}): abre com ODbL/aviso/contato, Esc e Fechar e toque no fundo fecham, foco volta ao botão`, T, async t => {
+      const { page, fim } = await abre(t, { ctxOpts: { ...CEL, colorScheme: tema } });
+      await page.emulateMedia({ colorScheme: tema });
+      const btn = page.locator("#sobreBtn"), dlg = page.locator("#sobre");
+      const caixa = await btn.boundingBox();
+      assert.ok(caixa.width >= 44 && caixa.height >= 44, `alvo do ⓘ ${caixa.width}x${caixa.height} < 44px`);
+      const h1 = await page.locator("h1").boundingBox();
+      assert.ok(caixa.x >= 0 && caixa.x + caixa.width <= 375 && caixa.y >= 0, "ⓘ dentro da tela");
+      assert.ok(caixa.y + caixa.height <= h1.y + 1, "ⓘ numa linha própria acima do título (não aperta o cabeçalho)");
+      const ativo = () => page.evaluate(() => document.activeElement && document.activeElement.id);
+      const aberto = () => dlg.evaluate(d => d.open);
+      assert.equal(await aberto(), false, "começa fechado");
+      await btn.click();
+      assert.equal(await aberto(), true, "toque no ⓘ abre");
+      assert.equal(await dlg.locator('a[href="https://opendatacommons.org/licenses/odbl/1-0/"]').count(), 1, "link da licença ODbL");
+      assert.equal(await dlg.locator('a[href*="openfoodfacts.org"]').count(), 1, "crédito Open Food Facts");
+      assert.match(await dlg.innerText(), /Não substitui nutricionista/);
+      assert.match(await dlg.innerText(), /5 dias úteis/);
+      assert.equal(await dlg.locator('a[href="mailto:contato@joaoamorim.dev"]').count(), 1, "e-mail de contestação");
+      for (const p of ["criterios.html", "privacidade.html", "termos.html"]) assert.equal(await dlg.locator(`a[href="${p}"]`).count(), 1, p);
+      const menor = await dlg.locator("a, button").evaluateAll(l => l.filter(e => e.tagName === "BUTTON").map(e => e.getBoundingClientRect().height).filter(h => h < 44));
+      assert.deepEqual(menor, [], "botão do diálogo < 44px");
+      await page.screenshot({ path: path.join(OUT, `sobre-375-${tema}.png`) });
+      await page.addScriptTag({ path: AXE });
+      const axe = await page.evaluate(() => axe.run(document, { runOnly: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "best-practice"] })
+        .then(r => r.violations.map(v => ({ id: v.id, impacto: v.impact, alvos: v.nodes.map(n => n.target.join(" ")).slice(0, 5) }))));
+      assert.deepEqual(axe, [], "violação de acessibilidade (axe) com o Sobre aberto");
+      await page.keyboard.press("Escape");
+      assert.equal(await aberto(), false, "Esc fecha");
+      assert.equal(await ativo(), "sobreBtn", "foco volta ao ⓘ depois do Esc");
+      await btn.click();
+      await page.click("#sobreFechar");
+      assert.equal(await aberto(), false, "Fechar fecha");
+      assert.equal(await ativo(), "sobreBtn", "foco volta ao ⓘ depois do Fechar");
+      await btn.click();
+      await page.mouse.click(4, 4);   // fora da caixa = fundo escuro
+      assert.equal(await aberto(), false, "toque no fundo fecha");
+      assert.equal(await ativo(), "sobreBtn", "foco volta ao ⓘ depois do fundo");
+      await fim();
+    });
+  }
+
+  // Páginas públicas (critérios, privacidade, termos): abrem sem erro de console/CSP, sem rolagem lateral, axe zero, links internos existem.
+  for (const pag of ["criterios", "privacidade", "termos"]) for (const [nome, ctxOpts, tema] of [["375", CEL, "dark"], ["1440", PC, "light"]]) {
+    it(`página ${pag}.html ${nome}px tema ${tema}: abre limpa, sem rolagem lateral, axe zero e links internos existem`, T, async t => {
+      const { page, fim } = await abre(t, { ctxOpts: { ...ctxOpts, colorScheme: tema }, url: srv.url + pag + ".html" });
+      await page.emulateMedia({ colorScheme: tema });
+      assert.equal(await page.title(), { criterios: "Critérios", privacidade: "Política de Privacidade", termos: "Termos de Uso" }[pag] + " — Leva ou não?");
+      assert.equal(await page.locator("h1").count(), 1);
+      assert.equal(await page.evaluate(() => document.fonts.ready.then(() => getComputedStyle(document.querySelector("h1")).fontFamily.includes("Bebas Neue"))), true, "folha paginas.css carregou");
+      const m = await page.evaluate(() => {
+        const w = document.documentElement.clientWidth;
+        return { rolagem: document.documentElement.scrollWidth - w, fora: [...document.querySelectorAll("a, h1, h2, table")].filter(e => e.offsetParent !== null && e.getBoundingClientRect().right > w + 1).map(e => e.outerHTML.slice(0, 80)) };
+      });
+      assert.ok(m.rolagem <= 0, `rolagem lateral de ${m.rolagem}px`);
+      assert.deepEqual(m.fora, [], "elemento fora da tela");
+      await page.screenshot({ path: path.join(OUT, `${pag}-${nome}-${tema}.png`), fullPage: true });
+      await page.addScriptTag({ path: AXE });
+      const axe = await page.evaluate(() => axe.run(document, { runOnly: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "best-practice"] })
+        .then(r => r.violations.map(v => ({ id: v.id, impacto: v.impact, alvos: v.nodes.map(n => n.target.join(" ")).slice(0, 5) }))));
+      if (axe.length) console.log(`>> axe ${pag} ${nome}/${tema}: ` + axe.map(v => `${v.id}(${v.impacto}) ${v.alvos.join(" | ")}`).join("; "));
+      assert.deepEqual(axe, [], "violação de acessibilidade (axe)");
+      const internos = await page.locator("a[href]").evaluateAll(l => [...new Set(l.map(a => a.getAttribute("href")).filter(h => !/^(https?:|mailto:)/.test(h)))]);
+      assert.ok(internos.includes("index.html"), "link de volta ao app");
+      for (const h of internos) assert.equal((await page.request.get(new URL(h, page.url()).href)).status(), 200, `link interno ${h}`);
+      await fim();
+    });
+  }
+
   it("service worker instala mesmo com 1 arquivo do SHELL em erro e o app abre com o servidor fora do ar", T, async t => {
     const s2 = await sobe({ falhar: p => p === "/icons/icon-512.png" ? 500 : null });
     t.after(() => s2.desce().catch(() => {}));
@@ -273,6 +344,7 @@ describe("Leva ou não? no navegador", { concurrency: true }, () => {
     });
     assert.equal(sw.estado, "activated");
     assert.ok(sw.cache.includes("/index.html") && sw.cache.includes("/lib/zxing_reader.wasm"), "shell no cache: " + sw.cache.join(" "));
+    assert.ok(["/criterios.html", "/privacidade.html", "/termos.html", "/paginas.css"].every(p => sw.cache.includes(p)), "páginas de texto também abrem sem sinal: " + sw.cache.join(" "));
     assert.ok(!sw.cache.includes("/icons/icon-512.png"), "o que falhou fica fora, o resto entra");
     await page.waitForFunction(() => !!navigator.serviceWorker.controller);
     await s2.desce();

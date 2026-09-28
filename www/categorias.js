@@ -72,7 +72,7 @@ const COSMETICO = [
            [/(^|[^o])butyl[\s-]*paraben|(^|[^o])butil[\s-]*parabeno/, "butilparabeno"],
            [/isobutyl[\s-]*paraben|isobutil[\s-]*parabeno/, "isobutilparabeno"],
            [/isopropyl[\s-]*paraben|isopropil[\s-]*parabeno/, "isopropilparabeno"]] },
-  { p:3, tag:"cons", m:"Libera formol",
+  { p:3, tag:"cons", m:"Tem conservante que libera formol",
     dica:"Esse conservante solta formol aos poucos dentro do produto: irrita a pele e formol é cancerígeno.",
     itens:[[/dmdm[\s-]*h[iy]dantoin/, "DMDM hidantoína"], [/(^|[^y])quaternium[\s-]*15\b/, "quaternium-15"],
            [/imidazolidin[iy]l[\s-]*ure/, "imidazolidinil ureia"], [/diazolidin[iy]l[\s-]*ure/, "diazolidinil ureia"],
@@ -90,7 +90,7 @@ const COSMETICO = [
   { p:3, tag:"cons", m:"Conservante que mais dá alergia",
     dica:"MIT/MCI virou campeão de alergia de contato; a Europa proibiu em creme que fica na pele.",
     itens:[[/methylchloroisothiazolinone|metilcloroisotiazolinona/, "MCI"], [/methylisothiazolinone|metilisotiazolinona/, "MIT"], [/kathon/, "Kathon"]] },
-  { p:3, m:"Proibido em cosmético na Europa",
+  { p:3, m:"Tem ingrediente proibido em cosmético na Europa",
     itens:[[/hydroquinone|hidroquinona/, "hidroquinona"], [/dibutyl phthalate|ftalato de dibutila|\bdbp\b/, "ftalato DBP"],
            [/diethylhexyl phthalate|ethylhexyl phthalate|\bdehp\b/, "ftalato DEHP"],
            [/butylphenyl methylpropional|\blilial/, "lilial"], [/hydroxyisohexyl 3-cyclohexene|\blyral/, "lyral"]] },
@@ -102,9 +102,9 @@ const COSMETICO = [
            [/\bgeraniol\b/, "geraniol"], [/\b(iso)?eugenol\b/, "eugenol"], [/coumarin|cumarina/, "cumarina"], [/\bcinnamal\b|cinamal\b|cinnamyl alcohol/, "cinnamal"],
            [/\bcitral\b/, "citral"], [/\bfarnesol\b/, "farnesol"], [/hydroxycitronellal/, "hydroxycitronellal"], [/(amyl|hexyl) ?cinnamal/, "cinnamal"],
            [/benzyl (salicylate|benzoate|cinnamate)/, "benzílicos"], [/isomethyl ionone/, "ionone"], [/evernia/, "musgo de carvalho"]] },
-  { p:1, m:"Lauril sulfato (resseca e irrita)", lista:false,
+  { p:1, m:"Lauril sulfato (pode ressecar e irritar)", lista:false,
     itens:[[/lauryl sulfate|lauril sulfato/, "SLS"]] },
-  { p:1, m:"PPD (tintura que dá alergia forte)", lista:false,
+  { p:1, m:"PPD (pode dar alergia forte)", lista:false,
     dica:"Tintura com PPD: faz o teste de mecha 48 h antes.",
     itens:[[/phenylenediamine|fenilenodiamina|\bppd\b/, "PPD"]] }
 ];
@@ -126,7 +126,7 @@ const PET = [
   { p:ctx => ctx.esp === "gato" ? 1 : 3, m:ctx => ctx.esp === "gato" ? "Xilitol (tóxico pra cão: não dá pro cachorro)" : "Xilitol: tóxico pra cão", lista:false,
     dica:"Xilitol derruba o açúcar do sangue do cachorro e pode lesar o fígado, mesmo em pouca quantidade.",
     itens:[[/xylitol|xilitol/, "xilitol"]] },
-  { p:3, m:"Tóxico pra cão e gato",
+  { p:3, m:"Tem ingrediente tóxico pra cão e gato",
     dica:"Cebola e alho estragam as hemácias (anemia) do cão e, mais ainda, do gato.",
     itens:[[/\b(cebola|onions?)\b/, "cebola"], [/\b(alho|garlic)\b/, "alho"], [/\b(chocolate|cacau|cocoa|cacao)\b/, "chocolate"],
            [/\b(uvas?|passas?|grapes?|raisins?)\b/, "uva/passa"], [/macadami/, "macadâmia"], [/cafeina|caffeine|guarana/, "cafeína"]] },
@@ -141,7 +141,7 @@ const PET = [
     itens:[[/\bbha\b|butylated hydroxyanisole|hidroxianisol|butil[\s-]*hidroxi[\s-]*anisol/, "BHA"],
            [/\bbht\b|butylated hydroxytoluene|hidroxitolueno|butil[\s-]*hidroxi[\s-]*tolueno/, "BHT"]] },
   { p:2, tag:"cor", m:"Corante artificial",
-    dica:"Cor na ração é pro dono, não pro bicho: ele não liga.",
+    dica:"Corante na ração é só pela aparência: o bicho não precisa dele.",
     itens:[[/tartrazin/, "tartrazina"], [/amarelo crepusculo|sunset yellow/, "amarelo crepúsculo"], [/vermelho 40|red 40|allura/, "vermelho 40"],
            [/azul brilhante|brilliant blue/, "azul brilhante"], [/indigotin/, "indigotina"], [/eritrosin|erythrosin/, "eritrosina"],
            [/ponceau/, "ponceau"], [/carame(lo|l) i[v3]/, "caramelo IV"], [/dioxido de titanio|titanium dioxide/, "dióxido de titânio"],
@@ -150,8 +150,8 @@ const PET = [
            [/(?<!vitamina |vit\.? )\be ?1(02|10|22|24|27|29|32|33|71)\b/, "corante (E1xx)"]] }
 ];
 const RESUMO_PET = { comprar:"Ração sem os aditivos que preocupam. Pode levar.",
-  moderacao:"Não é das piores, mas tem ressalvas. Ok se o bicho vai bem com ela.",
-  evitar:"Tem coisa que faz mal pro bicho. Deixa na prateleira." };
+  moderacao:"Tem ressalvas. Ok se o bicho vai bem com ela.",
+  evitar:"Tem ingrediente que pode fazer mal pro bicho. Deixa na prateleira." };
 
 /* ---------- limpeza ----------
    A base tem pouca informação; quando tem ingrediente, é conservador: alquilfenol etoxilado (proibido em
@@ -161,7 +161,7 @@ const LIMPEZA = [
   { p:3, m:"Alquilfenol etoxilado (proibido na Europa)", lista:false,
     dica:"Alquilfenol vira nonilfenol na água: mexe com hormônio de peixe e de gente; a Europa proibiu em detergente.",
     itens:[[/nonylphenol|nonilfenol|octylphenol|octilfenol|alquilfenol|alkylphenol|nonoxynol|nonoxinol/, "alquilfenol"]] },
-  { p:3, m:"Libera formol",
+  { p:3, m:"Tem conservante que libera formol",
     itens:[[/formaldehyde|formaldeido|\bformol\b|\bformalin|\bmetanal\b/, "formol"], [/dmdm[\s-]*h[iy]dantoin/, "DMDM hidantoína"], [/bronopol/, "bronopol"]] },
   { p:3, m:"Triclosan (antibacteriano que fica no ambiente)", lista:false,
     itens:[[/triclosan|triclocarban/, "triclosan"]] },
@@ -173,12 +173,12 @@ const LIMPEZA = [
     itens:[[/\b(parfum|fragrance|fragrancia|perfume|essencia|aroma)\b/, "perfume"]] },
   { p:1, tag:"cor", m:"Tem corante", lista:false,
     itens:[[/\b(corantes?|colorants?|dyes?)\b|\bci ?\d{5}\b/, "corante"]] },
-  { p:1, tag:"fosf", m:"Fosfato (polui rio e lago)", lista:false,
+  { p:1, tag:"fosf", m:"Fosfato (pode pesar em rio e lago)", lista:false,
     itens:[[/fosfato|phosphate|\bstpp\b/, "fosfato"]] }
 ];
 const RESUMO_LIMP = { comprar:"Fórmula sem os ingredientes que mais preocupam. Pode levar.",
   moderacao:"Tem ressalvas: usa com luva e em lugar arejado.",
-  evitar:"Tem ingrediente que agride você ou o ambiente. Melhor outro." };
+  evitar:"Tem ingrediente que pode irritar você ou pesar no ambiente. Melhor outro." };
 
 // Sem ingrediente na base = "sem dados", do mesmo jeito que o app faz com alimento.
 function semDados(d, cat){
@@ -208,11 +208,11 @@ function avaliar(d){
     const tp = t.replace(/(extrato de )?semente de uva|grape ?seed( extract)?/g, " ");   // semente de uva é antioxidante, não é a fruta
     r = rodar(PET, tp, { esp });
     const acuRe = /\b(acucar|sugar|sacarose|sucrose|xarope|syrups?|glicose|glucose|frutose|fructose|dextrose|melaco|molasses)\b/;
-    if (acuRe.test(L.slice(0, 3).join(" | "))){ r.pts += 2; r.ruins.push("Açúcar/xarope entre os primeiros ingredientes"); r.dicas.push("Ração não precisa de açúcar: ele só engorda e estraga o dente."); }
+    if (acuRe.test(L.slice(0, 3).join(" | "))){ r.pts += 2; r.ruins.push("Açúcar/xarope entre os primeiros ingredientes"); r.dicas.push("Ração não precisa de açúcar: ele engorda e pode afetar o dente."); }
     else if (acuRe.test(tp)){ r.pts += 1; r.ruins.push("Tem açúcar/xarope"); }
     else bons.push("Sem açúcar");
     const gen = L.filter(x => /(subproduto|by-?product|derivado|digest|visceras|farinha de carne|meat meal|gordura animal|animal fat|proteina animal|animal protein)/.test(x) && !NOMEADO.test(x));
-    if (gen.length){ r.pts += 1; r.ruins.push("Subproduto sem dizer de qual animal"); r.dicas.push("Quando o rótulo não diz de qual animal vem, a qualidade muda de lote pra lote."); }
+    if (gen.length){ r.pts += 1; r.ruins.push("Subproduto sem dizer de qual animal"); r.dicas.push("Quando o rótulo não diz de qual animal vem, a composição pode mudar de lote pra lote."); }
     const prim = L[0] || "";
     if (/\b(milho|corn|maize|trigo|wheat|quirera|sorgo|sorghum|cereais|cereals)\b/.test(prim)){ r.pts += 1; r.ruins.push(esp === "gato" ? "Cereal é o 1º ingrediente (gato é carnívoro)" : "Cereal é o 1º ingrediente"); }
     else if (NOMEADO.test(prim) && !/(subproduto|by-?product|derivado)/.test(prim)) bons.unshift("1º ingrediente é proteína animal com nome");

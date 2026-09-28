@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<!-- CSP: a mesma do index.html (e do _headers). Página sem JS de tela: o script inline só deixa o app Android escuro.
+     Texto = docs/POLITICA-DE-PRIVACIDADE.md (mudou lá? muda aqui). -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://images.openfoodfacts.org https://static.openfoodfacts.org https://images.openbeautyfacts.org https://images.openpetfoodfacts.org https://images.openproductsfacts.org; connect-src 'self' https://world.openfoodfacts.org https://world.openbeautyfacts.org https://world.openpetfoodfacts.org https://world.openproductsfacts.org https://*.workers.dev; media-src 'self' blob:; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#F2F2F2">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000">
+<meta name="description" content="Política de Privacidade do Leva ou não?: o que o app faz (e não faz) com os seus dados.">
+<link rel="icon" href="icons/icon-192.png">
+<script>if(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform())document.documentElement.dataset.theme="dark"</script>
+<title>Política de Privacidade — Leva ou não?</title>
+<link rel="stylesheet" href="paginas.css">
+</head>
+<body>
+<main>
+  <nav class="topo" aria-label="Navegação"><a href="index.html">← Voltar ao app</a><span class="marca" aria-hidden="true">Leva ou não?</span></nav>
+
+  <h1>Política de Privacidade</h1>
+  <p>Última atualização: setembro de 2026.</p>
+  <p><strong>Responsável:</strong> ZICAO STORE LTDA — CNPJ 52.813.621/0001-98 — Itaú de Minas/MG.<br>
+  <strong>Contato:</strong> <a href="mailto:contato@joaoamorim.dev">contato@joaoamorim.dev</a></p>
+
+  <h2>O que o app faz com seus dados</h2>
+  <ul>
+    <li><strong>Câmera:</strong> usada só pra ler o código de barras na hora. Nenhuma imagem é gravada, guardada ou enviada.</li>
+    <li><strong>Foto do rótulo (ingredientes):</strong> quando o produto não tem cadastro, o texto do rótulo é lido no próprio aparelho e a foto é descartada na hora. Nenhuma foto é salva nem enviada.</li>
+    <li><strong>Código de barras:</strong> o número lido é enviado ao Open Food Facts (base pública) pra buscar as informações do produto. Nenhum dado seu vai junto.</li>
+    <li><strong>Histórico:</strong> o nome e o veredito dos últimos produtos ficam salvos <strong>só no seu aparelho</strong>. Você pode apagar a qualquer momento em “Limpar lista”.</li>
+    <li><strong>Conta, nome, e-mail, localização:</strong> o app não pede nem coleta.</li>
+    <li><strong>Anúncios e estatísticas:</strong> o app não usa hoje. Se passar a usar, esta política será atualizada antes e seu consentimento será pedido quando a lei exigir.</li>
+  </ul>
+
+  <h2>Seus direitos (LGPD)</h2>
+  <p>Como o app não guarda dados pessoais em servidor, não há dados seus conosco. Dúvidas: fale com o contato acima.</p>
+
+  <h2>Aviso</h2>
+  <p>As análises são baseadas nas informações do rótulo e em critérios públicos (ingredientes, classificação NOVA, açúcar adicionado, aditivos). Não substituem orientação de médico, pediatra ou nutricionista. Os critérios completos estão em <a href="criterios.html">Como o app decide</a>.</p>
+
+  <div class="fim">
+    <p><a href="criterios.html">Critérios</a> · <a href="termos.html">Termos de Uso</a> · <a href="index.html">Voltar ao app</a></p>
+  </div>
+</main>
+</body>
+</html>

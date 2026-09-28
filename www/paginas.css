@@ -1,0 +1,52 @@
+/* Leva ou não? — páginas de texto (criterios.html, privacidade.html, termos.html). Sem JS de tela, leves.
+   Mesmos tokens de cor do index.html (escuro = padrão Zicão; claro segue o sistema). Mudou a paleta lá? Muda aqui. */
+@font-face{font-family:"Bebas Neue";font-weight:400;font-display:swap;src:url(fonts/bebas-neue-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Barlow";font-weight:400;font-display:swap;src:url(fonts/barlow-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Barlow";font-weight:600;font-display:swap;src:url(fonts/barlow-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"Barlow";font-weight:700;font-display:swap;src:url(fonts/barlow-latin-700-normal.woff2) format("woff2")}
+:root{
+  --preto:#000000; --branco:#FFFFFF; --ouro:#EBB533; --ouro-l:#F4CB63;
+  --r-sm:10px; --r-md:14px; --s1:4px; --s2:8px; --s3:12px; --s4:16px;
+  --alvo:44px; --foco:3px solid var(--gold-l);
+  color-scheme:dark;
+  --bg:var(--preto); --card:#121212; --line:#2A2A2A; --edge:var(--line);
+  --ink:var(--branco); --ink2:#DDDDDD; --muted:#A8A8A8; --gold:var(--ouro); --gold-t:var(--ouro); --gold-l:var(--ouro-l);
+}
+@supports (color:color-mix(in srgb,red,blue)){
+  :root{ --edge:color-mix(in srgb,var(--ink) 38%,var(--card)); }
+  @media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){ color-scheme:light;
+    --bg:color-mix(in srgb,var(--preto) 5%,var(--branco)); --card:var(--branco);
+    --line:color-mix(in srgb,var(--preto) 12%,var(--branco)); --edge:color-mix(in srgb,var(--ink) 52%,var(--card));
+    --ink:color-mix(in srgb,var(--preto) 90%,var(--branco)); --ink2:color-mix(in srgb,var(--preto) 80%,var(--branco)); --muted:color-mix(in srgb,var(--preto) 58%,var(--branco));
+    --gold-t:color-mix(in srgb,var(--ouro) 55%,var(--preto)); --gold-l:var(--gold-t); } }
+}
+*,*::before,*::after{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Barlow",system-ui,-apple-system,sans-serif;
+  font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-wrap:anywhere;
+  padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+main{max-width:680px;margin:0 auto;padding:18px var(--s4) 40px}
+.topo{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);flex-wrap:wrap;border-bottom:2px solid var(--gold);padding-bottom:var(--s2);margin-bottom:var(--s4)}
+.topo a{display:inline-flex;align-items:center;min-height:var(--alvo);font-weight:600;color:var(--gold-t);text-decoration:none}
+.topo a:hover{text-decoration:underline}
+.topo .marca{font-family:"Bebas Neue",sans-serif;font-weight:400;letter-spacing:.08em;font-size:1.3rem;color:var(--muted)}
+h1{font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:clamp(2.1rem,10vw,2.8rem);line-height:1;letter-spacing:.06em;color:var(--gold-t);margin:var(--s4) 0 var(--s2)}
+h2{font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:1.5rem;line-height:1.1;letter-spacing:.08em;color:var(--gold-t);margin:32px 0 var(--s2)}
+h3{font-size:1rem;font-weight:700;color:var(--ink);margin:var(--s4) 0 var(--s1)}
+p,li,td,th{color:var(--ink2)}
+p{margin:0 0 var(--s3)}
+ul,ol{margin:0 0 var(--s3);padding-left:1.3em}
+li{margin:0 0 var(--s2)}
+strong{color:var(--ink)}
+a{color:var(--gold-t);text-underline-offset:3px}
+a:focus-visible{outline:var(--foco);outline-offset:2px}
+.lead{font-size:1.05rem;color:var(--ink)}
+.nota{margin:var(--s4) 0;padding:var(--s3) var(--s4);background:var(--card);border:1px solid var(--edge);border-left:4px solid var(--gold);border-radius:var(--r-sm)}
+.nota p:last-child{margin:0}
+.tab{margin:0 0 var(--s3);overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.95rem}
+caption{text-align:left;color:var(--muted);font-size:.85rem;padding-bottom:var(--s2)}
+th,td{text-align:left;padding:var(--s2) var(--s3) var(--s2) 0;border-bottom:1px solid var(--edge);vertical-align:top}
+th{font-weight:700;color:var(--ink)}
+.fim{margin-top:40px;padding-top:var(--s3);border-top:1px solid var(--edge);font-size:.85rem;color:var(--muted)}
+.fim p{color:var(--muted);margin:0 0 var(--s2)}

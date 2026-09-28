@@ -34,16 +34,16 @@ Sem isso o GitHub não publica APK novo: o passo "APK Android" falha e diz o que
 
 ## 2. Dados do Open Food Facts (licença ODbL + DbCL)
 - [x] Citar a fonte em todo resultado ("Fonte: Open Food Facts" + link)
-- [ ] Tela "Sobre" com a atribuição e link da licença
+- [x] Tela "Sobre" com a atribuição e link da licença (ⓘ no topo do app; `<dialog>` em `www/index.html`)
 - [ ] Se criar base própria derivada da deles e distribuir: publicar essa base também sob ODbL
-- [ ] Mandar um User-Agent/identificação nas chamadas quando tiver servidor próprio (pedido deles)
+- [x] Mandar um User-Agent/identificação nas chamadas quando tiver servidor próprio (pedido deles) (`LevaOuNao/1.0 (contato@joaoamorim.dev)` em `api/src/index.js`; `OFF_USER_AGENT` no `wrangler.toml`)
 
 ## 3. Veredito objetivo (evitar acusação de difamar marca)
 - [x] Todo veredito mostra o PORQUÊ com critério verificável (ingrediente X, NOVA 4, % de açúcar adicionado)
 - [x] Aviso "não substitui pediatra ou nutricionista"
-- [ ] Página pública explicando os critérios (metodologia)
-- [ ] Canal pra fabricante contestar dado errado (e-mail), com prazo de resposta
-- [ ] Linguagem sem ofender marca ("tem X" em vez de "produto ruim/veneno")
+- [x] Página pública explicando os critérios (metodologia) (`www/criterios.html`; vai ao ar no próximo push da main)
+- [x] Canal pra fabricante contestar dado errado (e-mail), com prazo de resposta (contato@joaoamorim.dev, 5 dias úteis: Sobre, critérios e termos)
+- [x] Linguagem sem ofender marca ("tem X" em vez de "produto ruim/veneno") (varrido `regras.js`/`categorias.js`/`troca.js`/`index.html`)
 
 ## 4. Marca
 - [ ] Buscar "Leva ou não" no INPI (busca.inpi.gov.br) pra ver se está livre
@@ -52,7 +52,7 @@ Sem isso o GitHub não publica APK novo: o passo "APK Android" falha e diz o que
 
 ## 5. Privacidade (LGPD)
 - [x] Hoje: nenhuma foto salva, nenhum dado enviado além do código de barras pra busca
-- [ ] Publicar a Política de Privacidade (rascunho em docs/POLITICA-DE-PRIVACIDADE.md)
+- [x] Publicar a Política de Privacidade (`www/privacidade.html`, texto em docs/POLITICA-DE-PRIVACIDADE.md; vai ao ar no próximo push da main; ao ligar `API_URL` no app, atualizar a política)
 - [ ] Se tiver conta/login, anúncios ou analytics: atualizar a política e pedir consentimento
 - [ ] Anúncios (AdMob): tela de consentimento e declaração na loja
 

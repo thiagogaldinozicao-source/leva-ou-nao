@@ -8,8 +8,8 @@ workers_dev = true
 # Quem pode chamar a API (separado por vírgula): site no GitHub Pages + app Android/iOS (Capacitor).
 # Domínio próprio no futuro: acrescentar aqui.
 ALLOWED_ORIGINS = "https://thiagogaldinozicao-source.github.io,https://localhost,capacitor://localhost"
-# O Open Food Facts exige User-Agent com nome do app + contato.
-OFF_USER_AGENT = "LevaOuNao/1.0 (+https://github.com/thiagogaldinozicao-source/leva-ou-nao)"
+# O Open Food Facts pede User-Agent no formato "NomeDoApp/versão (e-mail de contato)".
+OFF_USER_AGENT = "LevaOuNao/1.0 (contato@joaoamorim.dev)"
 
 # Segredos: NUNCA aqui nem no repositório. Cada um com `npx wrangler secret put NOME` (todos opcionais):
 #   TURNSTILE_SECRET   liga o captcha invisível no POST /v1/rotulo-texto (só depois que o app mandar o token)

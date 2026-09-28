@@ -19,14 +19,15 @@ Produto sem cadastro → ler ingredientes do rótulo (Android: ML Kit no aparelh
 
 ## Mapa
 - `www/index.html` — casca do app (HTML + CSS + JS de tela; motor e regras foram pra arquivos próprios). `www/lib/` = ZXing wasm (não editar).
-  Faixas (em 2026-09-28, depois da frente UI; mudou? `grep -n '/\* ----------'` antes): tema escuro fixo no app nativo 23 ·
-  CSS 25-180 (tokens claro/escuro 33-62) · HTML 182-249 · JS 255-801: busca própria/bases abertas 271-339 ·
-  baseLocal + renderSlot 340-385 · OCR/rótulo (painel + ML Kit/iOS) 386-487 · scanner ZXing/BarcodeDetector 488-589 ·
-  tela de resultado (usa `Regras`/`Categorias`/`Troca`) 592-771 · histórico 772-800.
+  Faixas (em 2026-09-28, depois da frente UI e do Sobre; mudou? `grep -n '/\* ----------'` antes): tema escuro fixo no app nativo 23 ·
+  CSS 25-192 (tokens claro/escuro 33-62; bloco `sobre` 180-192) · HTML 194-278 (`<dialog id="sobre">` 264-274) · JS 280-835: busca própria/bases abertas 296-364 ·
+  baseLocal + renderSlot 365-410 · OCR/rótulo (painel + ML Kit/iOS) 411-512 · scanner ZXing/BarcodeDetector 513-615 ·
+  tela de resultado (usa `Regras`/`Categorias`/`Troca`) 616-795 · histórico 796-827 · ⓘ Sobre 828-835.
 - `www/regras.js` — motor de regras de ALIMENTO (NOVA, açúcar, adoçante, corante, conservante) → `globalThis.Regras`.
 - `www/categorias.js` — veredito de cosmético/pet/limpeza e informação (sem veredito) de remédio → `globalThis.Categorias`.
 - `www/troca.js` — "🔁 Tem melhor?": categoria do produto (OFF) → URL da busca no OFF (Brasil, mais escaneados) → até 3 trocas com "Pode levar" → `globalThis.Troca`; puro, o fetch e o botão ficam no `index.html` (`trocaBox`).
 - `www/rotulo.js` — parser por regras do texto lido no rótulo (ingredientes, alérgenos, "ALTO EM") → `globalThis.Rotulo`; mesmo arquivo usado pela API (`api/src/index.js`).
+- `www/criterios.html`, `www/privacidade.html`, `www/termos.html` (+ `www/paginas.css`) — páginas públicas estáticas (mesma CSP `<meta>` e tokens do app, sem JS de tela), linkadas do ⓘ Sobre. `privacidade`/`termos` = texto de `docs/POLITICA-DE-PRIVACIDADE.md`/`docs/TERMOS-DE-USO.md` (mudou lá? muda aqui); `criterios` = pesos reais de `regras.js`/`categorias.js` (mudou regra? muda lá).
 - `www/sw.js` — service worker do site: cache-first em `lib/fonts/icons`, rede-primeiro no shell; nunca intercepta Open Food Facts/irmãs nem a API.
 - `www/offline.js` — registra o `sw.js` (só no site, não no app empacotado).
 - `www/_headers` — headers pra host que aplica o arquivo (Cloudflare Pages/Netlify); o GitHub Pages IGNORA: lá só vale a CSP da `<meta>` do `index.html`.

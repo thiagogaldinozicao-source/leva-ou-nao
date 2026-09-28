@@ -14,6 +14,7 @@ const Rotulo = globalThis.Rotulo;
 const FIELDS = "product_name,product_name_pt,generic_name_pt,brands,quantity,image_front_small_url,ingredients_text_pt,ingredients_text,additives_tags,nova_group,nutriscore_grade,nutriments,categories_tags,allergens_tags,traces_tags,labels_tags";
 const TRINTA_DIAS = 30 * 24 * 3600 * 1000;
 const CACHE_OK_S = 3600, CACHE_SEM_S = 900;
+const UA_PADRAO = "LevaOuNao/1.0 (contato@joaoamorim.dev)";   // formato que o Open Food Facts pede: app/versão (e-mail); env.OFF_USER_AGENT (wrangler.toml) manda
 
 const OFF = { fonte: "off", categoria: "alimento", host: "https://world.openfoodfacts.org" };
 const IRMAS = [ // depois do OFF, nesta ordem de prioridade
@@ -96,7 +97,7 @@ function apagaCache(ctx, req, ean) {
 /* ---------- bases abertas (Open Food Facts e irmãs) ---------- */
 async function buscaBase(env, base, ean) {
   const r = await fetch(`${base.host}/api/v2/product/${ean}.json?fields=${FIELDS}`, {
-    headers: { "User-Agent": env.OFF_USER_AGENT || "LevaOuNao/1.0", Accept: "application/json" },
+    headers: { "User-Agent": env.OFF_USER_AGENT || UA_PADRAO, Accept: "application/json" },
     signal: AbortSignal.timeout(4000),
   });
   if (r.status === 404) return null;
@@ -290,7 +291,7 @@ async function enviaAoOff(env) {
       if (!atual) { form.set("lang", "pt"); form.set("countries", "Brasil"); } // produto novo lá
       const resp = await fetch(base.host + "/cgi/product_jqm2.pl", {
         method: "POST",
-        headers: { "User-Agent": env.OFF_USER_AGENT || "LevaOuNao/1.0", "Content-Type": "application/x-www-form-urlencoded" },
+        headers: { "User-Agent": env.OFF_USER_AGENT || UA_PADRAO, "Content-Type": "application/x-www-form-urlencoded" },
         body: form,
         signal: AbortSignal.timeout(10000),
       });

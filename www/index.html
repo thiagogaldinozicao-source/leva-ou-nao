@@ -177,10 +177,24 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:1}
 .trocal::after{content:"›";flex:none;color:var(--muted);font-size:1.5rem;line-height:1}
 .hidden{display:none!important}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+/* ---------- sobre ---------- */
+.sobre-btn{display:flex;margin:-10px -10px 0 auto;align-items:center;justify-content:center;min-width:var(--alvo);min-height:var(--alvo);padding:0;border:0;border-radius:var(--r-full);background:none;color:var(--muted);cursor:pointer}
+.sobre-btn svg{width:24px;height:24px}
+.sobre-btn:hover{color:var(--gold-t)}
+dialog.sobre{width:min(calc(100% - 2 * var(--s4)),480px);max-height:calc(100vh - 2 * var(--s4));max-height:calc(100dvh - 2 * var(--s4));padding:0;border:1px solid var(--edge);border-radius:var(--r-lg);background:var(--card);color:var(--ink);overflow:auto}
+dialog.sobre::backdrop{background:rgba(0,0,0,.7)}
+.sobre-corpo{padding:var(--s4)}
+.sobre h2{font-family:"Bebas Neue",sans-serif;font-weight:400;letter-spacing:.08em;font-size:1.5rem;line-height:1.1;color:var(--gold-t);margin:0 0 var(--s3)}
+.sobre p{margin:0 0 var(--s3);color:var(--ink2);font-size:.95rem}
+.sobre strong{color:var(--ink)}
+.sobre a{color:var(--gold-t);text-underline-offset:3px}
+.sobre a:focus-visible{outline:var(--foco);outline-offset:2px}
+.sobre-fechar{width:100%;min-height:var(--alvo);border:1px solid var(--edge);border-radius:var(--r-md);background:transparent;color:var(--ink);font:inherit;font-weight:600;cursor:pointer}
 </style>
 </head>
 <body>
 <main>
+  <button type="button" class="sobre-btn" id="sobreBtn" aria-label="Sobre o app" aria-haspopup="dialog" title="Sobre"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><circle cx="12" cy="7.8" r=".6" fill="currentColor"/></svg></button>
   <header>
     <h1>Leva ou não?</h1>
     <p>Escaneia o código de barras e vê na hora se vale levar.</p>
@@ -247,6 +261,17 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:1}
   <div class="box" aria-hidden="true"></div>
   <div class="bar"><p id="scanMsg">Aponte pro código de barras</p><button id="scanClose">Cancelar</button></div>
 </div>
+<dialog id="sobre" class="sobre" aria-labelledby="sobreTit">
+  <div class="sobre-corpo">
+    <h2 id="sobreTit">Sobre o Leva ou não?</h2>
+    <p>Ajuda a comparar rótulos: olha ingredientes, açúcar adicionado, adoçante, corante, conservante e NOVA, e mostra o motivo de cada ponto. <a href="criterios.html">Ver os critérios</a></p>
+    <p><strong>Não substitui nutricionista, médico ou pediatra.</strong> Alergia? Confira sempre a embalagem.</p>
+    <p>Dados de produtos: <a href="https://world.openfoodfacts.org/" target="_blank" rel="noopener">Open Food Facts</a> e bases irmãs, licença <a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noopener">ODbL</a>. Preço de remédio: CMED/Anvisa.</p>
+    <p>Dado errado? Escreva pra <a href="mailto:contato@joaoamorim.dev">contato@joaoamorim.dev</a>. Respondemos em até 5 dias úteis (fabricantes também).</p>
+    <p><a href="privacidade.html">Privacidade</a> · <a href="termos.html">Termos de uso</a></p>
+    <button type="button" class="sobre-fechar" id="sobreFechar">Fechar</button>
+  </div>
+</dialog>
 <script src="categorias.js"></script>
 <script src="lib/zxing-reader.js"></script>
 <script src="regras.js"></script>
@@ -554,6 +579,7 @@ if (NO_APP){
   let AppPl = null;
   try { AppPl = (CAP.Plugins && CAP.Plugins.App) || (CAP.registerPlugin && CAP.registerPlugin("App")); } catch (e) {}
   if (AppPl && AppPl.addListener) AppPl.addListener("backButton", () => {
+    if (sobreAberto()) { fechaSobre(); return; }
     if (!$("#scanner").classList.contains("hidden")) { fecharScanner(); return; }
     if (!result.classList.contains("hidden")) { result.classList.add("hidden"); window.scrollTo({ top: 0, behavior: suave() }); return; }
     if (mode === "two") { setMode("one"); return; }
@@ -798,6 +824,15 @@ goBtn.onclick = () => {
   showCards([a, b], [prod.A, prod.B], a._cat === b._cat ? "💊 Remédio não entra na comparação." : Categorias.icone(a._cat, a) + " e " + Categorias.icone(b._cat, b) + " não se comparam: vai o de cada um.");
 };
 render();
+
+/* ---------- sobre (ⓘ): crédito ODbL, aviso, contato pra contestar dado, páginas de texto ---------- */
+const sobre = $("#sobre"), sobreBtn = $("#sobreBtn");
+const sobreAberto = () => sobre.hasAttribute("open");
+function fechaSobre(){ if (sobre.close) sobre.close(); else { sobre.removeAttribute("open"); sobreBtn.focus(); } }   // sem <dialog> (iOS < 15.4): só atributo
+sobreBtn.onclick = () => { if (sobre.showModal) sobre.showModal(); else sobre.setAttribute("open", ""); };
+$("#sobreFechar").onclick = fechaSobre;
+sobre.addEventListener("close", () => sobreBtn.focus());
+sobre.addEventListener("click", e => { if (e.target === sobre) fechaSobre(); });   // toque no fundo escuro fecha
 </script>
 </body>
 </html>

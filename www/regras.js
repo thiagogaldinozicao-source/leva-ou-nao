@@ -97,7 +97,7 @@ function aplicarPerfis(out, perfis, d, texto, temIng, add){
 /* 👶 é calculado DEPOIS dos perfis: "serve" só se o veredito final é comprar (senão sairia "serve" ao lado de "Deixa na prateleira"). v0 = veredito antes dos perfis. */
 function bebeDe(out, v0){
   const serve = out.veredito === "comprar";
-  return { serve, motivo: serve ? "Sem açúcar adicionado, adoçante ou corante artificial." : out.veredito !== v0 ? (out.veredito === "evitar" ? "Não serve pro seu perfil alimentar." : "Confira o rótulo pro seu perfil alimentar.") : "Tem coisa que é melhor evitar pra idade dele." };
+  return { serve, motivo: serve ? "Sem açúcar adicionado, adoçante ou corante artificial." : out.veredito !== v0 ? (out.veredito === "evitar" ? "Não serve pro seu perfil alimentar." : "Confira o rótulo pro seu perfil alimentar.") : "Tem item que não é indicado pra idade dele." };
 }
 function avaliar(raw, isBaby, limpo, perfis){
   const ing = ingredientesDe(raw, limpo); const t = ing.texto; const full = nrm(raw);
@@ -118,7 +118,7 @@ function avaliar(raw, isBaby, limpo, perfis){
   else if (vd == null || vd === 0) bons.push("Sem açúcar adicionado");
 
   const ado = ["aspartame","sucralose","acessulfame","acesulfame","esulfame","neotame","ciclamato","sacarina"].filter(x => t.includes(x));
-  if (ado.length || /edulcorante/.test(t)) bad(2, "Adoçante artificial" + (ado.length ? " (" + [...new Set(ado.map(x => x === "esulfame" || x === "acesulfame" ? "acessulfame" : x))].join(", ") + ")" : ""), ado.includes("aspartame") ? "Aspartame é o adoçante mais ligado a queixa de dor de cabeça." : "Adoçante artificial deixa doce sem açúcar, mas não é o que a gente quer no natural.");
+  if (ado.length || /edulcorante/.test(t)) bad(2, "Adoçante artificial" + (ado.length ? " (" + [...new Set(ado.map(x => x === "esulfame" || x === "acesulfame" ? "acessulfame" : x))].join(", ") + ")" : ""), ado.includes("aspartame") ? "Aspartame é o adoçante mais ligado a queixa de dor de cabeça." : "Adoçante artificial deixa doce sem açúcar, mas o app prefere produto sem ele.");
   else bons.push("Sem adoçante artificial");
 
   const cor = ["tartrazina","amarelo crepusculo","vermelho 40","bordeaux","ponceau","azul brilhante","azorrubina","eritrosina","caramelo iv","caramelo iii","indigotina"].filter(x => t.includes(x));
@@ -131,15 +131,15 @@ function avaliar(raw, isBaby, limpo, perfis){
   else if (cons.length === 1) bad(1, cons[0] === "conservador" ? "Tem conservante" : "Tem conservante (" + cons[0] + ")");
   else bons.push("Sem conservante");
 
-  if (/hidrogenada/.test(t)) bad(2, "Gordura hidrogenada", "Gordura hidrogenada é das piores coisas pra ter no rótulo.");
+  if (/hidrogenada/.test(t)) bad(2, "Gordura hidrogenada", "Gordura hidrogenada pode ter gordura trans, que é melhor evitar.");
   else if (/gordura vegetal|oleo de palma|aceite vegetal|aceite de palma/.test(t)) bad(1, "Gordura vegetal/palma");
 
-  if (/(artificial|identico ao natural)/.test(t) && /arom/.test(t)) bad(1, "Aromatizante artificial", "Aroma artificial imita o sabor, não é a fruta de verdade.");
+  if (/(artificial|identico ao natural)/.test(t) && /arom/.test(t)) bad(1, "Aromatizante artificial", "Aroma artificial reproduz o sabor; não vem da fruta.");
   if (/glutamato|realcador de sabor/.test(t)) bad(1, "Realçador de sabor (glutamato)");
-  if (/^.{0,12}soro de le/.test(L[0] || "")) bad(2, "Soro de leite é o 1º ingrediente", "Soro de leite em 1º lugar quer dizer bebida láctea, não leite de verdade.");
+  if (/^.{0,12}soro de le/.test(L[0] || "")) bad(2, "Soro de leite é o 1º ingrediente", "Soro de leite em 1º lugar é o que se vê em bebida láctea, que é uma categoria diferente do leite.");
 
   const suco = t.match(/suco[^%]{0,40}?\(?\s*(\d+[.,]?\d*)\s*%/);
-  if (suco && parseFloat(suco[1].replace(",", ".")) < 10) bad(2, "Pouquíssima fruta (" + suco[1] + "%)", "Rótulo com fruta desenhada e só " + suco[1] + "% de suco é praticamente água com açúcar.");
+  if (suco && parseFloat(suco[1].replace(",", ".")) < 10) bad(2, "Pouquíssima fruta (" + suco[1] + "%)", "O rótulo declara só " + suco[1] + "% de suco: o resto da lista é água e outros ingredientes.");
 
   const aditivos = (t.match(/(goma|carragena|carboximetilcelulose|polifosfato|edta|fosfato|citrato trissodico|lecitina|espessante|estabilizante|emulsificante|amido modificado)/g) || []).length;
   if (aditivos >= 4) bad(1, "Muitos espessantes/estabilizantes (" + aditivos + ")");
@@ -154,7 +154,7 @@ function avaliar(raw, isBaby, limpo, perfis){
   let v = pts >= 3 ? "evitar" : pts >= 1 ? "moderacao" : "comprar";
   if (isBaby && pts >= 2) v = "evitar";
   const tipo = (TIPOS.find(([re]) => re.test(full)) || [0, "Produto"])[1];
-  const resumo = v === "comprar" ? "Rótulo limpo, pode levar tranquilo." : v === "moderacao" ? "Não é dos piores, mas tem ressalvas. De vez em quando tá ok." : "Muita coisa industrial aqui. Melhor deixar na prateleira.";
+  const resumo = v === "comprar" ? "Rótulo sem pontos de atenção, pode levar." : v === "moderacao" ? "Tem ressalvas. De vez em quando tá ok." : "Tem vários pontos de atenção no rótulo. Melhor deixar na prateleira.";
   const comentario = (dicas.length ? dicas.slice(0, 2).join(" ") : "Nada que chame atenção no rótulo.") + (tipo !== "Produto" ? "" : "");
   const out = { legivel: true, produto: tipo, veredito: v, resumo, comentario, pontos_bons: bons.slice(0, 4), pontos_ruins: ruins.slice(0, 5), ingredientes: (soTabela || ing.semOrdem) ? "" : ing.texto.slice(0, 600), _pts: pts, _n: n };
   aplicarPerfis(out, perfis, {}, raw, ing.achou, (!soTabela && acucarAdicionado(t)) || (vd != null && vd > 0));
@@ -260,7 +260,7 @@ function analisarProduto(d, isBaby, perfis){
   if (nova === 4) coment.push("NOVA 4 é a classificação de ultraprocessado: feito na indústria com ingredientes que você não tem em casa.");
   if (nova === 1) coment.push("NOVA 1 é comida de verdade, do jeito que vem da natureza ou quase.");
   if (r.comentario && r.comentario !== "Nada que chame atenção no rótulo.") coment.push(r.comentario);
-  const resumo = v === "comprar" ? "Pode levar tranquilo." : v === "moderacao" ? "Não é dos piores, mas tem ressalvas. De vez em quando tá ok." : "Muita coisa industrial aqui. Melhor deixar na prateleira.";
+  const resumo = v === "comprar" ? "Pode levar tranquilo." : v === "moderacao" ? "Tem ressalvas. De vez em quando tá ok." : "Tem vários pontos de atenção no rótulo. Melhor deixar na prateleira.";
   const out = { legivel: true, produto: nomeProd(d), imagem: d.image_front_small_url || "", veredito: v, resumo,
     comentario: coment.slice(0, 2).join(" ") || (ing ? "Rótulo sem nada que chame atenção." : ""), pontos_bons: bons.slice(0, 4), pontos_ruins: [...new Set(ruins)].slice(0, 6),
     ingredientes: ing.slice(0, 700), lupa: lupa.map(x => x.id), _pts: pts, _n: r._n || 0 };

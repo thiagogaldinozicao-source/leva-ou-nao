@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<!-- CSP: a mesma do index.html (e do _headers). Página sem JS de tela: o script inline só deixa o app Android escuro. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://images.openfoodfacts.org https://static.openfoodfacts.org https://images.openbeautyfacts.org https://images.openpetfoodfacts.org https://images.openproductsfacts.org; connect-src 'self' https://world.openfoodfacts.org https://world.openbeautyfacts.org https://world.openpetfoodfacts.org https://world.openproductsfacts.org https://*.workers.dev; media-src 'self' blob:; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#F2F2F2">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000">
+<meta name="description" content="Como o Leva ou não? lê o rótulo: os critérios que o app usa pra dar Pode levar, Com moderação ou Deixa na prateleira.">
+<link rel="icon" href="icons/icon-192.png">
+<script>if(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform())document.documentElement.dataset.theme="dark"</script>
+<title>Critérios — Leva ou não?</title>
+<link rel="stylesheet" href="paginas.css">
+</head>
+<body>
+<main>
+  <nav class="topo" aria-label="Navegação"><a href="index.html">← Voltar ao app</a><span class="marca" aria-hidden="true">Leva ou não?</span></nav>
+
+  <h1>Como o app decide</h1>
+  <p class="lead">O Leva ou não? ajuda a comparar rótulos. Ele lê o que está escrito na embalagem (e o que a base aberta do produto traz) e mostra o motivo de cada ponto. Não é avaliação da empresa que fabrica e não é orientação de saúde.</p>
+
+  <h2>Os 3 resultados</h2>
+  <ul>
+    <li><strong>Pode levar:</strong> o rótulo não tem nenhum ponto de atenção pelos critérios abaixo.</li>
+    <li><strong>Com moderação:</strong> tem 1 ou 2 pontos de atenção. Serve de vez em quando.</li>
+    <li><strong>Deixa na prateleira:</strong> tem vários pontos de atenção (3 ou mais). O botão “Tem melhor?” procura, na mesma categoria, produtos que ficam em “Pode levar”.</li>
+  </ul>
+  <p>Cada ponto de atenção soma 1 ou 2 pontos (abaixo). O resultado é a soma. Não existe nota de 0 a 100: o app só diz de que lado do rótulo cada coisa aparece.</p>
+
+  <h2>Alimentos: o que o app procura</h2>
+  <h3>Pesa mais (2 pontos)</h3>
+  <ul>
+    <li><strong>Açúcar adicionado entre os 3 primeiros ingredientes.</strong> A lista do rótulo vai do que tem mais pro que tem menos. Conta açúcar, xarope, glicose, frutose, maltodextrina, mel e parecidos. “Sem açúcar” e “não contém açúcar” não contam.</li>
+    <li><strong>Adoçante artificial:</strong> aspartame, sucralose, acessulfame, neotame, ciclamato, sacarina ou “edulcorante”.</li>
+    <li><strong>Corante artificial:</strong> tartrazina, amarelo crepúsculo, vermelho 40, bordeaux, ponceau, azul brilhante, azorrubina, eritrosina, indigotina, caramelo III e IV.</li>
+    <li><strong>Vários conservantes</strong> ao mesmo tempo (2 ou mais).</li>
+    <li><strong>Gordura hidrogenada</strong> (pode ter gordura trans).</li>
+    <li><strong>Soro de leite como 1º ingrediente</strong> e <strong>suco declarado abaixo de 10%.</strong></li>
+    <li><strong>NOVA 4</strong> (ultraprocessado): classificação da comida por grau de processamento, que o Open Food Facts traz.</li>
+    <li><strong>Muito açúcar adicionado por porção:</strong> 20% ou mais do valor diário, quando o rótulo informa.</li>
+  </ul>
+  <h3>Pesa menos (1 ponto)</h3>
+  <ul>
+    <li>Açúcar adicionado em qualquer posição da lista (ou 8% a 19% do valor diário por porção).</li>
+    <li>Um conservante: benzoato, sorbato, nitrito, nitrato, dicarbonato, metabissulfito, propionato ou bissulfito.</li>
+    <li>Gordura vegetal ou de palma, aroma artificial, realçador de sabor (glutamato).</li>
+    <li>Muitos espessantes e estabilizantes (4 ou mais) e lista longa (14 ou mais ingredientes).</li>
+    <li>NOVA 3 (processado).</li>
+    <li>Sal a partir de 1,5 g em 100 g e açúcar total a partir de 22,5 g em 100 g (este só quando a lista tem açúcar adicionado). Se a lupa já avisa o mesmo nutriente, não conta duas vezes.</li>
+    <li>Cada aviso “ALTO EM” da lupa (tabela abaixo).</li>
+  </ul>
+  <p>Lista curta (até 5 ingredientes, todos reconhecíveis) e NOVA 1 (comida in natura ou pouco processada) aparecem como ponto positivo. No <strong>modo bebê</strong> o app é mais rigoroso: 2 pontos já viram “Deixa na prateleira”.</p>
+
+  <h2>Lupa “ALTO EM” (Anvisa)</h2>
+  <p>Seguimos os limites da <a href="https://www.in.gov.br/en/web/dou/-/instrucao-normativa-in-n-75-de-8-de-outubro-de-2020-282071143" target="_blank" rel="noopener">Instrução Normativa 75/2020</a> da Anvisa. O aviso conta quando o valor é igual ou maior que o limite.</p>
+  <div class="tab" role="region" aria-label="Limites da lupa" tabindex="0">
+    <table>
+      <caption>Limites por 100 g (sólidos) ou 100 ml (líquidos)</caption>
+      <thead><tr><th scope="col">Nutriente</th><th scope="col">Sólidos</th><th scope="col">Líquidos</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Açúcar adicionado</th><td>15 g</td><td>7,5 g</td></tr>
+        <tr><th scope="row">Gordura saturada</th><td>6 g</td><td>3 g</td></tr>
+        <tr><th scope="row">Sódio</th><td>600 mg</td><td>300 mg</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Só o açúcar <em>adicionado</em> conta (o total não vira “adicionado”, senão fruta e leite seriam acusados). Na dúvida entre sólido e líquido vale o limite maior. A Anvisa veda a lupa em alimentos in natura, leites, queijos, ovos, farinhas, azeite e óleos, sal, fórmulas infantis, suplementos e bebida alcoólica (sem ingrediente que acrescente açúcar, gordura saturada ou sódio): nesses o app também não acusa.</p>
+
+  <h2>Meu perfil: sem glúten, sem lactose, pouco açúcar</h2>
+  <p>Os perfis ficam na tela inicial e valem pra qualquer alimento. Cada um responde <em>serve</em>, <em>confira</em> ou <em>não serve</em>.</p>
+  <ul>
+    <li><strong>Sem glúten:</strong> só aparece “serve” se o rótulo diz que não contém glúten ou tem selo de sem glúten. Trigo, centeio, cevada, aveia, malte ou glúten nos ingredientes ou alérgenos = não serve. “Pode conter traços” ou sem confirmação = confira.</li>
+    <li><strong>Sem lactose:</strong> leite ou derivado nos ingredientes ou alérgenos = não serve, exceto quando o rótulo diz sem lactose.</li>
+    <li><strong>Pouco açúcar:</strong> açúcar adicionado, ou 15 g de açúcar (ou mais) em 100 g, = não serve. Adoçante não pesa aqui.</li>
+  </ul>
+  <p>Com um perfil ligado, “não serve” leva a “Deixa na prateleira” e “confira” a no máximo “Com moderação”. <strong>Alergia ou doença celíaca:</strong> a palavra final é sempre a embalagem na sua mão.</p>
+
+  <h2>Cosméticos, pet e limpeza</h2>
+  <p>Aqui o app olha a lista de ingredientes (INCI) atrás de substâncias que órgãos sanitários ou pesquisas apontam como de atenção:</p>
+  <ul>
+    <li><strong>Cosméticos:</strong> parabenos de cadeia longa, conservantes que liberam formol, triclosan, BHA, oxibenzona, isotiazolinonas (MIT, MCI), ftalatos, hidroquinona, alguns alérgenos de perfume e a fragrância em si, lauril sulfato, PPD (tinturas).</li>
+    <li><strong>Pet:</strong> xilitol, ingredientes tóxicos pra cão e gato (cebola, alho, chocolate, uva, macadâmia, cafeína), propilenoglicol, etoxiquina, BHA e BHT, corantes artificiais.</li>
+    <li><strong>Limpeza:</strong> alquilfenol etoxilado (proibido em detergente na Europa), conservantes que liberam formol, triclosan; perfume, corante, fosfato e isotiazolinonas viram ressalva.</li>
+    <li><strong>Remédios:</strong> sem veredito. O app só mostra a informação e o preço máximo da tabela CMED/Anvisa.</li>
+  </ul>
+  <p>Produto sem lista de ingredientes na base fica “Com moderação” e o app diz que faltou dado: nesses casos dá pra ler o rótulo com a câmera.</p>
+
+  <h2>De onde vêm os dados</h2>
+  <p>Produtos: <a href="https://world.openfoodfacts.org/" target="_blank" rel="noopener">Open Food Facts</a> e as bases irmãs (Beauty, Pet Food e Products Facts), abertas e colaborativas, sob a licença <a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noopener">ODbL</a>. Remédios: CMED/Anvisa. Como são bases feitas por voluntários, um dado pode estar incompleto ou desatualizado; se a dúvida for importante, vale o rótulo da embalagem.</p>
+
+  <div class="nota">
+    <p><strong>Quer corrigir algum dado ou critério?</strong> Escreva pra <a href="mailto:contato@joaoamorim.dev">contato@joaoamorim.dev</a>. Respondemos em até 5 dias úteis. Fabricantes também podem pedir correção por esse canal.</p>
+  </div>
+  <p class="nota"><strong>Não substitui nutricionista, médico ou pediatra.</strong> O app ajuda a comparar rótulos; não faz diagnóstico nem promete efeito na saúde.</p>
+
+  <div class="fim">
+    <p><a href="privacidade.html">Política de Privacidade</a> · <a href="termos.html">Termos de Uso</a> · <a href="index.html">Voltar ao app</a></p>
+    <p>Última atualização: setembro de 2026.</p>
+  </div>
+</main>
+</body>
+</html>

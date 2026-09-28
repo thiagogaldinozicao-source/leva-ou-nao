@@ -54,13 +54,13 @@ test("pet: milho em 1º + subproduto sem animal + BHA soma até deixar na pratel
 
 test("pet: semente de uva (antioxidante) não é a fruta tóxica", () => {
   const r = C.avaliar(racao("Frango, arroz, extrato de semente de uva"));
-  assert.ok(!tem(r.pontos_ruins, /Tóxico/));
+  assert.ok(!tem(r.pontos_ruins, /[Tt]óxico/));
 });
 
 test("limpeza: formol = deixa na prateleira, sem repetir o nome e sem 'nada que chame atenção'", () => {
   const r = C.avaliar({ _categoria: "limpeza", product_name: "Desinfetante", ingredients_text_pt: "Água, formol, tensoativo" });
   assert.equal(r.veredito, "evitar");
-  assert.ok(r.pontos_ruins.includes("Libera formol"), r.pontos_ruins.join(" | "));
+  assert.ok(r.pontos_ruins.includes("Tem conservante que libera formol"), r.pontos_ruins.join(" | "));
   assert.ok(!/nada que chame/i.test(r.comentario));
 });
 

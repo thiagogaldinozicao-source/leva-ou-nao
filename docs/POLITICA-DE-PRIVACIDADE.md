@@ -1,12 +1,13 @@
 # Política de Privacidade — Leva ou não?
 
-*Rascunho. Última atualização: setembro de 2026.*
+*Versão publicada em www/privacidade.html (mudou aqui? muda lá). Última atualização: setembro de 2026.*
 
 **Responsável:** ZICAO STORE LTDA — CNPJ 52.813.621/0001-98 — Itaú de Minas/MG.
-**Contato:** (preencher e-mail de contato)
+**Contato:** contato@joaoamorim.dev
 
 ## O que o app faz com seus dados
 - **Câmera:** usada só pra ler o código de barras na hora. Nenhuma imagem é gravada, guardada ou enviada.
+- **Foto do rótulo (ingredientes):** quando o produto não tem cadastro, o texto do rótulo é lido no próprio aparelho e a foto é descartada na hora. Nenhuma foto é salva nem enviada.
 - **Código de barras:** o número lido é enviado ao Open Food Facts (base pública) pra buscar as informações do produto. Nenhum dado seu vai junto.
 - **Histórico:** o nome e o veredito dos últimos produtos ficam salvos **só no seu aparelho**. Você pode apagar a qualquer momento em "Limpar lista".
 - **Conta, nome, e-mail, localização:** o app não pede nem coleta.

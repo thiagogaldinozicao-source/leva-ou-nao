@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<!-- CSP: a mesma do index.html (e do _headers). Página sem JS de tela: o script inline só deixa o app Android escuro.
+     Texto = docs/TERMOS-DE-USO.md (mudou lá? muda aqui). -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://images.openfoodfacts.org https://static.openfoodfacts.org https://images.openbeautyfacts.org https://images.openpetfoodfacts.org https://images.openproductsfacts.org; connect-src 'self' https://world.openfoodfacts.org https://world.openbeautyfacts.org https://world.openpetfoodfacts.org https://world.openproductsfacts.org https://*.workers.dev; media-src 'self' blob:; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#F2F2F2">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000">
+<meta name="description" content="Termos de Uso do Leva ou não?">
+<link rel="icon" href="icons/icon-192.png">
+<script>if(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform())document.documentElement.dataset.theme="dark"</script>
+<title>Termos de Uso — Leva ou não?</title>
+<link rel="stylesheet" href="paginas.css">
+</head>
+<body>
+<main>
+  <nav class="topo" aria-label="Navegação"><a href="index.html">← Voltar ao app</a><span class="marca" aria-hidden="true">Leva ou não?</span></nav>
+
+  <h1>Termos de Uso</h1>
+  <p>Última atualização: setembro de 2026.</p>
+
+  <ol>
+    <li><strong>O que é:</strong> o Leva ou não? lê o código de barras de alimentos e mostra uma análise do rótulo com base em critérios objetivos: ingredientes, classificação NOVA, açúcar adicionado, adoçantes, corantes, conservantes e sal. Os critérios estão em <a href="criterios.html">Como o app decide</a>.</li>
+    <li><strong>Não é orientação de saúde:</strong> as análises são informativas e não substituem médico, pediatra ou nutricionista. Alergias e restrições devem ser sempre conferidas no rótulo físico.</li>
+    <li><strong>Fonte dos dados:</strong> as informações dos produtos vêm do Open Food Facts, uma base aberta e colaborativa (licença <a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noopener">ODbL</a>). Elas podem estar incompletas ou desatualizadas. Na dúvida, vale o rótulo da embalagem.</li>
+    <li><strong>Sem juízo sobre marcas:</strong> o veredito descreve o que está no rótulo segundo os critérios do app. Não é uma avaliação da empresa fabricante. Fabricantes podem pedir correção de dados pelo e-mail <a href="mailto:contato@joaoamorim.dev">contato@joaoamorim.dev</a>; respondemos em até 5 dias úteis.</li>
+    <li><strong>Uso:</strong> é proibido usar o app pra fins ilegais ou tentar copiar a base e o código de forma que viole licenças de terceiros.</li>
+    <li><strong>Mudanças:</strong> estes termos podem mudar. A versão atual fica sempre disponível no app.</li>
+    <li><strong>Foro:</strong> comarca de Itaú de Minas/MG.</li>
+  </ol>
+  <p><strong>ZICAO STORE LTDA — CNPJ 52.813.621/0001-98</strong></p>
+
+  <div class="fim">
+    <p><a href="criterios.html">Critérios</a> · <a href="privacidade.html">Política de Privacidade</a> · <a href="index.html">Voltar ao app</a></p>
+  </div>
+</main>
+</body>
+</html>

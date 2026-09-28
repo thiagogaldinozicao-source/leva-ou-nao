@@ -2,19 +2,23 @@
 // Só roda no site (quem registra é offline.js); no app Android os arquivos já vêm no APK.
 //
 // Estratégia:
-//  - index.html e *.js/*.json do app: rede primeiro (atualização chega na hora), cache se estiver offline ou a rede passar de 3 s.
+//  - index.html, páginas de texto (*.html, paginas.css) e *.js/*.json do app: rede primeiro (atualização chega na hora), cache se estiver offline ou a rede passar de 3 s.
 //  - lib/, fonts/, icons/: cache primeiro (não mudam; o .js e o .wasm do ZXing ficam sempre do mesmo par).
 //  - Open Food Facts, API e qualquer outro domínio: o SW não toca, vai direto pra rede.
 //
 // Trocou algo em lib/, fonts/ ou icons/ (ou a lista SHELL)? Suba a VERSAO: o cache velho é apagado.
 // O prefixo é só deste app porque o domínio *.github.io é dividido com outros sites do mesmo dono.
 const PREFIXO = "levaounao-";
-const VERSAO = PREFIXO + "v3";
+const VERSAO = PREFIXO + "v4";
 const PRAZO_REDE_MS = 3000; // rede mais lenta que isso => cópia guardada
 
 const SHELL = [
   "./",
   "index.html",
+  "criterios.html",
+  "privacidade.html",
+  "termos.html",
+  "paginas.css",
   "regras.js",
   "rotulo.js",
   "categorias.js",
@@ -60,7 +64,7 @@ self.addEventListener("fetch", (ev) => {
   // Cache quebrado (caches.open recusa: cota, armazenamento bloqueado, Safari privado) => vai à rede direto,
   // em vez de o respondWith rejeitar e a página nem abrir.
   if (ESTATICO.test(url.pathname)) { ev.respondWith(cachePrimeiro(req).catch(() => fetch(req))); return; }
-  if (req.mode === "navigate" || /(\/|\.html|\.js|\.json|\.webmanifest)$/.test(url.pathname)) {
+  if (req.mode === "navigate" || /(\/|\.html|\.js|\.css|\.json|\.webmanifest)$/.test(url.pathname)) {
     ev.respondWith(redePrimeiro(ev, req, url).catch(() => fetch(req)));
   }
   // O resto do mesmo domínio passa direto, sem cache.

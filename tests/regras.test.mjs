@@ -300,7 +300,7 @@ test("bebê depois dos perfis: 'serve' só se o veredito final é comprar", () =
   assert.equal(ocr.veredito, "evitar");
   assert.equal(ocr.bebe.serve, false);
   // já reprovado pelo motor (sem perfil mexer): motivo de antes
-  assert.equal(analisarProduto(fx("nescau"), true, GL).bebe.motivo, "Tem coisa que é melhor evitar pra idade dele.");
+  assert.equal(analisarProduto(fx("nescau"), true, GL).bebe.motivo, "Tem item que não é indicado pra idade dele.");
   // sem bebê, sem chave
   assert.equal("bebe" in analisarProduto(trigo, false, GL), false);
 });
