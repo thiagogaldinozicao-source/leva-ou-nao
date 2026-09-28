@@ -142,7 +142,7 @@ describe("Leva ou não? no navegador", { concurrency: true }, () => {
 
   it("modo bebê: liga, persiste e decide (papinha serve, Nescau não)", T, async t => {
     const { page, fim } = await abre(t);
-    await page.click("label.row:has(#baby)");   // a linha inteira liga (alvo de toque), não só o trilho
+    await page.click("label:has(#baby)");   // a linha inteira liga (alvo de toque), não só o trilho
     assert.equal(await page.locator("#baby").isChecked(), true);
     await page.reload({ waitUntil: "load" });
     assert.equal(await page.locator("#baby").isChecked(), true, "modo bebê volta ligado");
@@ -270,7 +270,9 @@ describe("Leva ou não? no navegador", { concurrency: true }, () => {
       assert.ok(caixa.width >= 44 && caixa.height >= 44, `alvo do ⓘ ${caixa.width}x${caixa.height} < 44px`);
       const h1 = await page.locator("h1").boundingBox();
       assert.ok(caixa.x >= 0 && caixa.x + caixa.width <= 375 && caixa.y >= 0, "ⓘ dentro da tela");
-      assert.ok(caixa.y + caixa.height <= h1.y + 1, "ⓘ numa linha própria acima do título (não aperta o cabeçalho)");
+      assert.ok(caixa.x >= h1.x + h1.width, "ⓘ na mesma linha do título, à direita, sem encostar nele (cabeçalho enxuto)");
+      const go = await page.locator("#go").boundingBox();   // dono 09-28: "tem q ser enxuto pra caber bem"
+      assert.ok(go.y + go.height <= page.viewportSize().height, `Analisar fora da 1ª tela (${Math.round(go.y + go.height)} > ${page.viewportSize().height})`);
       const ativo = () => page.evaluate(() => document.activeElement && document.activeElement.id);
       const aberto = () => dlg.evaluate(d => d.open);
       assert.equal(await aberto(), false, "começa fechado");

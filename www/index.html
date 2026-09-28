@@ -68,18 +68,20 @@ html{background:var(--bg);scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"Barlow",system-ui,-apple-system,sans-serif;
   font-size:17px;line-height:1.45;-webkit-font-smoothing:antialiased;
   padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
-main{max-width:520px;margin:0 auto;padding:var(--s4) 20px 48px}
-/* Carimbo: título grande numa linha + traço de ouro; o ⓘ fica na linha de cima (não aperta o título no 320) */
-header{margin-bottom:var(--s5)}
-header::after{content:"";display:block;width:56px;height:4px;border-radius:2px;background:var(--gold);margin-top:var(--s4)}
-h1{font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:clamp(2.4rem,13.5vw,3.6rem);line-height:.9;letter-spacing:.04em;white-space:nowrap;color:var(--gold-t);margin:0}
-header p{margin:var(--s2) 0 0;color:var(--ink2);font-size:1.02rem}
+main{position:relative;max-width:520px;margin:0 auto;padding:var(--s3) var(--s4) 40px}
+/* Enxuto (dono 09-28 "tem q ser enxuto pra caber bem"): num iPhone (390×664 visível) a tela inicial inteira, do título ao
+   Analisar, cabe sem rolar. Título + ⓘ numa linha só, frase curta embaixo. */
+header{margin-bottom:var(--s3);padding-right:calc(var(--alvo) + var(--s2))}
+h1{font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:2.2rem;line-height:1;letter-spacing:.04em;white-space:nowrap;color:var(--gold-t);margin:0}
+header p{margin:2px 0 0;color:var(--muted);font-size:.9rem;line-height:1.3}
 .sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
-.tabs{display:grid;grid-template-columns:1fr 1fr;gap:var(--s1);background:var(--card2);padding:var(--s1);border-radius:var(--r-lg);box-shadow:inset 0 0 0 1px var(--line);margin-bottom:22px}
-.tabs button{font:inherit;font-size:1rem;font-weight:700;border:0;border-radius:var(--r-md);padding:12px;min-height:var(--alvo);background:transparent;color:var(--muted);cursor:pointer}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:var(--s1);background:var(--card2);padding:3px;border-radius:var(--r-md);box-shadow:inset 0 0 0 1px var(--line);margin-bottom:var(--s3)}
+.tabs button{font:inherit;font-size:.95rem;font-weight:700;border:0;border-radius:var(--r-sm);padding:6px;min-height:38px;background:transparent;color:var(--muted);cursor:pointer}
 .tabs button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}   /* aba ativa invertida: o ouro fica só pra ação */
-.slot{margin-bottom:22px}
-.slot h2{font-family:"Bebas Neue",sans-serif;font-weight:400;letter-spacing:.14em;font-size:1.05rem;color:var(--muted);margin:0 0 10px}
+.slot{margin-bottom:var(--s3)}
+.slot h2{font-family:"Bebas Neue",sans-serif;font-weight:400;letter-spacing:.14em;font-size:1rem;color:var(--muted);margin:0 0 6px}
+/* com 1 produto só, "Produto" não diz nada: some da tela (o leitor de tela ainda lê) */
+main:not(:has(#slotB:not(.hidden))) #slotATitle{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 input[type=file]{position:absolute;left:0;bottom:0;width:1px;height:1px;opacity:0;pointer-events:none}
 .row{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);margin:0 0 var(--s3);padding:14px var(--s4);background:var(--card);border-radius:var(--r-lg);border:1px solid var(--line);box-shadow:var(--sh);cursor:pointer}
 .row small{display:block;color:var(--muted);font-size:.85rem}
@@ -90,20 +92,20 @@ input[type=file]{position:absolute;left:0;bottom:0;width:1px;height:1px;opacity:
 .switch input:checked + i{background:var(--gold);box-shadow:inset 0 0 0 2px var(--gold-t)}
 .switch input:checked + i::after{transform:translateX(20px);top:4px;left:4px;width:24px;height:24px;background:var(--preto)}
 .switch input:focus-visible + i{outline:var(--foco);outline-offset:2px}
-.perfis{display:flex;flex-wrap:wrap;gap:var(--s2);margin:0 0 var(--s5)}
-.perfis label{position:relative;cursor:pointer}
+/* Bebê + perfis = 4 botões numa fileira (ícone em cima, nome embaixo): 1 linha em vez de 3 blocos */
+.perfis{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:0 0 var(--s3)}
+.perfis label{position:relative;cursor:pointer;min-width:0}
 .perfis input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
-.perfis label>span{display:flex;align-items:center;gap:6px;min-height:var(--alvo);padding:0 14px;border-radius:var(--r-full);background:var(--card);border:1px solid var(--edge);color:var(--muted);font-size:.9rem}
-.perfis i{font-style:normal}
-.perfis input:checked + span{background:var(--card2);background:color-mix(in srgb,var(--gold) 18%,var(--card));border-color:var(--gold-t);color:var(--gold-l)}
-.perfis input:checked + span::before{content:"✓";font-weight:700}
+.perfis label>span{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;height:100%;min-height:52px;padding:5px 2px;border-radius:var(--r-md);background:var(--card);border:1px solid var(--edge);color:var(--muted);font-size:.74rem;font-weight:600;line-height:1.1;text-align:center}
+.perfis i{font-style:normal;font-size:1.15rem;line-height:1.2}
+.perfis input:checked + span{background:var(--card2);background:color-mix(in srgb,var(--gold) 18%,var(--card));border-color:var(--gold-t);color:var(--gold-l);box-shadow:inset 0 0 0 1px var(--gold-t)}
 .perfis input:focus-visible + span{outline:var(--foco);outline-offset:2px}
-.go{width:100%;border:0;border-radius:var(--r-lg);padding:18px;font-family:"Bebas Neue",sans-serif;font-size:1.9rem;line-height:1;letter-spacing:.08em;background:var(--gold);color:var(--preto);cursor:pointer;
+.go{width:100%;border:0;border-radius:var(--r-lg);padding:14px;font-family:"Bebas Neue",sans-serif;font-size:1.7rem;line-height:1;letter-spacing:.08em;background:var(--gold);color:var(--preto);cursor:pointer;
   box-shadow:0 16px 34px -18px color-mix(in srgb,var(--ouro) 90%,transparent)}
 .go:disabled{background:var(--card2);color:var(--muted);box-shadow:inset 0 0 0 1px var(--line);cursor:default}   /* cinza legível, não ouro apagado */
 button:active:not(:disabled){transform:scale(.98)}
 button:focus-visible,summary:focus-visible,a:focus-visible,.alt input:focus-visible,.ler-ta:focus-visible,.alt label:focus-within,.ler-btn:focus-within{outline:var(--foco);outline-offset:2px}
-.status{margin:14px 0 0;color:var(--muted);text-align:center;min-height:1.4em}
+.status{margin:var(--s2) 0 0;color:var(--muted);text-align:center;min-height:1.4em}
 .status.warn{color:var(--stop);font-weight:600}
 /* Resultado: o veredito é uma FAIXA sólida no topo do cartão (carimbo), cor do veredito com texto preto (≥7:1 nas 3).
    O ✓/!/✕ é desenho (máscara SVG, content vazio): o leitor de tela lê só o texto do veredito. Cor por veredito num lugar só
@@ -114,27 +116,27 @@ button:focus-visible,summary:focus-visible,a:focus-visible,.alt input:focus-visi
   --gl:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cmask id='m'%3E%3Crect width='24' height='24' fill='%23fff'/%3E%3Cpath d='M12 6.2v7.4' stroke='%23000' stroke-width='3' stroke-linecap='round'/%3E%3Ccircle cx='12' cy='17.7' r='1.8'/%3E%3C/mask%3E%3Ccircle cx='12' cy='12' r='12' mask='url(%23m)'/%3E%3C/svg%3E")}
 .evitar{--v:var(--stop);--v-bg:var(--stop-bg);--v-solid:var(--vermelho);
   --gl:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cmask id='m'%3E%3Crect width='24' height='24' fill='%23fff'/%3E%3Cpath d='M8.3 8.3l7.4 7.4M15.7 8.3l-7.4 7.4' stroke='%23000' stroke-width='2.8' stroke-linecap='round'/%3E%3C/mask%3E%3Ccircle cx='12' cy='12' r='12' mask='url(%23m)'/%3E%3C/svg%3E")}
-.res{margin-top:var(--s5)}
-.card{--pad:20px;background:var(--card);border:1px solid var(--line);border-radius:var(--r-xl);padding:var(--pad);margin-bottom:var(--s3);box-shadow:var(--sh);overflow:hidden}
-.stamp,.winner>.crown{display:flex;align-items:center;justify-content:center;gap:12px;margin:calc(-1 * var(--pad)) calc(-1 * var(--pad)) var(--s5);padding:28px 18px 22px;
-  background:var(--v-solid);color:var(--preto);font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:clamp(2.4rem,12vw,3.4rem);line-height:.95;letter-spacing:.04em;text-align:left;
+.res{margin-top:var(--s3);scroll-margin-top:var(--s2)}
+.card{--pad:16px;background:var(--card);border:1px solid var(--line);border-radius:var(--r-xl);padding:var(--pad);margin-bottom:var(--s3);box-shadow:var(--sh);overflow:hidden}
+.stamp,.winner>.crown{display:flex;align-items:center;justify-content:center;gap:10px;margin:calc(-1 * var(--pad)) calc(-1 * var(--pad)) var(--s4);padding:18px 14px 14px;
+  background:var(--v-solid);color:var(--preto);font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:clamp(1.7rem,8.4vw,2.5rem);line-height:.95;letter-spacing:.04em;text-align:left;
   box-shadow:inset 0 0 0 .2em var(--v-solid),inset 0 0 0 calc(.2em + 2px) color-mix(in srgb,var(--preto) 30%,var(--v-solid))}
 .stamp::before{content:"";flex:none;width:.95em;height:.95em;margin-top:-.08em;background:var(--preto);-webkit-mask:var(--gl) center/contain no-repeat;mask:var(--gl) center/contain no-repeat}
-.pname{font-weight:700;font-size:1.4rem;line-height:1.2;margin:6px 0 8px}
-.summary{margin:0 0 var(--s3);color:var(--ink2);font-size:1.06rem}
-.talk{margin:0 0 14px;padding:12px 14px;border-left:3px solid var(--gold);background:var(--card2);border-radius:0 var(--r-md) var(--r-md) 0;color:var(--ink2);font-size:.95rem}
-.list{list-style:none;padding:0;margin:0 0 10px}
-.list li{padding:11px 0 11px 36px;position:relative;border-top:1px solid var(--line)}
-.list li::before{position:absolute;left:0;top:10px;display:grid;place-items:center;width:26px;height:26px;border-radius:50%;font-size:.8rem;font-weight:800}
+.pname{font-weight:700;font-size:1.2rem;line-height:1.2;margin:2px 0 4px}
+.summary{margin:0 0 var(--s3);color:var(--ink2);font-size:1rem;line-height:1.35}
+.talk{margin:0 0 var(--s3);padding:8px 12px;border-left:3px solid var(--gold);background:var(--card2);border-radius:0 var(--r-md) var(--r-md) 0;color:var(--ink2);font-size:.88rem;line-height:1.35}
+.list{list-style:none;padding:0;margin:0 0 var(--s2)}
+.list li{padding:7px 0 7px 30px;position:relative;border-top:1px solid var(--line);font-size:.95rem;line-height:1.35}
+.list li::before{position:absolute;left:0;top:7px;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;font-size:.72rem;font-weight:800}
 .good li::before{content:"✓";color:var(--go);background:var(--go-bg)}
 .bad li::before{content:"✕";color:var(--stop);background:var(--stop-bg)}
-.baby{margin-top:8px;padding:11px 13px;border-radius:var(--r-sm);font-weight:700}
+.baby{margin:0 0 var(--s2);padding:8px 12px;border-radius:var(--r-sm);font-weight:700;font-size:.95rem}
 .baby.ok{background:var(--go-bg);color:var(--go)}
 .baby.no{background:var(--stop-bg);color:var(--stop)}
 .baby.warn{background:var(--wait-bg);color:var(--wait)}
 .baby span{display:block;font-weight:400;color:var(--ink);margin-top:2px}
 .ing{margin-top:var(--s1);font-size:.9rem;color:var(--muted)}
-.ing summary,.how summary{cursor:pointer;font-weight:600;padding:var(--s3) 0}
+.ing summary,.how summary{cursor:pointer;font-weight:600;padding:10px 0}
 .ing summary{color:var(--ink)}
 .winner{--v-solid:var(--ouro);border:2px solid var(--gold)}   /* "Leva o A"/"Empate" = faixa de ouro */
 .vs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
@@ -143,11 +145,11 @@ button:focus-visible,summary:focus-visible,a:focus-visible,.alt input:focus-visi
 .vs .stamp{flex-direction:column;gap:6px;text-align:center;margin:var(--s2) calc(-1 * var(--pad)) var(--s3);padding:14px 8px 10px;font-size:1.4rem}
 .vs .pname{font-size:.98rem}
 .vs .summary{font-size:.92rem;margin:0}
-.again{width:100%;min-height:56px;border:2px solid var(--edge);border-radius:var(--r-lg);padding:14px;font:inherit;font-size:1.05rem;font-weight:700;background:transparent;color:var(--ink);cursor:pointer;margin-top:var(--s1)}
-.hist{margin-top:40px}
-.hist h2{font-family:"Bebas Neue",sans-serif;font-weight:400;letter-spacing:.08em;color:var(--gold-t);font-size:1.6rem;margin:0 0 var(--s3)}
-.hist ul{list-style:none;margin:0;padding:2px var(--s4);background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:var(--sh)}
-.hist li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 0;border-top:1px solid var(--line)}
+.again{width:100%;min-height:48px;border:2px solid var(--edge);border-radius:var(--r-lg);padding:10px;font:inherit;font-size:1rem;font-weight:700;background:transparent;color:var(--ink);cursor:pointer;margin-top:var(--s1)}
+.hist{margin-top:var(--s5)}
+.hist h2{font-family:"Bebas Neue",sans-serif;font-weight:400;letter-spacing:.08em;color:var(--gold-t);font-size:1.3rem;margin:0 0 var(--s2)}
+.hist ul{list-style:none;margin:0;padding:0 var(--s3);background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--sh)}
+.hist li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;min-height:var(--alvo);border-top:1px solid var(--line)}
 .hist li:first-child{border-top:0}
 /* mini-carimbo (histórico e trocas): mesma cor e mesmo ✓/!/✕ da faixa, em tamanho de etiqueta */
 .dot{flex:none;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:1.1rem;letter-spacing:.06em;line-height:1;
@@ -157,16 +159,16 @@ button:focus-visible,summary:focus-visible,a:focus-visible,.alt input:focus-visi
 .clear{background:none;border:0;color:var(--muted);font:inherit;font-size:.85rem;text-decoration:underline;cursor:pointer;min-height:var(--alvo);padding:0 var(--s2);margin:var(--s1) 0 0 calc(-1 * var(--s2))}
 .fine{margin-top:32px;font-size:.8rem;color:var(--muted);text-align:center}
 /* escanear = o bloco de ouro grande (a ação da tela); no Comparar 2 são dois, então encolhem */
-.scanbtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;width:100%;min-height:184px;padding:var(--s4);border:0;border-radius:var(--r-xl);background:var(--gold);color:var(--preto);
-  font-family:"Bebas Neue",sans-serif;font-size:2.1rem;line-height:1.05;letter-spacing:.05em;cursor:pointer;
-  box-shadow:inset 0 1px 0 color-mix(in srgb,var(--branco) 35%,transparent),0 22px 44px -22px color-mix(in srgb,var(--ouro) 85%,transparent)}
-.scanbtn svg{width:64px;height:64px;stroke-width:1.6}
-main:has(#slotB:not(.hidden)) [data-pick] .scanbtn{min-height:120px;font-size:1.7rem}
-main:has(#slotB:not(.hidden)) [data-pick] .scanbtn svg{width:44px;height:44px}
-.alt{display:flex;gap:var(--s2);margin-top:var(--s3)}
-.alt input{flex:1;min-width:0;min-height:52px;padding:12px 14px;border-radius:var(--r-md);border:1px solid var(--edge);background:var(--campo);color:var(--ink);font:inherit;font-size:16px;letter-spacing:.04em}
+.scanbtn{display:flex;align-items:center;justify-content:center;gap:14px;width:100%;min-height:96px;padding:var(--s3) var(--s4);border:0;border-radius:var(--r-xl);background:var(--gold);color:var(--preto);
+  font-family:"Bebas Neue",sans-serif;font-size:1.75rem;line-height:1.05;letter-spacing:.05em;text-align:left;cursor:pointer;
+  box-shadow:inset 0 1px 0 color-mix(in srgb,var(--branco) 35%,transparent),0 18px 36px -22px color-mix(in srgb,var(--ouro) 85%,transparent)}
+.scanbtn svg{flex:none;width:44px;height:44px;stroke-width:1.8}
+main:has(#slotB:not(.hidden)) [data-pick] .scanbtn{min-height:64px;font-size:1.4rem}
+main:has(#slotB:not(.hidden)) [data-pick] .scanbtn svg{width:32px;height:32px}
+.alt{display:flex;gap:var(--s2);margin-top:var(--s2)}
+.alt input{flex:1;min-width:0;min-height:var(--alvo);padding:8px 14px;border-radius:var(--r-md);border:1px solid var(--edge);background:var(--campo);color:var(--ink);font:inherit;font-size:16px;letter-spacing:.04em}
 input::placeholder,textarea::placeholder{color:var(--muted);opacity:1}
-.alt label,.alt button{position:relative;flex:none;display:flex;align-items:center;justify-content:center;min-width:52px;min-height:52px;padding:0 var(--s4);border-radius:var(--r-md);border:1px solid var(--edge);background:var(--card2);color:var(--ink);font:inherit;font-weight:700;cursor:pointer}
+.alt label,.alt button{position:relative;flex:none;display:flex;align-items:center;justify-content:center;min-width:48px;min-height:var(--alvo);padding:0 var(--s3);border-radius:var(--r-md);border:1px solid var(--edge);background:var(--card2);color:var(--ink);font:inherit;font-weight:700;cursor:pointer}
 .found{display:flex;gap:var(--s2);align-items:center;padding:12px;border-radius:var(--r-lg);background:var(--card);border:1px solid var(--line);box-shadow:var(--sh);margin-bottom:10px}
 .found img{width:58px;height:58px;object-fit:contain;border-radius:var(--r-sm);background:var(--branco);flex:none}
 .found .nm{font-weight:700;line-height:1.2}
@@ -181,7 +183,7 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:1}
 #scanner .bar{position:absolute;left:0;right:0;bottom:0;padding:36px max(16px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:10px;align-items:center;background:linear-gradient(to top,rgba(0,0,0,.85) 60%,rgba(0,0,0,0))}
 #scanner .bar p{margin:0;color:var(--branco);text-align:center;max-width:420px}
 #scanner .bar button{width:100%;max-width:420px;min-height:var(--alvo);padding:15px;border-radius:var(--r-md);border:1px solid rgba(255,255,255,.5);background:var(--preto);color:var(--branco);font:inherit;font-weight:700}
-.prodimg{float:right;width:88px;height:88px;object-fit:contain;background:var(--branco);border-radius:var(--r-lg);box-shadow:0 0 0 1px var(--line);margin:0 0 8px 12px}
+.prodimg{float:right;width:60px;height:60px;object-fit:contain;background:var(--branco);border-radius:var(--r-md);box-shadow:0 0 0 1px var(--line);margin:0 0 6px 10px}
 .src{font-size:.8rem;color:var(--muted);margin-top:10px}
 .src a{color:var(--gold-l)}
 .cat{margin-right:.3em} .info li{padding-left:0} .info small{display:block;color:var(--muted);font-size:.8rem}
@@ -192,7 +194,7 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:1}
 .how{margin:6px 0 0;font-size:.88rem;color:var(--muted)}
 .how summary{color:var(--gold-l)}
 .how p{margin:6px 0 0}
-.trocab{display:flex;align-items:center;justify-content:center;width:100%;min-height:50px;margin:0 0 var(--s4);padding:8px 14px;border:2px solid var(--gold-t);border-radius:var(--r-md);background:transparent;color:var(--gold-l);font:inherit;font-weight:700;cursor:pointer}
+.trocab{display:flex;align-items:center;justify-content:center;width:100%;min-height:var(--alvo);margin:0 0 var(--s3);padding:8px 14px;border:2px solid var(--gold-t);border-radius:var(--r-md);background:transparent;color:var(--gold-l);font:inherit;font-weight:700;cursor:pointer}
 .trocab:disabled{opacity:.6}
 .troca p{margin:0 0 10px;color:var(--muted)}
 .trocal{display:flex;justify-content:space-between;gap:10px;width:100%;min-height:48px;align-items:center;padding:10px 0;border:0;border-top:1px solid var(--line);background:transparent;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
@@ -204,7 +206,7 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:1}
 @media (prefers-reduced-motion:no-preference){.res .card{animation:sobe .28s var(--ease)}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}button:active:not(:disabled){transform:none}}
 /* ---------- sobre ---------- */
-.sobre-btn{display:flex;margin:-10px -10px 0 auto;align-items:center;justify-content:center;min-width:var(--alvo);min-height:var(--alvo);padding:0;border:0;border-radius:var(--r-full);background:none;color:var(--muted);cursor:pointer}
+.sobre-btn{position:absolute;top:calc(var(--s3) - 4px);right:calc(var(--s4) - 10px);display:flex;align-items:center;justify-content:center;min-width:var(--alvo);min-height:var(--alvo);padding:0;border:0;border-radius:var(--r-full);background:none;color:var(--muted);cursor:pointer}
 .sobre-btn svg{width:24px;height:24px}
 .sobre-btn:hover{color:var(--gold-t)}
 dialog.sobre{width:min(calc(100% - 2 * var(--s4)),480px);max-height:calc(100vh - 2 * var(--s4));max-height:calc(100dvh - 2 * var(--s4));padding:0;border:1px solid var(--edge);border-radius:var(--r-xl);background:var(--card);color:var(--ink);overflow:auto}
@@ -226,7 +228,7 @@ dialog.sobre:not([open]){display:none}
   <button type="button" class="sobre-btn" id="sobreBtn" aria-label="Sobre o app" aria-haspopup="dialog" title="Sobre"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><circle cx="12" cy="7.8" r=".6" fill="currentColor"/></svg></button>
   <header>
     <h1>Leva ou não?</h1>
-    <p>Escaneia o código de barras e vê na hora se vale levar.</p>
+    <p>Escaneia e vê na hora se vale levar.</p>
   </header>
 
   <div class="tabs" role="group" aria-label="Quantos produtos">
@@ -240,7 +242,7 @@ dialog.sobre:not([open]){display:none}
     <div data-pick="A">
       <button class="scanbtn" data-scan="A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 8v8M10 8v8M13.5 8v8M17 8v8"/></svg>Escanear código de barras</button>
       <div class="alt">
-        <input data-code="A" inputmode="numeric" pattern="[0-9]*" maxlength="14" placeholder="ou digita o número" aria-label="Número do código de barras">
+        <input data-code="A" inputmode="numeric" pattern="[0-9]*" maxlength="14" placeholder="digita o número" aria-label="Número do código de barras">
         <button data-ok="A">OK</button>
         <label title="Foto do código de barras"><span aria-hidden="true">📷</span><input type="file" accept="image/*" capture="environment" data-photo="A" aria-label="Foto do código de barras"></label>
       </div>
@@ -253,21 +255,19 @@ dialog.sobre:not([open]){display:none}
     <div data-pick="B">
       <button class="scanbtn" data-scan="B"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 8v8M10 8v8M13.5 8v8M17 8v8"/></svg>Escanear código de barras</button>
       <div class="alt">
-        <input data-code="B" inputmode="numeric" pattern="[0-9]*" maxlength="14" placeholder="ou digita o número" aria-label="Número do código de barras">
+        <input data-code="B" inputmode="numeric" pattern="[0-9]*" maxlength="14" placeholder="digita o número" aria-label="Número do código de barras">
         <button data-ok="B">OK</button>
         <label title="Foto do código de barras"><span aria-hidden="true">📷</span><input type="file" accept="image/*" capture="environment" data-photo="B" aria-label="Foto do código de barras"></label>
       </div>
     </div>
   </section>
 
-  <label class="row">
-    <span>Modo bebê<small id="babyDica">Liga quando for algo só pra ele: fica mais rigoroso</small></span>
-    <span class="switch"><input type="checkbox" role="switch" id="baby" aria-label="Modo bebê" aria-describedby="babyDica"><i aria-hidden="true"></i></span>
-  </label>
-  <div class="perfis" role="group" aria-label="Meu perfil">
+  <div class="perfis" role="group" aria-label="Pra quem é">
+    <label title="Liga quando for algo só pro bebê: fica mais rigoroso"><input type="checkbox" role="switch" id="baby" aria-label="Modo bebê" aria-describedby="babyDica"><span><i aria-hidden="true">👶</i>Bebê</span></label>
     <label><input type="checkbox" data-perfil="gluten"><span><i aria-hidden="true">🌾</i>Sem glúten</span></label>
     <label><input type="checkbox" data-perfil="lactose"><span><i aria-hidden="true">🥛</i>Sem lactose</span></label>
     <label><input type="checkbox" data-perfil="acucar"><span><i aria-hidden="true">🍬</i>Pouco açúcar</span></label>
+    <small id="babyDica" class="sr">Liga quando for algo só pro bebê: fica mais rigoroso</small>
   </div>
 
   <button class="go" id="go" disabled>Analisar</button>
@@ -698,12 +698,14 @@ function cartao(r, p){
     (Array.isArray(r.perfis) ? r.perfis : []).forEach(p => { const s = SELO_PERFIL[p.id]; if (s) c.append(seloPerfil(s[0] + " " + s[{ ok: 1, atencao: 2, nao: 3 }[p.estado] || 2], p.estado, p.motivo)); });
     const lupa = (Array.isArray(r.lupa) ? r.lupa : []).map(k => LUPA_TXT[k]).filter(Boolean);
     if (lupa.length) c.append(seloPerfil("🔍 ALTO EM " + lupa.join(" · "), "atencao"));
-    if (r.comentario) c.append(el("p","talk","💬 " + r.comentario));
-    [list(r.pontos_bons,"good"), list(r.pontos_ruins,"bad")].forEach(x => x && c.append(x));
     if (r.bebe && typeof r.bebe === "object"){
       const b = el("div","baby " + (r.bebe.serve ? "ok" : "no"), r.bebe.serve ? "👶 Serve pro bebê" : "👶 Não indicado pro bebê");
       if (r.bebe.motivo) b.append(el("span",null,r.bebe.motivo)); c.append(b);
     }
+    // o motivo que sustenta o veredito vem primeiro (✕ no "Deixa"/"Moderação", ✓ no "Pode levar"); a explicação 💬 depois
+    const bons = list(r.pontos_bons,"good"), ruins = list(r.pontos_ruins,"bad");
+    (v === "comprar" ? [bons, ruins] : [ruins, bons]).forEach(x => x && c.append(x));
+    if (r.comentario) c.append(el("p","talk","💬 " + r.comentario));
     if (r.ingredientes){ const d = el("details","ing"); d.append(el("summary",null,"Ingredientes lidos"), el("p",null,r.ingredientes)); c.append(d); }
     saveHist(histNome(cat, r, r.produto || "Produto"), v);
   }

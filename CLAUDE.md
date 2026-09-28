@@ -19,10 +19,10 @@ Produto sem cadastro → ler ingredientes do rótulo (Android: ML Kit no aparelh
 
 ## Mapa
 - `www/index.html` — casca do app (HTML + CSS + JS de tela; motor e regras foram pra arquivos próprios). `www/lib/` = ZXing wasm (não editar).
-  Faixas (em 2026-09-28, depois do redesign "Carimbo"; mudou? `grep -n '/\* ----------'` antes): tema escuro fixo no app nativo 23 ·
-  CSS 25-222 (tokens claro/escuro 34-65; veredito = faixa/mini-carimbo com glifo em máscara SVG ~108-156; bloco `sobre` 206-221) · HTML 224-303 (`<dialog id="sobre">` 293-303) · JS 309-865: busca própria/bases abertas 325-393 ·
+  Faixas (em 2026-09-28, depois do layout enxuto; mudou? `grep -n '/\* ----------'` antes): tema escuro fixo no app nativo 23 ·
+  CSS 25-223 (tokens claro/escuro 34-65; veredito = faixa/mini-carimbo com glifo em máscara SVG ~108-158; bloco `sobre` 208-223) · HTML 226-303 (`<dialog id="sobre">` 293-303) · JS 309-867: busca própria/bases abertas 325-393 ·
   baseLocal + renderSlot 394-439 · OCR/rótulo (painel + ML Kit/iOS) 440-541 · scanner ZXing/BarcodeDetector 542-646 ·
-  tela de resultado (usa `Regras`/`Categorias`/`Troca`) 647-824 · histórico 825-856 · ⓘ Sobre 857-864.
+  tela de resultado (usa `Regras`/`Categorias`/`Troca`) 647-827 · histórico 828-858 · ⓘ Sobre 859-866.
 - `www/regras.js` — motor de regras de ALIMENTO (NOVA, açúcar, adoçante, corante, conservante) → `globalThis.Regras`.
 - `www/categorias.js` — veredito de cosmético/pet/limpeza e informação (sem veredito) de remédio → `globalThis.Categorias`.
 - `www/troca.js` — "🔁 Tem melhor?": categoria do produto (OFF) → URL da busca no OFF (Brasil, mais escaneados) → até 3 trocas com "Pode levar" → `globalThis.Troca`; puro, o fetch e o botão ficam no `index.html` (`trocaBox`).
