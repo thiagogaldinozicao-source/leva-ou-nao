@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <!-- CSP: lista do que a página pode carregar. Mesma política em _headers (lá com frame-ancestors, que meta ignora).
-     script-src 'unsafe-inline': sai quando o JS inline for pra arquivo. 'wasm-unsafe-eval': ZXing (lib/).
+     script-src 'unsafe-inline': sai quando o JS inline for pra arquivo. 'wasm-unsafe-eval': ZXing (lib/); 'unsafe-eval': iPhone com iOS < 16 não conhece o 'wasm-unsafe-eval' e bloquearia o leitor (sai junto com o 'unsafe-inline').
      https://*.workers.dev: API futura — trocar pelo domínio real quando existir. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://images.openfoodfacts.org https://static.openfoodfacts.org https://images.openbeautyfacts.org https://images.openpetfoodfacts.org https://images.openproductsfacts.org; connect-src 'self' https://world.openfoodfacts.org https://world.openbeautyfacts.org https://world.openpetfoodfacts.org https://world.openproductsfacts.org https://*.workers.dev; media-src 'self' blob:; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://images.openfoodfacts.org https://static.openfoodfacts.org https://images.openbeautyfacts.org https://images.openpetfoodfacts.org https://images.openproductsfacts.org; connect-src 'self' https://world.openfoodfacts.org https://world.openbeautyfacts.org https://world.openpetfoodfacts.org https://world.openproductsfacts.org https://*.workers.dev; media-src 'self' blob:; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#000000">
