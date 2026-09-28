@@ -28,7 +28,8 @@ Produto sem cadastro → ler ingredientes do rótulo (Android: ML Kit no aparelh
 - `www/sw.js` — service worker do site: cache-first em `lib/fonts/icons`, rede-primeiro no shell; nunca intercepta Open Food Facts/irmãs nem a API.
 - `www/offline.js` — registra o `sw.js` (só no site, não no app empacotado).
 - `www/_headers` — headers pra host que aplica o arquivo (Cloudflare Pages/Netlify); o GitHub Pages IGNORA: lá só vale a CSP da `<meta>` do `index.html`.
-- `tests/` — `node --test` puro: `regras.test.mjs` roda `www/regras.js` como script clássico via `vm`; `fixtures/` = produtos reais (JSON) pros casos.
+- `tests/` — `node --test` puro: `regras.test.mjs` roda `www/regras.js` como script clássico via `vm`; `categorias.test.mjs` idem pra `www/categorias.js`; `fixtures/` = produtos reais (JSON) pros casos.
+- `scripts/vm-run.sh` (+ `vm-run.conf`) — TESTE NUNCA LOCAL: roda na VM tibiatest. `vm-run.sh test|check|api|android|quick` (segundos, exceto android ~3 min). `api` = `api/scripts/fumaca-local.mjs` (wrangler dev local + as 3 rotas).
 - `android/` — Capacitor 8 (id `br.com.zicao.levaounao`). `capacitor.config.json`.
 - `.github/workflows/site.yml` — `www/` → GitHub Pages a cada push na main.
 - `.github/workflows/android.yml` — APK → Releases quando muda `www/`, `android/` ou deps.
