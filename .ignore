@@ -1,0 +1,16 @@
+# busca (rg/grep do Claude) pula peso morto: binário, minificado, gerado
+node_modules/
+package-lock.json
+www/lib/
+www/fonts/
+www/icons/
+assets/
+android/app/src/main/res/
+android/gradle/wrapper/
+android/.gradle/
+android/build/
+android/app/build/
+*.keystore
+*.png
+*.woff2
+*.wasm
