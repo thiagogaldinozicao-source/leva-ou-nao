@@ -211,19 +211,69 @@ baby.checked = store("baby2") ?? false;
 baby.onchange = () => store("baby2", baby.checked);
 function el(tag, cls, text){ const e = document.createElement(tag); if(cls) e.className = cls; if(text!=null) e.textContent = text; return e; }
 
-/* ---------- busca na base aberta ---------- */
+/* ---------- busca: API própria (se houver) ou direto nas bases abertas ----------
+   API_URL = endereço da API do Leva ou não, sem barra no fim (ex.: "https://api.levaounao.com.br").
+   Vazio = sem API = o app faz exatamente o que fazia antes: busca direto nas bases abertas e guarda no aparelho. */
+const API_URL = "";
+const PRAZO_API = 5000, PRAZO_BASE = 8000;   // rede travada no mercado não pode deixar o "Buscando…" pra sempre
+// Família Open Food Facts, nesta ordem (o 1º que achar ganha): [site, _categoria, _fonte] — mesmos valores da API.
+const BASES = [
+  ["world.openfoodfacts.org", "alimento", "off"],
+  ["world.openbeautyfacts.org", "cosmetico", "obf"],
+  ["world.openpetfoodfacts.org", "pet", "opff"],
+  ["world.openproductsfacts.org", "limpeza", "opf"],
+];
 const FIELDS = "product_name,product_name_pt,generic_name_pt,brands,quantity,image_front_small_url,ingredients_text_pt,ingredients_text,additives_tags,nova_group,nutriscore_grade,nutriments,categories_tags";
 const cache = new Map();
-async function buscar(code){
-  if (cache.has(code)) return cache.get(code);
-  const p = (async () => {
+// Corta a chamada (cabeçalho E corpo) depois de `ms`.
+async function comPrazo(ms, fn){
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), ms);
+  try { return await fn(ctl.signal); } finally { clearTimeout(t); }
+}
+function buscarNaBase([site, categoria, fonte], code){
+  return comPrazo(PRAZO_BASE, async signal => {
     let res;
-    try { res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json?fields=${FIELDS}`); }
+    try { res = await fetch(`https://${site}/api/v2/product/${code}.json?fields=${FIELDS}`, { signal }); }
     catch (e) { throw new Error("net"); }
     if (res.status === 404) return null;
     if (!res.ok) throw new Error("http");
     const j = await res.json();
-    return j && j.status === 1 && j.product ? j.product : null;
+    return j && j.status === 1 && j.product ? { ...j.product, _categoria: categoria, _fonte: fonte } : null;
+  });
+}
+async function buscarDireto(code){
+  const off = await buscarNaBase(BASES[0], code);   // falhou a rede aqui = sem internet: lança, como sempre
+  if (off) return off;
+  // Não é comida? Pergunta às bases irmãs juntas. Erro numa delas conta como "não achou" (abre a leitura do rótulo).
+  const irmas = await Promise.all(BASES.slice(1).map(b => buscarNaBase(b, code).catch(() => null)));
+  return irmas.find(Boolean) || null;
+}
+// null = a API respondeu "sem_cadastro"; lança = API fora do ar/resposta estranha (aí vai direto nas bases).
+function buscarNaApi(code){
+  return comPrazo(PRAZO_API, async signal => {
+    const res = await fetch(`${API_URL}/v1/produto/${code}`, { signal });
+    const j = res.ok ? await res.json() : null;
+    if (j && j.status === "ok" && j.produto) return j.produto;
+    if (j && j.status === "sem_cadastro") return null;
+    throw new Error("api");
+  });
+}
+// Fire-and-forget. Corpo vai como texto (sem preflight de CORS): o servidor lê o JSON sem olhar o Content-Type.
+function metrica(corpo){
+  if (!API_URL) return;
+  const url = `${API_URL}/v1/metrica`, txt = JSON.stringify(corpo);
+  try { if (navigator.sendBeacon && navigator.sendBeacon(url, txt)) return; } catch (e) {}
+  fetch(url, { method: "POST", body: txt, keepalive: true }).catch(() => {});
+}
+async function buscar(code){
+  if (cache.has(code)) return cache.get(code);
+  const p = (async () => {
+    const t0 = Date.now();
+    let d;
+    if (API_URL) d = await buscarNaApi(code).catch(() => undefined);   // API fora do ar => caminho direto
+    if (d === undefined) d = await buscarDireto(code);
+    metrica({ evento: "busca", achou: !!d, ms: Date.now() - t0 });
+    return d;
   })();
   cache.set(code, p);
   p.catch(() => cache.delete(code));
@@ -231,9 +281,9 @@ async function buscar(code){
 }
 const nomeProd = d => { const n = d.product_name_pt || d.product_name || d.generic_name_pt || "Produto", m = d.brands && d.brands.split(",")[0].trim(); return m && !nrm(n).includes(nrm(m)) ? n + " · " + m : n; };
 
-/* ---------- base própria (hoje no aparelho; no app de verdade vira servidor) ----------
-   Guarda os ingredientes lidos do rótulo por código de barras. Trocar get/set por uma API
-   (ex.: Supabase) quando virar produto: o resto do app não muda. */
+/* ---------- base própria no aparelho (cache/offline) ----------
+   Guarda os ingredientes lidos do rótulo por código de barras. Com API_URL a leitura também vai pro
+   servidor (usarIngredientes → /v1/rotulo-texto) e quem escanear o mesmo código já recebe pronto. */
 const baseLocal = {
   get(code){ const b = store("base") || {}; return b[code] || null; },
   set(code, dados){ const b = store("base") || {}; b[code] = { ...dados, salvoEm: Date.now() }; store("base", b); }
@@ -280,6 +330,7 @@ function renderSlot(k){
 const CAPX = window.Capacitor, NATIVO = !!(CAPX && CAPX.isNativePlatform && CAPX.isNativePlatform());
 let mlkit = null;
 if (NATIVO){ try { mlkit = (CAPX.Plugins && CAPX.Plugins.CapacitorPluginMlKitTextRecognition) || CAPX.registerPlugin("CapacitorPluginMlKitTextRecognition"); } catch (e) { mlkit = null; } }
+const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
 function painelLeitura(k, p){
   const w = el("div","ler");
@@ -293,8 +344,11 @@ function painelLeitura(k, p){
   } else {
     const ta = el("textarea","ler-ta"); ta.rows = 4; ta.placeholder = "Toque aqui → Escanear Texto → aponte pros ingredientes → Inserir";
     ta.setAttribute("aria-label","Ingredientes do rótulo");
+    // De onde veio o texto (vai pro servidor): o "Escanear Texto" do iPhone entra de uma vez; digitando, letra a letra.
+    let antes = 0, emBloco = false;
+    ta.oninput = () => { if (ta.value.length - antes >= 20) emBloco = true; antes = ta.value.length; };
     const ok = el("button","scanbtn ler-btn","Usar esses ingredientes");
-    ok.onclick = () => usarIngredientes(k, ta.value);
+    ok.onclick = async () => { ok.disabled = true; await usarIngredientes(k, ta.value, IOS && emBloco ? "ios" : "digitado"); ok.disabled = false; };
     const dica = el("details","how"); dica.append(el("summary",null,"Não aparece o Escanear Texto?"),
       el("p",null,"Toque no campo e depois toque de novo (ou segure) pra abrir o menu com \"Escanear Texto\". Precisa de iPhone XS ou mais novo. Também dá pra digitar ou colar os ingredientes."));
     w.append(ta, dica, ok);
@@ -323,7 +377,7 @@ async function lerFotoNativo(k, file){
       const txt = await ocrNativo(file);
       statusEl.textContent = "";
       if (txt.trim().length < 15){ statusEl.className = "status warn"; statusEl.textContent = "Não consegui ler. Tira mais de perto, reto e sem reflexo."; return; }
-      usarIngredientes(k, txt); return;
+      return usarIngredientes(k, txt, "mlkit");   // sem await: erro dali não pode cair no "preparando o leitor"
     }catch(e){
       // 1ª vez: o Android ainda está baixando o leitor do Google
       statusEl.textContent = "Preparando o leitor (só na primeira vez)…";
@@ -332,13 +386,32 @@ async function lerFotoNativo(k, file){
   }
   statusEl.className = "status warn"; statusEl.textContent = "O leitor ainda não ficou pronto. Confere a internet e tenta de novo em 1 minuto.";
 }
-function usarIngredientes(k, texto){
+// Manda o texto lido pro servidor (ele organiza e guarda por código). Falhou/sem API = null, sem erro na tela.
+async function enviarRotulo(ean, texto, fonte){
+  const enc = new TextEncoder();
+  texto = texto.slice(0, 8000); while (enc.encode(texto).length > 8000) texto = texto.slice(0, -200);   // teto de 8 KB da API
+  try {
+    return await comPrazo(PRAZO_API, async signal => {
+      const res = await fetch(`${API_URL}/v1/rotulo-texto`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ean, texto, fonte }), signal });
+      const j = res.ok ? await res.json() : null;
+      return j && j.status === "ok" && j.produto ? j.produto : null;
+    });
+  } catch (e) { return null; }
+}
+const semVazios = o => Object.fromEntries(Object.entries(o).filter(([, v]) => v != null && v !== ""));
+async function usarIngredientes(k, texto, fonte){
   texto = String(texto || "").trim();
   if (texto.length < 10){ statusEl.className = "status warn"; statusEl.textContent = "Faltam os ingredientes. Escaneia ou digita."; return; }
   const p = prod[k]; if (!p) return;
   const base = p.status === "ok" && p.data ? p.data : { product_name: "Produto " + p.code };
-  const dados = { ...base, ingredients_text_pt: texto, _lido: true };
-  baseLocal.set(p.code, { product_name: dados.product_name, product_name_pt: dados.product_name_pt, brands: dados.brands, quantity: dados.quantity, image_front_small_url: dados.image_front_small_url, ingredients_text_pt: texto, _lido: true });
+  let dados = { ...base, ingredients_text_pt: texto, _lido: true };
+  if (API_URL){
+    statusEl.className = "status"; statusEl.textContent = "Lendo os ingredientes…";
+    const srv = await enviarRotulo(p.code, texto, fonte);
+    if (prod[k] !== p){ if (statusEl.textContent === "Lendo os ingredientes…") statusEl.textContent = ""; return; }   // trocou de produto enquanto esperava
+    if (srv) dados = { ...dados, ...semVazios(srv), ingredients_text_pt: srv.ingredients_text_pt || texto, _lido: true };
+  }
+  baseLocal.set(p.code, { product_name: dados.product_name, product_name_pt: dados.product_name_pt, brands: dados.brands, quantity: dados.quantity, image_front_small_url: dados.image_front_small_url, ingredients_text_pt: dados.ingredients_text_pt, _lido: true });
   prod[k] = { code: p.code, status: "ok", data: dados };
   statusEl.className = "status"; statusEl.textContent = "";
   renderSlot(k); render();
