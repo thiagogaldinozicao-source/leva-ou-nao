@@ -29,7 +29,7 @@ Aprendizado corrigido: o iPhone **deixa** a página mandar a foto. O que não po
 
 Onde roda: **Cloudflare Workers + D1** (banco SQLite deles). É grátis até 100 mil chamadas/dia e fica sempre ligado. O Supabase grátis "dorme" depois de 1 semana parado e demora pra acordar, por isso ficou de fora.
 
-- [ ] `[Thiago]` Conta Cloudflare (grátis) e uma chave do **Google AI Studio com cobrança ligada**. No plano grátis o Google pode usar as fotos pra treinar a IA. No pago, não. O gasto fica em centavos, dá pra configurar alerta de gasto no Google, e o teto de verdade quem aplica é a nossa API (ver "teto diário" abaixo).
+- [ ] `[Thiago]` Conta Cloudflare (grátis) e uma chave do **Google AI Studio**. Enquanto só você e os amigos usam, fica na **camada grátis** (R$ 0, até ~500 fotos/dia). **Antes de abrir pro público**, liga a cobrança: no grátis o Google pode guardar as fotos e usar pra treinar a IA, o que quebra a promessa "nenhuma foto é salva". No pago isso não acontece e o gasto fica em centavos. O teto de gasto quem aplica é a nossa API (ver "teto diário" abaixo).
 - [ ] `GET /v1/produto/{código}` — procura na base própria → Open Food Facts (o servidor manda o *User-Agent* que eles pedem) → responde `sem_cadastro`. Com cache, o 2º usuário recebe na hora.
 - [ ] `POST /v1/rotulo` — recebe a foto, manda pro **Gemini Flash-Lite**, que devolve JSON pronto (ingredientes, alérgenos, tabela nutricional, lupa "ALTO EM"), grava **por código de barras** e responde o veredito. **A foto não é guardada**: é lida na memória e descartada. Fica só o texto.
 - [ ] `POST /v1/rotulo-texto` — o Android manda o texto que o ML Kit leu e o servidor organiza (texto é ainda mais barato que foto).
