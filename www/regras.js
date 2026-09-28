@@ -26,7 +26,71 @@ const TIPOS = [
   [/barra|castanha|tamara/, "Barrinha"], [/azeite/, "Azeite"], [/cereal|aveia/, "Cereal"], [/salsicha|presunto|mortadela|linguica/, "Embutido"],
   [/cafe/, "Café"], [/leite/, "Leite/derivado"], [/pao/, "Pão"], [/macarrao|massa/, "Massa"], [/molho/, "Molho"]
 ];
-function avaliar(raw, isBaby, limpo){
+
+/* Perfis alimentares (🌾 sem glúten · 🥛 sem lactose · 🍬 pouco açúcar): só alimento, só os ligados.
+   Nenhum ligado = resultado idêntico ao de antes (nem a chave `perfis` aparece).
+   Glúten NUNCA dá "ok" por falta de dado (falso "sem glúten" machuca celíaco): "ok" só com selo ou
+   "não contém glúten" escrito (Lei 10.674/2003); na dúvida, "atencao".
+   Lactose (RDC 136/2017 "CONTÉM LACTOSE"): traço de leite não conta, intolerância é por dose.
+   Pouco açúcar: adoçante não penaliza; o motor não sabe o que é líquido, então vale a régua do sólido. */
+const PERFIS = ["gluten", "lactose", "acucar"];
+const NEG = "(?:nao cont[e3]m|sem|zero|isent[oa] de|livre de|sin) ?(?:de )?";
+const TRACOS = /(?<![a-z])(?:podem? conter|tracos? de)(?:(?!(?<![a-z])(?:nao )?cont[e3]m(?![a-z])|alergic)[^.;]){0,160}/g;
+const GL_NEG = new RegExp("(?<![a-z])" + NEG + "glute[nm](?![a-z])|glute[nm][ -]free", "g");
+const GL_SIM = /(?<![a-z])cont[e3]m ?glute[nm](?![a-z])/;
+const GL_GRAO = /(?<![a-z])(trigo(?![ -]sarraceno)|centeio|cevada|malte|aveia|espelta|semolina(?! de (?:milho|arroz))|glute[nm]|centeno|cebada|avena|wheat|barley|rye|oats?|malt|spelt)(?![a-z])/;
+const LC_NEG = new RegExp("(?<![a-z])(?:" + NEG + "|0 ?% ?(?:de )?)lactose(?![a-z])|lactose[ -]free", "g");
+const LC_SIM = /(?<![a-z])cont[e3]m ?lactose(?![a-z])/;
+const LEITE_NEG = /(?<![a-z])(?:nao cont[e3]m|sem|isent[oa] de|livre de) (?:leite|derivados de leite|lacteos)(?![a-z])/g;
+const LACTEO = /(?<![a-z])(soro de leite|creme de leite|leites?(?![ -]de[ -](?:coco|amendoas?|soja|aveia|arroz|castanhas?|caju|amendoim))(?! vegeta)|lactose|manteiga(?! de (?:cacau|amendoim|karite|castanhas?))|queijos?|requeijao|iogurtes?|leitelho|whey|composto lacteo|solidos (?:lacteos|de leite)|nata)(?![a-z])/;
+const ACU_ADD = /(a[cg]ucar|azucar|xarope|jarabe|sacarose|glicose|glucosa|frutose|fructosa|maltodextrina|dextrose|melado|melaco|rapadura|(?<![a-z])mel(?![a-z]))/;
+const NOME_ING = { gluten: "glúten", glutem: "glúten", centeno: "centeio", cebada: "cevada", avena: "aveia", wheat: "trigo", barley: "cevada", rye: "centeio", oat: "aveia", oats: "aveia",
+  malt: "malte", spelt: "espelta", leites: "leite", queijos: "queijo", iogurtes: "iogurte", requeijao: "requeijão", "composto lacteo": "composto lácteo", "solidos lacteos": "sólidos lácteos", "solidos de leite": "sólidos de leite" };
+const estadoPerfil = (estado, motivo) => ({ estado, motivo });
+function perfilGluten(c){
+  const lim = c.sem.replace(GL_NEG, " ");
+  if (c.dito.gluten === true || GL_SIM.test(lim)) return estadoPerfil("nao", "O rótulo diz: contém glúten");
+  if (c.al.includes("en:gluten") || c.alerg.some(a => /^(trigo|centeio|cevada|aveia)$/.test(a))) return estadoPerfil("nao", "Glúten está nos alérgenos");
+  const g = lim.match(GL_GRAO);
+  if (g) return estadoPerfil("nao", "Tem " + (NOME_ING[g[1]] || g[1]) + " nos ingredientes");
+  if (c.tr.includes("en:gluten") || GL_GRAO.test(c.tracos)) return estadoPerfil("atencao", "Pode ter traços de glúten");
+  if (c.lb.some(x => /^en:(no-gluten|gluten-free)$/.test(x))) return estadoPerfil("ok", "Selo de sem glúten");
+  if (c.dito.gluten === false || c.t.search(GL_NEG) >= 0) return estadoPerfil("ok", "O rótulo diz: não contém glúten");
+  return estadoPerfil("atencao", c.t || c.al.length ? "Não achei glúten, mas a embalagem não confirma" : "Não deu pra confirmar");
+}
+function perfilLactose(c){
+  const lim = c.sem.replace(LC_NEG, " ").replace(LEITE_NEG, " ");
+  if (c.dito.lactose === true || LC_SIM.test(lim)) return estadoPerfil("nao", "O rótulo diz: contém lactose");
+  if (c.lb.some(x => /^en:(no-lactose|lactose-free)$/.test(x))) return estadoPerfil("ok", "Selo de sem lactose");
+  if (c.dito.lactose === false || c.t.search(LC_NEG) >= 0) return estadoPerfil("ok", "O rótulo diz: sem lactose");
+  if (c.al.includes("en:milk") || c.alerg.includes("leite")) return estadoPerfil("nao", "Leite está nos alérgenos");
+  const m = lim.match(LACTEO);
+  if (m) return estadoPerfil("nao", "Tem " + (NOME_ING[m[1]] || m[1]) + " nos ingredientes");
+  return c.temIng ? estadoPerfil("ok", "Sem leite nos ingredientes") : estadoPerfil("atencao", "Não deu pra confirmar");
+}
+function perfilAcucar(c){
+  const s = c.n.sugars_100g, g = s == null || s === "" || !isFinite(+s) ? null : +s, q = g == null ? "" : g.toFixed(0) + " g em 100 g";
+  if (c.add) return estadoPerfil("nao", "Tem açúcar adicionado");
+  if (g != null && g >= 15) return estadoPerfil("nao", c.temIng ? "Muito açúcar, mesmo sendo natural (" + q + ")" : "Muito açúcar (" + q + ")");
+  if (!c.temIng) return estadoPerfil("atencao", "Não deu pra confirmar");
+  return g == null ? estadoPerfil("atencao", "Sem açúcar adicionado, mas não sei o total") : estadoPerfil("ok", "Sem açúcar adicionado (" + q + ")");
+}
+/* d = produto no formato OFF (tags, nutriments, _rotulo da API); texto = onde procurar; temIng = achou a lista;
+   add = o motor achou açúcar adicionado. Qualquer "nao" → evitar; "atencao" → no máximo moderação. */
+function aplicarPerfis(out, perfis, d, texto, temIng, add){
+  const lig = PERFIS.filter(k => perfis && perfis[k]);
+  if (!lig.length) return;
+  const t = nrm(texto).replace(/\s+/g, " ").trim(), rot = d._rotulo || {}, tags = k => Array.isArray(d[k]) ? d[k].map(String) : [];
+  const c = { t, temIng, add, dito: rot.contem || {}, alerg: (rot.alergenos || []).map(nrm), al: tags("allergens_tags"), tr: tags("traces_tags"), lb: tags("labels_tags"),
+    tracos: (t.match(TRACOS) || []).join(" "), sem: t.replace(TRACOS, " "), n: d.nutriments || {} };
+  out.perfis = lig.map(id => ({ id, ...(id === "gluten" ? perfilGluten(c) : id === "lactose" ? perfilLactose(c) : perfilAcucar(c)) }));
+  const v0 = out.veredito;
+  if (out.perfis.some(p => p.estado === "nao")) out.veredito = "evitar";
+  else if (v0 === "comprar" && out.perfis.some(p => p.estado === "atencao")) out.veredito = "moderacao";
+  if (out.veredito !== v0) out.resumo = out.veredito === "evitar" ? "Não serve pro seu perfil." : "Pelo rótulo tá bom, mas confira pro seu perfil.";
+}
+
+function avaliar(raw, isBaby, limpo, perfis){
   const ing = ingredientesDe(raw, limpo); const t = ing.texto; const full = nrm(raw);
   const vdAdd = full.match(/acucares adicionados[^%]{0,30}?(\d{1,3})\s*%/);
   const soTabela = !ing.achou && !!vdAdd;
@@ -85,29 +149,42 @@ function avaliar(raw, isBaby, limpo){
   const comentario = (dicas.length ? dicas.slice(0, 2).join(" ") : "Nada que chame atenção no rótulo.") + (tipo !== "Produto" ? "" : "");
   const out = { legivel: true, produto: tipo, veredito: v, resumo, comentario, pontos_bons: bons.slice(0, 4), pontos_ruins: ruins.slice(0, 5), ingredientes: (soTabela || ing.semOrdem) ? "" : ing.texto.slice(0, 600), _pts: pts, _n: n };
   if (isBaby) out.bebe = { serve: v === "comprar", motivo: v === "comprar" ? "Sem açúcar adicionado, adoçante ou corante artificial." : "Tem coisa que é melhor evitar pra idade dele." };
+  aplicarPerfis(out, perfis, {}, raw, ing.achou, (!soTabela && ACU_ADD.test(t)) || (vd != null && vd > 0));
   return out;
 }
-function comparar(a, b, isBaby){
+/* Com perfil ligado, quem falha num perfil ("nao") perde pra quem passa, antes da contagem de pontos. */
+function comparar(a, b, isBaby, perfis){
   const lg = x => x && x.legivel !== false;
-  let melhor = "empate";
-  if (lg(a) && lg(b)) melhor = a._pts < b._pts ? "a" : b._pts < a._pts ? "b" : (a._n < b._n ? "a" : b._n < a._n ? "b" : "empate");
+  const pf = PERFIS.some(k => perfis && perfis[k]);
+  const tem = (x, e) => pf && !!(x && x.perfis && x.perfis.some(p => p.estado === e)), falha = x => tem(x, "nao");
+  let melhor = "empate", porPerfil = false;
+  if (lg(a) && lg(b) && falha(a) !== falha(b)) { melhor = falha(a) ? "b" : "a"; porPerfil = true; }
+  else if (lg(a) && lg(b)) melhor = a._pts < b._pts ? "a" : b._pts < a._pts ? "b" : (a._n < b._n ? "a" : b._n < a._n ? "b" : "empate");
   else if (lg(a)) melhor = "a"; else if (lg(b)) melhor = "b";
   const w = melhor === "a" ? a : melhor === "b" ? b : null, l = melhor === "a" ? b : melhor === "b" ? a : null;
   const dif = [];
+  if (porPerfil) l.perfis.filter(p => p.estado === "nao").slice(0, 1).forEach(p => dif.push("O outro: " + p.motivo.charAt(0).toLowerCase() + p.motivo.slice(1)));
   if (w && l && lg(l)) { l.pontos_ruins.filter(x => !w.pontos_ruins.includes(x)).slice(0, 3).forEach(x => dif.push("O outro: " + x.charAt(0).toLowerCase() + x.slice(1))); }
-  return {
+  const res = {
     a: { legivel: lg(a), produto: a && a.produto, veredito: a && a.veredito, resumo: a && a.resumo },
     b: { legivel: lg(b), produto: b && b.produto, veredito: b && b.veredito, resumo: b && b.resumo },
-    melhor, motivo: w ? "Rótulo mais limpo, com menos coisa industrial." : "Os dois ficaram parecidos pelo rótulo.",
-    comentario: w && w.comentario, diferencas: dif,
+    melhor, motivo: porPerfil ? "O outro não serve pro seu perfil." : w ? "Rótulo mais limpo, com menos coisa industrial." : "Os dois ficaram parecidos pelo rótulo.",
+    comentario: w && w.comentario, diferencas: dif.slice(0, 3),
     bebe: isBaby ? (w && w.veredito === "comprar" ? "O escolhido serve pro bebê." : "Nenhum dos dois é ideal pro bebê.") : null
   };
+  if (pf) {
+    const nenhum = estadoPerfil("nao", "Nenhum dos dois serve pro seu perfil.");
+    res.perfis = w ? (falha(w) ? (lg(l) ? nenhum : estadoPerfil("nao", "O escolhido não serve pro seu perfil."))
+        : tem(w, "atencao") ? estadoPerfil("atencao", "Confira o rótulo do escolhido pro seu perfil.") : estadoPerfil("ok", "O escolhido serve pro seu perfil."))
+      : !lg(a) ? null : falha(a) ? nenhum : tem(a, "atencao") || tem(b, "atencao") ? estadoPerfil("atencao", "Confira o rótulo dos dois pro seu perfil.") : estadoPerfil("ok", "Os dois servem pro seu perfil.");
+  }
+  return res;
 }
 
 const ENUM = { e951:"aspartame", e955:"sucralose", e950:"acessulfame", e961:"neotame", e952:"ciclamato", e954:"sacarina",
   e102:"tartrazina", e110:"amarelo crepusculo", e129:"vermelho 40", e124:"ponceau", e133:"azul brilhante", e150c:"caramelo iii", e150d:"caramelo iv", e122:"azorrubina", e127:"eritrosina", e132:"indigotina",
   e211:"benzoato", e212:"benzoato", e202:"sorbato", e200:"sorbato", e250:"nitrito", e252:"nitrato", e251:"nitrato", e242:"dicarbonato", e223:"metabissulfito", e282:"propionato", e621:"glutamato" };
-function analisarProduto(d, isBaby){
+function analisarProduto(d, isBaby, perfis){
   const ing = d.ingredients_text_pt || d.ingredients_text || "";
   const extras = (d.additives_tags || []).map(t => ENUM[t.replace(/^en:/, "")]).filter(Boolean);
   const texto = (ing + (extras.length ? ", " + extras.join(", ") : "")).trim();
@@ -137,6 +214,7 @@ function analisarProduto(d, isBaby){
     comentario: coment.slice(0, 2).join(" ") || (ing ? "Rótulo sem nada que chame atenção." : ""), pontos_bons: bons.slice(0, 4), pontos_ruins: [...new Set(ruins)].slice(0, 6),
     ingredientes: ing.slice(0, 700), _pts: pts, _n: r._n || 0 };
   if (isBaby) out.bebe = { serve: v === "comprar", motivo: v === "comprar" ? "Sem açúcar adicionado, adoçante ou corante artificial." : "Tem coisa que é melhor evitar pra idade dele." };
+  aplicarPerfis(out, perfis, d, ing, !!ing, !!ing && ACU_ADD.test(nrm(ing)));
   return out;
 }
 

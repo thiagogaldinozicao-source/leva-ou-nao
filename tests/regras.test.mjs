@@ -119,3 +119,120 @@ test("comparar 2 no modo bebê e empate", () => {
   assert.equal(e.melhor, "empate");
   assert.deepEqual(e.diferencas, []);
 });
+
+// ---------- perfis alimentares (🌾 glúten · 🥛 lactose · 🍬 açúcar) ----------
+const FIXTURES = ["agua", "biscoito-recheado", "iogurte-acucar", "iogurte-natural", "nescau", "papinha", "refrigerante-zero", "suco-caixa", "toddy"];
+const GL = { gluten: true }, LAC = { lactose: true }, ACU = { acucar: true };
+// produto mínimo: NOVA 1 e sem nutriente, pra o veredito de base ser "comprar" quando a lista é curta e limpa
+const prodT = extra => ({ product_name_pt: "Teste", nova_group: 1, nutriments: {}, ...extra });
+const perfil = (r, id) => r.perfis.find(p => p.id === id);
+
+test("sem perfil ligado: resultado idêntico ao de antes, sem a chave perfis", () => {
+  const desligados = [undefined, null, {}, { gluten: false, lactose: false, acucar: false }];
+  for (const nome of FIXTURES) for (const bebe of [false, true]) {
+    const antes = analisarProduto(fx(nome), bebe);
+    assert.equal("perfis" in antes, false, nome);
+    for (const p of desligados) assert.deepEqual(analisarProduto(fx(nome), bebe, p), antes, nome);
+  }
+  const rotulo = "Ingredientes: farinha de trigo, leite, açúcar. CONTÉM GLÚTEN.";
+  for (const p of desligados) assert.deepEqual(avaliar(rotulo, false, false, p), avaliar(rotulo, false));
+  for (const x of FIXTURES) for (const y of FIXTURES) {
+    const a = analisarProduto(fx(x), false), b = analisarProduto(fx(y), false), antes = comparar(a, b, false);
+    assert.equal("perfis" in antes, false);
+    for (const p of desligados) assert.deepEqual(comparar(a, b, false, p), antes, x + " × " + y);
+  }
+});
+
+test("glúten: 'não contém glúten' e selo → ok; 'contém glúten' não casa com 'não contém'", () => {
+  const r = analisarProduto(prodT({ ingredients_text_pt: "Arroz, sal. NÃO CONTÉM GLÚTEN." }), false, GL);
+  assert.deepEqual(r.perfis, [{ id: "gluten", estado: "ok", motivo: "O rótulo diz: não contém glúten" }]);
+  assert.equal(r.veredito, "comprar");
+  assert.equal(perfil(analisarProduto(prodT({ ingredients_text_pt: "Arroz", labels_tags: ["en:gluten-free"] }), false, GL), "gluten").estado, "ok");
+  assert.equal(perfil(analisarProduto(prodT({ ingredients_text_pt: "Trigo sarraceno. Sem glúten." }), false, GL), "gluten").estado, "ok");
+});
+
+test("glúten: 'contém glúten', trigo/aveia na lista ou alérgeno → não; veredito vira deixar na prateleira", () => {
+  const r = analisarProduto(prodT({ ingredients_text_pt: "Farinha de trigo, água, sal, fermento. CONTÉM GLÚTEN." }), false, GL);
+  assert.deepEqual(perfil(r, "gluten"), { id: "gluten", estado: "nao", motivo: "O rótulo diz: contém glúten" });
+  assert.equal(r.veredito, "evitar");
+  assert.equal(r.resumo, "Não serve pro seu perfil.");
+  assert.equal(perfil(analisarProduto(prodT({ ingredients_text_pt: "Aveia em flocos" }), false, GL), "gluten").motivo, "Tem aveia nos ingredientes");
+  assert.equal(perfil(analisarProduto(prodT({ ingredients_text_pt: "Arroz", allergens_tags: ["en:gluten"] }), false, GL), "gluten").estado, "nao");
+  assert.equal(perfil(analisarProduto(prodT({ ingredients_text_pt: "Arroz", _rotulo: { contem: { gluten: true } } }), false, GL), "gluten").estado, "nao");
+  // trigo na lista vence o "não contém glúten" (na dúvida, protege o celíaco)
+  assert.equal(perfil(analisarProduto(prodT({ ingredients_text_pt: "Farinha de trigo. Não contém glúten." }), false, GL), "gluten").estado, "nao");
+});
+
+test("glúten: traços e falta de dado → atenção (nunca ok por ausência), no máximo moderação", () => {
+  const r = analisarProduto(prodT({ ingredients_text_pt: "Arroz, milho, sal. Alérgicos: pode conter trigo e cevada." }), false, GL);
+  assert.deepEqual(perfil(r, "gluten"), { id: "gluten", estado: "atencao", motivo: "Pode ter traços de glúten" });
+  assert.equal(r.veredito, "moderacao");
+  assert.equal(r.resumo, "Pelo rótulo tá bom, mas confira pro seu perfil.");
+  assert.equal(perfil(analisarProduto(prodT({ ingredients_text_pt: "Arroz", traces_tags: ["en:gluten"] }), false, GL), "gluten").estado, "atencao");
+  const sem = perfil(analisarProduto(prodT({}), false, GL), "gluten");
+  assert.deepEqual(sem, { id: "gluten", estado: "atencao", motivo: "Não deu pra confirmar" });
+  const semFrase = analisarProduto(prodT({ ingredients_text_pt: "Arroz, feijão" }), false, GL);
+  assert.equal(perfil(semFrase, "gluten").estado, "atencao");
+  assert.equal(semFrase.veredito, "moderacao");
+  // já era "evitar": atenção não mexe no veredito nem no resumo
+  const nescau = analisarProduto(fx("nescau"), false, GL);
+  assert.equal(nescau.veredito, "evitar");
+  assert.equal(nescau.resumo, analisarProduto(fx("nescau"), false).resumo);
+});
+
+test("lactose: leite na lista, alérgeno e 'contém lactose' → não", () => {
+  const r = analisarProduto(fx("iogurte-natural"), false, LAC);
+  assert.deepEqual(r.perfis, [{ id: "lactose", estado: "nao", motivo: "Tem leite nos ingredientes" }]);
+  assert.equal(r.veredito, "evitar");
+  assert.equal(perfil(analisarProduto(prodT({ ingredients_text_pt: "Cacau, soro de leite em pó" }), false, LAC), "lactose").motivo, "Tem soro de leite nos ingredientes");
+  assert.equal(perfil(analisarProduto(prodT({ ingredients_text_pt: "Arroz", allergens_tags: ["en:milk"] }), false, LAC), "lactose").estado, "nao");
+  assert.equal(perfil(analisarProduto(prodT({ ingredients_text_pt: "Proteína, cacau. CONTÉM LACTOSE." }), false, LAC), "lactose").motivo, "O rótulo diz: contém lactose");
+});
+
+test("lactose: zero lactose, leite de coco, manteiga de cacau e traço de leite → ok; sem dado → atenção", () => {
+  const zero = analisarProduto(prodT({ ingredients_text_pt: "Leite integral, enzima lactase. ZERO LACTOSE", allergens_tags: ["en:milk"] }), false, LAC);
+  assert.deepEqual(perfil(zero, "lactose"), { id: "lactose", estado: "ok", motivo: "O rótulo diz: sem lactose" });
+  assert.equal(perfil(analisarProduto(prodT({ ingredients_text_pt: "Leite", labels_tags: ["en:lactose-free"] }), false, LAC), "lactose").estado, "ok");
+  const coco = perfil(analisarProduto(prodT({ ingredients_text_pt: "Leite de coco, água, goma guar" }), false, LAC), "lactose");
+  assert.deepEqual(coco, { id: "lactose", estado: "ok", motivo: "Sem leite nos ingredientes" });
+  assert.equal(perfil(analisarProduto(prodT({ ingredients_text_pt: "Massa de cacau, manteiga de cacau, açúcar" }), false, LAC), "lactose").estado, "ok");
+  assert.equal(perfil(analisarProduto(prodT({ ingredients_text_pt: "Amendoim, sal. Alérgicos: pode conter leite." }), false, LAC), "lactose").estado, "ok");
+  assert.deepEqual(perfil(analisarProduto(prodT({}), false, LAC), "lactose"), { id: "lactose", estado: "atencao", motivo: "Não deu pra confirmar" });
+});
+
+test("pouco açúcar: adicionado ou muito açúcar natural → não; adoçante não penaliza; sem dado → atenção", () => {
+  assert.deepEqual(perfil(analisarProduto(fx("nescau"), false, ACU), "acucar"), { id: "acucar", estado: "nao", motivo: "Tem açúcar adicionado" });
+  const tamara = analisarProduto(prodT({ ingredients_text_pt: "Tâmaras desidratadas", nutriments: { sugars_100g: 63 } }), false, ACU);
+  assert.deepEqual(perfil(tamara, "acucar"), { id: "acucar", estado: "nao", motivo: "Muito açúcar, mesmo sendo natural (63 g em 100 g)" });
+  assert.equal(tamara.veredito, "evitar");
+  const zero = analisarProduto(fx("refrigerante-zero"), false, ACU);
+  assert.deepEqual(perfil(zero, "acucar"), { id: "acucar", estado: "ok", motivo: "Sem açúcar adicionado (0 g em 100 g)" });
+  assert.equal(perfil(analisarProduto(fx("papinha"), false, ACU), "acucar").estado, "ok"); // 11 g/100 g de fruta < 15
+  assert.equal(perfil(analisarProduto(prodT({ ingredients_text_pt: "Castanha de caju" }), false, ACU), "acucar").motivo, "Sem açúcar adicionado, mas não sei o total");
+  assert.deepEqual(perfil(analisarProduto(prodT({ nutriments: { sugars_100g: 3 } }), false, ACU), "acucar"), { id: "acucar", estado: "atencao", motivo: "Não deu pra confirmar" });
+});
+
+test("vários perfis: um por ligado, na ordem glúten → lactose → açúcar; modo bebê não muda", () => {
+  const r = analisarProduto(fx("agua"), true, { gluten: true, lactose: true, acucar: true });
+  assert.deepEqual(r.perfis.map(p => [p.id, p.estado]), [["gluten", "atencao"], ["lactose", "ok"], ["acucar", "ok"]]);
+  assert.equal(r.veredito, "moderacao");
+  assert.equal(r.bebe.serve, true); // bebê avalia o rótulo, não o perfil
+  const ocr = avaliar("Ingredientes: farinha de trigo, leite, açúcar. CONTÉM GLÚTEN.", false, false, { gluten: true, lactose: true });
+  assert.deepEqual(ocr.perfis.map(p => p.estado), ["nao", "nao"]);
+  assert.equal(ocr.veredito, "evitar");
+});
+
+test("comparar 2 com perfil: quem falha perde; os dois falham → nenhum serve", () => {
+  const trigo = prodT({ ingredients_text_pt: "Farinha de trigo, água, sal, fermento" });
+  const arroz = prodT({ ingredients_text_pt: "Arroz, açúcar, sal. Não contém glúten.", nova_group: 3 });
+  assert.equal(comparar(analisarProduto(trigo, false), analisarProduto(arroz, false), false).melhor, "a"); // sem perfil, o trigo ganha
+  const c = comparar(analisarProduto(trigo, false, GL), analisarProduto(arroz, false, GL), false, GL);
+  assert.equal(c.melhor, "b");
+  assert.equal(c.motivo, "O outro não serve pro seu perfil.");
+  assert.equal(c.diferencas[0], "O outro: tem trigo nos ingredientes");
+  assert.ok(c.diferencas.length <= 3);
+  assert.deepEqual(c.perfis, { estado: "ok", motivo: "O escolhido serve pro seu perfil." });
+  const dois = comparar(analisarProduto(trigo, false, GL), analisarProduto(fx("biscoito-recheado"), false, GL), false, GL);
+  assert.equal(dois.melhor, "a");
+  assert.deepEqual(dois.perfis, { estado: "nao", motivo: "Nenhum dos dois serve pro seu perfil." });
+});

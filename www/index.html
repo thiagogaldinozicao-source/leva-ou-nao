@@ -63,6 +63,12 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
 .switch i::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:transform .2s}
 .switch input:checked + i{background:var(--gold)}
 .switch input:checked + i::after{transform:translateX(22px)}
+.perfis{display:flex;flex-wrap:wrap;gap:8px;margin:-8px 0 16px}
+.perfis label{position:relative;cursor:pointer}
+.perfis input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+.perfis span{display:block;padding:8px 12px;border-radius:30px;background:var(--card);border:1px solid var(--line);color:var(--muted);font-size:.9rem}
+.perfis input:checked + span{background:var(--card2);background:color-mix(in srgb,var(--gold) 18%,var(--card));border-color:var(--gold);color:var(--gold-l)}
+.perfis input:focus-visible + span{outline:2px solid var(--gold);outline-offset:2px}
 .go{width:100%;border:0;border-radius:16px;padding:17px;font-family:"Bebas Neue",sans-serif;font-size:1.6rem;letter-spacing:.08em;background:var(--gold);color:#000;cursor:pointer}
 .go:disabled{opacity:.35;cursor:default}
 button:focus-visible,.shoot:focus-within{outline:3px solid var(--gold-l);outline-offset:2px}
@@ -85,6 +91,7 @@ button:focus-visible,.shoot:focus-within{outline:3px solid var(--gold-l);outline
 .baby{margin-top:8px;padding:11px 13px;border-radius:12px;font-weight:700}
 .baby.ok{background:var(--go-bg);color:var(--go)}
 .baby.no{background:var(--stop-bg);color:var(--stop)}
+.baby.warn{background:var(--wait-bg);color:var(--wait)}
 .baby span{display:block;font-weight:400;color:var(--ink);margin-top:2px}
 .ing{margin-top:12px;font-size:.9rem;color:var(--muted)}
 .ing summary{cursor:pointer;color:var(--ink);font-weight:600}
@@ -180,6 +187,11 @@ button:focus-visible,.shoot:focus-within{outline:3px solid var(--gold-l);outline
     <div>Modo bebê<small>Liga quando for algo só pra ele: fica mais rigoroso</small></div>
     <label class="switch"><input type="checkbox" id="baby" aria-label="Modo bebê"><i></i></label>
   </div>
+  <div class="perfis" role="group" aria-label="Meu perfil">
+    <label><input type="checkbox" data-perfil="gluten"><span>🌾 Sem glúten</span></label>
+    <label><input type="checkbox" data-perfil="lactose"><span>🥛 Sem lactose</span></label>
+    <label><input type="checkbox" data-perfil="acucar"><span>🍬 Pouco açúcar</span></label>
+  </div>
 
   <button class="go" id="go" disabled>Analisar</button>
   <p class="status" id="status" role="status"></p>
@@ -212,6 +224,10 @@ const prod = { A: null, B: null };      // {code, status:'loading'|'ok'|'miss'|'
 function store(k, v){ try{ if(v===undefined) return JSON.parse(localStorage.getItem(k)); localStorage.setItem(k, JSON.stringify(v)); }catch(e){ return null; } }
 baby.checked = store("baby2") ?? false;
 baby.onchange = () => store("baby2", baby.checked);
+// Perfis (glúten/lactose/açúcar): {gluten, lactose, acucar} salvo em "perfis"; só valem pra alimento (regras.js).
+const perfilInputs = [...document.querySelectorAll("[data-perfil]")];
+const perfisAtuais = () => Object.fromEntries(perfilInputs.map(i => [i.dataset.perfil, i.checked]));
+{ const salvos = store("perfis") || {}; perfilInputs.forEach(i => { i.checked = !!salvos[i.dataset.perfil]; i.onchange = () => store("perfis", perfisAtuais()); }); }
 function el(tag, cls, text){ const e = document.createElement(tag); if(cls) e.className = cls; if(text!=null) e.textContent = text; return e; }
 
 /* ---------- busca: API própria (se houver) ou direto nas bases abertas ----------
@@ -226,7 +242,7 @@ const BASES = [
   ["world.openpetfoodfacts.org", "pet", "opff"],
   ["world.openproductsfacts.org", "limpeza", "opf"],
 ];
-const FIELDS = "product_name,product_name_pt,generic_name_pt,brands,quantity,image_front_small_url,ingredients_text_pt,ingredients_text,additives_tags,nova_group,nutriscore_grade,nutriments,categories_tags";
+const FIELDS = "product_name,product_name_pt,generic_name_pt,brands,quantity,image_front_small_url,ingredients_text_pt,ingredients_text,additives_tags,nova_group,nutriscore_grade,nutriments,categories_tags,allergens_tags,traces_tags,labels_tags";
 const cache = new Map();
 // Corta a chamada (cabeçalho E corpo) depois de `ms`.
 async function comPrazo(ms, fn){
@@ -300,7 +316,7 @@ function setCode(k, code){
   const local = baseLocal.get(code);
   buscar(code).then(d => {
     if (!prod[k] || prod[k].code !== code) return;
-    if (d && local && semIngredientes(d)) d = { ...d, ingredients_text_pt: local.ingredients_text_pt, _lido: true };
+    if (d && local && semIngredientes(d)) d = { ...d, ingredients_text_pt: local.ingredients_text_pt, _lido: true, _rotulo: local._rotulo };
     if (!d && local) d = local;
     prod[k] = { code, status: d ? "ok" : "miss", data: d }; renderSlot(k); render();
   }).catch(() => {
@@ -415,7 +431,7 @@ async function usarIngredientes(k, texto, fonte){
     if (prod[k] !== p){ if (statusEl.textContent === "Lendo os ingredientes…") statusEl.textContent = ""; return; }   // trocou de produto enquanto esperava
     if (srv) dados = { ...dados, ...semVazios(srv), ingredients_text_pt: srv.ingredients_text_pt || texto, _lido: true };
   }
-  baseLocal.set(p.code, { product_name: dados.product_name, product_name_pt: dados.product_name_pt, brands: dados.brands, quantity: dados.quantity, image_front_small_url: dados.image_front_small_url, ingredients_text_pt: dados.ingredients_text_pt, _lido: true });
+  baseLocal.set(p.code, { product_name: dados.product_name, product_name_pt: dados.product_name_pt, brands: dados.brands, quantity: dados.quantity, image_front_small_url: dados.image_front_small_url, ingredients_text_pt: dados.ingredients_text_pt, _rotulo: dados._rotulo, _lido: true });
   prod[k] = { code: p.code, status: "ok", data: dados };
   statusEl.className = "status"; statusEl.textContent = "";
   renderSlot(k); render();
@@ -545,9 +561,9 @@ function show(){ result.classList.remove("hidden"); result.scrollIntoView({behav
 
 /* Categoria vem da busca em d._categoria (sem = alimento). Alimento = motor do app; cosmético/pet/limpeza =
    categorias.js; remédio nunca tem veredito, só card de informação. */
-function analisarCat(d, isBaby){
+function analisarCat(d, isBaby, perfis){
   const cat = Categorias.categoria(d);
-  const r = cat === "alimento" ? analisarProduto(d, isBaby) : cat === "remedio" ? Categorias.remedio(d) : Categorias.avaliar(d);
+  const r = cat === "alimento" ? analisarProduto(d, isBaby, perfis) : cat === "remedio" ? Categorias.remedio(d) : Categorias.avaliar(d);
   r._cat = cat; return r;
 }
 function nomeCom(cat, r, nome){
@@ -555,6 +571,10 @@ function nomeCom(cat, r, nome){
   i.setAttribute("role","img"); i.setAttribute("aria-label", Categorias.NOME[cat]); i.title = Categorias.NOME[cat];
   p.append(i, nome); return p;
 }
+// Selo por perfil ligado (mesmo estilo do selo do bebê): ícone + [ok, atenção, não].
+const SELO_PERFIL = { gluten: ["🌾", "Sem glúten", "Pode ter glúten", "Tem glúten"], lactose: ["🥛", "Sem lactose", "Pode ter lactose", "Tem lactose"], acucar: ["🍬", "Pouco açúcar", "Açúcar a conferir", "Tem açúcar"] };
+const CLS_PERFIL = { ok: "ok", atencao: "warn", nao: "no" };
+function seloPerfil(titulo, estado, motivo){ const s = el("div","baby " + (CLS_PERFIL[estado] || "warn"), titulo); if (motivo) s.append(el("span",null,motivo)); return s; }
 const histNome = (cat, r, nome) => (cat === "alimento" ? "" : Categorias.icone(cat, r) + " ") + nome;
 
 function cartao(r, p){
@@ -572,6 +592,7 @@ function cartao(r, p){
     if (r.imagem){ const im = el("img","prodimg"); im.src = r.imagem; im.alt = ""; c.append(im); }
     if (r.produto) c.append(nomeCom(cat, r, r.produto));
     if (r.resumo) c.append(el("p","summary",r.resumo));
+    (Array.isArray(r.perfis) ? r.perfis : []).forEach(p => { const s = SELO_PERFIL[p.id]; if (s) c.append(seloPerfil(s[0] + " " + s[{ ok: 1, atencao: 2, nao: 3 }[p.estado] || 2], p.estado, p.motivo)); });
     if (r.comentario) c.append(el("p","talk","💬 " + r.comentario));
     [list(r.pontos_bons,"good"), list(r.pontos_ruins,"bad")].forEach(x => x && c.append(x));
     if (r.bebe && typeof r.bebe === "object"){
@@ -606,6 +627,7 @@ function showTwo(r, cat){
   if (r && r.comentario) top.append(el("p","talk","💬 " + r.comentario));
   const dl = list(r && r.diferencas, "good"); if (dl) top.append(dl);
   if (r && typeof r.bebe === "string" && r.bebe) { const bb = el("div","baby ok","👶 Pro bebê"); bb.append(el("span",null,r.bebe)); top.append(bb); }
+  if (r && r.perfis && typeof r.perfis === "object") top.append(seloPerfil("Pro seu perfil", r.perfis.estado, r.perfis.motivo));
   const vs = el("div","vs");
   [["A",a],["B",b]].forEach(([t,p]) => {
     const c = el("div","card");
@@ -643,11 +665,12 @@ function fonte(code, lido, cat){ const p = el("p","src"); if (lido){ p.append("I
 goBtn.onclick = () => {
   if (!ready() || busy) return;
   statusEl.className = "status"; statusEl.textContent = "";
-  const isBaby = baby.checked;
-  if (mode === "one") return showOne(analisarCat(prod.A.data, isBaby), prod.A);
-  // Modo bebê só vale pra alimento; comparar só dentro da mesma categoria e nunca remédio.
-  const a = analisarCat(prod.A.data, isBaby), b = analisarCat(prod.B.data, isBaby);
-  if (a._cat === b._cat && a._cat !== "remedio") return showTwo(comparar(a, b, isBaby && a._cat === "alimento"), a._cat);
+  const isBaby = baby.checked, perfis = perfisAtuais();
+  if (mode === "one") return showOne(analisarCat(prod.A.data, isBaby, perfis), prod.A);
+  // Modo bebê e perfis só valem pra alimento; comparar só dentro da mesma categoria e nunca remédio.
+  const a = analisarCat(prod.A.data, isBaby, perfis), b = analisarCat(prod.B.data, isBaby, perfis);
+  const alim = a._cat === "alimento";
+  if (a._cat === b._cat && a._cat !== "remedio") return showTwo(comparar(a, b, isBaby && alim, alim ? perfis : null), a._cat);
   showCards([a, b], [prod.A, prod.B], a._cat === b._cat ? "💊 Remédio não entra na comparação." : Categorias.icone(a._cat, a) + " e " + Categorias.icone(b._cat, b) + " não se comparam: vai o de cada um.");
 };
 render();
