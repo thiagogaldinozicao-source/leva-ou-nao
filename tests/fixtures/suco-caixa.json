@@ -1,0 +1,10 @@
+{
+  "code": "7894900530018",
+  "product_name_pt": "Refresco de uva",
+  "brands": "Del Valle",
+  "quantity": "1 L",
+  "ingredients_text_pt": "Água, açúcar, suco concentrado de uva (6%), acidulante ácido cítrico, aromatizante e conservador sorbato de potássio",
+  "additives_tags": ["en:e330", "en:e202"],
+  "nova_group": 4,
+  "nutriments": { "sugars_100g": 10, "salt_100g": 0.02, "saturated-fat_100g": 0 }
+}

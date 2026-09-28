@@ -1,0 +1,10 @@
+{
+  "code": "7894900701517",
+  "product_name_pt": "Coca-Cola sem açúcar",
+  "brands": "Coca-Cola",
+  "quantity": "350 ml",
+  "ingredients_text_pt": "Água gaseificada, extrato de noz de cola, cafeína, aroma natural, corante caramelo IV, acidulante ácido fosfórico, edulcorantes ciclamato de sódio, acessulfame de potássio e aspartame, conservador benzoato de sódio, regulador de acidez citrato de sódio",
+  "additives_tags": ["en:e150d", "en:e338", "en:e952", "en:e950", "en:e951", "en:e211", "en:e331"],
+  "nova_group": 4,
+  "nutriments": { "sugars_100g": 0, "salt_100g": 0.02, "saturated-fat_100g": 0 }
+}
