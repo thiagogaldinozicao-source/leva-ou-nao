@@ -215,7 +215,7 @@ function lupaDe(d, ing){
   const na = num("sodium_100g"), sal = num("salt_100g");
   const dado = { acucar: num("added-sugars_100g"), gordura: num("saturated-fat_100g"), sodio: na != null ? na * 1000 : sal != null ? sal / 2.5 * 1000 : null };
   const cat = (Array.isArray(d.categories_tags) ? d.categories_tags : []).join(" ");
-  const vedada = +d.nova_group === 1 || (LUPA_VEDADA.test(cat) && !(ing && acucarAdicionado(ingredientesDe(ing, true).texto)));
+  const vedada = +d.nova_group === 1 || (LUPA_VEDADA.test(cat) && !(ing && acucarAdicionado(ing)));   // lista inteira: ingredientesDe corta e o açúcar sumia
   const lido = (d._rotulo && Array.isArray(d._rotulo.altoEm) ? d._rotulo.altoEm : []).map(k => LUPA_ROT[k]);
   const liq = ehLiquido(d), un = liq ? "100 ml" : "100 g", res = [];
   for (const id of ["acucar", "gordura", "sodio"]) {

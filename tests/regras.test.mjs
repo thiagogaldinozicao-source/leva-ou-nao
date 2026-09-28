@@ -383,6 +383,8 @@ test("lupa vedada (IN 75, Anexo XVI): in natura, queijo, azeite, sal não levam 
   assert.deepEqual(ve({ nova_group: 2, ingredients_text_pt: "Azeite de oliva", categories_tags: ["en:olive-oils"] }), []);
   assert.deepEqual(ve({ nova_group: 2, ingredients_text_pt: "Sal", categories_tags: ["en:salts"] }), []);
   assert.deepEqual(ve({ nova_group: 4, ingredients_text_pt: "Leite, açúcar, polpa de morango", categories_tags: ["en:yogurts"], nutriments: { "added-sugars_100g": 16, "saturated-fat_100g": 3 } }), ["acucar"]);
+  // açúcar só no fim de lista longa (>700 chars): a vedação lê a lista inteira, senão o iogurte adoçado perdia a lupa
+  assert.deepEqual(ve({ nova_group: 4, ingredients_text_pt: "Leite" + ", estabilizante pectina".repeat(40) + ", açúcar", categories_tags: ["en:yogurts"], nutriments: { "added-sugars_100g": 16, "saturated-fat_100g": 3 } }), ["acucar"]);
   assert.deepEqual(ve({ nova_group: 4, ingredients_text_pt: "Manteiga, sal", categories_tags: ["en:butters"] }), ["gordura", "sodio"]);   // manteiga não está no Anexo XVI
   // a vedação só cala número do OFF; a lupa que o rótulo mostra (nutriente ausente no OFF) é fato da embalagem e vale
   assert.deepEqual(ve({ nova_group: 3, ingredients_text_pt: "Leite, sal", categories_tags: ["en:cheeses"], _rotulo: { altoEm: ["sodio"] } }), []);

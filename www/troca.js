@@ -8,7 +8,7 @@ globalThis.Troca = (() => {
   const igual = (a, b) => a.replace(/^0+/, "") === b.replace(/^0+/, "");   // UPC-A (12) e EAN-13 com 0 na frente são o mesmo produto
 
   // Só o que analisarProduto lê (ingredientes, aditivos, NOVA, nutrientes, alérgenos/traços/selos dos perfis) + o que a linha mostra.
-  const CAMPOS = ["code", "product_name", "product_name_pt", "brands", "ingredients_text_pt", "ingredients_text", "additives_tags", "nova_group", "nutriments", "allergens_tags", "traces_tags", "labels_tags"];
+  const CAMPOS = ["code", "product_name", "product_name_pt", "brands", "ingredients_text_pt", "ingredients_text", "additives_tags", "nova_group", "nutriments", "allergens_tags", "traces_tags", "labels_tags", "quantity", "categories_tags"];   // os 2 últimos = lupa (líquido? categoria vedada?)
 
   // Tags de categoria do OFF (a ordem NÃO é geral→específico: mistura ramos). Prefere as `en:` (as únicas que a busca entende sempre).
   function hierarquia(p){
