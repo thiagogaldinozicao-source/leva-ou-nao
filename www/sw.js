@@ -57,9 +57,11 @@ self.addEventListener("fetch", (ev) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return; // Open Food Facts / API: sem cache do SW
-  if (ESTATICO.test(url.pathname)) { ev.respondWith(cachePrimeiro(req)); return; }
+  // Cache quebrado (caches.open recusa: cota, armazenamento bloqueado, Safari privado) => vai à rede direto,
+  // em vez de o respondWith rejeitar e a página nem abrir.
+  if (ESTATICO.test(url.pathname)) { ev.respondWith(cachePrimeiro(req).catch(() => fetch(req))); return; }
   if (req.mode === "navigate" || /(\/|\.html|\.js|\.json|\.webmanifest)$/.test(url.pathname)) {
-    ev.respondWith(redePrimeiro(ev, req, url));
+    ev.respondWith(redePrimeiro(ev, req, url).catch(() => fetch(req)));
   }
   // O resto do mesmo domínio passa direto, sem cache.
 });
@@ -69,7 +71,7 @@ async function cachePrimeiro(req) {
   const achou = await cache.match(req, { ignoreVary: true });
   if (achou) return achou;
   const res = await fetch(req);
-  if (res.ok && res.type === "basic") cache.put(req, res.clone());
+  if (res.ok && res.type === "basic") cache.put(req, res.clone()).catch(() => {});
   return res;
 }
 
@@ -80,7 +82,9 @@ async function redePrimeiro(ev, req, url) {
     if (res.ok && res.type === "basic") return cache.put(chave, res.clone()).then(() => res, () => res);
     return res;
   });
-  ev.waitUntil(rede.catch(() => {})); // se a cópia guardada sair antes, a rede ainda atualiza o cache
+  // Se a cópia guardada sair antes, a rede ainda atualiza o cache. Chamado depois de um await: evento já
+  // encerrado => InvalidStateError, que rejeitaria o respondWith; aí a atualização só perde a garantia de vida.
+  try { ev.waitUntil(rede.catch(() => {})); } catch (e) { /* segue sem waitUntil */ }
   const guardado = async () => {
     const velho = await cache.match(chave, { ignoreVary: true });
     if (velho || req.mode !== "navigate") return velho;
