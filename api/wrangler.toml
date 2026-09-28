@@ -12,7 +12,7 @@ ALLOWED_ORIGINS = "https://thiagogaldinozicao-source.github.io,https://localhost
 OFF_USER_AGENT = "LevaOuNao/1.0 (+https://github.com/thiagogaldinozicao-source/leva-ou-nao)"
 
 # Segredos: NUNCA aqui nem no repositório. Cada um com `npx wrangler secret put NOME` (todos opcionais):
-#   TURNSTILE_SECRET   liga o captcha invisível no POST /v1/rotulo-texto
+#   TURNSTILE_SECRET   liga o captcha invisível no POST /v1/rotulo-texto (só depois que o app mandar o token)
 #   OFF_USER, OFF_PASS conta do app no Open Food Facts; sem eles o cron não envia nada
 
 [[d1_databases]]

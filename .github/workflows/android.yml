@@ -17,6 +17,7 @@ jobs:
     steps:
       # Sem a chave não publica nada: um APK com chave errada/pública deixa qualquer um soltar "update" falso.
       - name: Conferir chave de assinatura
+        id: chave
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -28,32 +29,39 @@ jobs:
             [ -n "${!s}" ] || faltam="$faltam $s"
           done
           if [ -n "$faltam" ]; then
-            echo "::error title=Falta a chave de assinatura::Nada foi publicado. Cadastre em Settings > Secrets and variables > Actions:$faltam. Passo a passo: docs/CHECKLIST-LANCAMENTO.md, seção 'Chave de assinatura (Thiago)'."
-            exit 1
+            echo "::warning title=Falta a chave de assinatura::Nada foi publicado. Cadastre em Settings > Secrets and variables > Actions:$faltam. Passo a passo: docs/CHECKLIST-LANCAMENTO.md, seção 'Chave de assinatura (Thiago)'."
+            echo "ok=0" >> "$GITHUB_OUTPUT"; exit 0  # site segue publicando; só o APK espera a chave
           fi
+          echo "ok=1" >> "$GITHUB_OUTPUT"
 
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        if: steps.chave.outputs.ok == '1'
         with:
           persist-credentials: false
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        if: steps.chave.outputs.ok == '1'
         with:
           node-version: 22
           cache: npm
 
       - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        if: steps.chave.outputs.ok == '1'
         with:
           distribution: temurin
           java-version: 21
           cache: gradle
 
       - name: Instalar dependências
+        if: steps.chave.outputs.ok == '1'
         run: npm ci
 
       - name: Copiar app pro Android
+        if: steps.chave.outputs.ok == '1'
         run: npx cap sync android
 
       - name: Montar chave (arquivo temporário)
+        if: steps.chave.outputs.ok == '1'
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
@@ -61,6 +69,7 @@ jobs:
           printf '%s' "$ANDROID_KEYSTORE_BASE64" | tr -d '[:space:]' | base64 --decode > "$RUNNER_TEMP/leva-ou-nao.keystore"
 
       - name: Gerar APK e AAB assinados
+        if: steps.chave.outputs.ok == '1'
         working-directory: android
         env:
           LEVA_KEYSTORE_PATH: ${{ runner.temp }}/leva-ou-nao.keystore
@@ -76,11 +85,13 @@ jobs:
         run: rm -f "$RUNNER_TEMP/leva-ou-nao.keystore"
 
       - name: Renomear APK e AAB
+        if: steps.chave.outputs.ok == '1'
         run: |
           cp android/app/build/outputs/apk/release/app-release.apk leva-ou-nao-v${{ github.run_number }}.apk
           cp android/app/build/outputs/bundle/release/app-release.aab leva-ou-nao-v${{ github.run_number }}.aab
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: steps.chave.outputs.ok == '1'
         with:
           name: leva-ou-nao-apk
           path: |
@@ -88,6 +99,7 @@ jobs:
             leva-ou-nao-v${{ github.run_number }}.aab
 
       - name: Publicar em Releases
+        if: steps.chave.outputs.ok == '1'
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           tag_name: v0.1.${{ github.run_number }}

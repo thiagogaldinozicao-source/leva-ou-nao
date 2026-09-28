@@ -206,7 +206,8 @@ async function postRotulo(req, env, ctx) {
   ).bind(ean).first();
   const insLeitura = env.DB.prepare("INSERT INTO leitura (ean, fonte, texto, ingredientes, criado_em) VALUES (?1, ?2, ?3, ?4, ?5)")
     .bind(ean, b.fonte, b.texto, lido.ingredientes, agora);
-  if (!lido.ingredientes) { await insLeitura.run(); return erro(req, env, 422, "sem_ingredientes"); }
+  // sem ingrediente achado = texto livre que não serve pra nada: não guarda (e a tabela não cresce com lixo)
+  if (!lido.ingredientes) return erro(req, env, 422, "sem_ingredientes");
   const diverge = !!(anterior && !parecidos(anterior.ingredientes, lido.ingredientes));
 
   // mescla com o que já se sabe do produto (D1 → cache → bases abertas)
@@ -229,14 +230,20 @@ async function postRotulo(req, env, ctx) {
   });
   delete dados.code;
 
-  await env.DB.batch([
-    insLeitura,
-    env.DB.prepare(
-      `INSERT INTO produto (ean, dados, categoria, fonte, atualizado_em, revisao) VALUES (?1, ?2, ?3, ?4, ?5, ?6)
-       ON CONFLICT(ean) DO UPDATE SET dados = excluded.dados, atualizado_em = excluded.atualizado_em, revisao = MAX(produto.revisao, excluded.revisao)`
-    ).bind(ean, JSON.stringify(dados), categoria, fonte, agora, diverge ? 1 : 0),
-  ]);
-  apagaCache(ctx, req, ean);
+  // Uma leitura só não derruba o que já se sabe: ingrediente vindo das bases abertas, ou lido antes e
+  // diferente deste, fica; a leitura é guardada e o produto vai pra revisão. Quem leu recebe o que leu.
+  const deFora = !!(base && !base._lido && !semIngredientes(base));
+  const lotes = [insLeitura];
+  if (!deFora && !diverge) {
+    lotes.push(env.DB.prepare(
+      `INSERT INTO produto (ean, dados, categoria, fonte, atualizado_em, revisao) VALUES (?1, ?2, ?3, ?4, ?5, 0)
+       ON CONFLICT(ean) DO UPDATE SET dados = excluded.dados, atualizado_em = excluded.atualizado_em`
+    ).bind(ean, JSON.stringify(dados), categoria, fonte, agora));
+  } else if (row && diverge) {
+    lotes.push(env.DB.prepare("UPDATE produto SET revisao = 1 WHERE ean = ?1").bind(ean));
+  }
+  await env.DB.batch(lotes);
+  if (lotes.length > 1) apagaCache(ctx, req, ean);
   return json(req, env, 200, { status: "ok", produto: montaProduto(ean, dados, categoria, fonte), revisao: diverge || !!(row && row.revisao) });
 }
 

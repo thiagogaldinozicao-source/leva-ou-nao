@@ -21,7 +21,8 @@ o mesmo arquivo que o app usa). Nenhuma foto chega aqui. Nenhum dado pessoal é 
 5. `npm run migrar` (cria as tabelas no banco).
 6. Opcional — segredos (ficam só no Cloudflare, nunca no repositório):
    - `npx wrangler secret put TURNSTILE_SECRET` → captcha invisível contra robô (crie o widget em
-     Cloudflare → Turnstile; a chave *site key* vai no app).
+     Cloudflare → Turnstile; a chave *site key* vai no app). **Ainda não ligue:** o app ainda não manda
+     o token, então com esse segredo todo envio de rótulo volta 403 (o app segue só com a leitura local).
    - `npx wrangler secret put OFF_USER` e `npx wrangler secret put OFF_PASS` → conta do app no
      <https://world.openfoodfacts.org> (crie uma conta só pro app). Sem elas, nada é enviado.
 7. `npm run deploy` → aparece a URL, tipo `https://leva-ou-nao-api.SEU-USUARIO.workers.dev`.
