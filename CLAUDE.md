@@ -19,9 +19,10 @@ Produto sem cadastro → ler ingredientes do rótulo (Android: ML Kit no aparelh
 
 ## Mapa
 - `www/index.html` — casca do app (HTML + CSS + JS de tela; motor e regras foram pra arquivos próprios). `www/lib/` = ZXing wasm (não editar).
-  Faixas (em 2026-09-28; mudou? `grep -n '/\* ----------'` antes): CSS 21-139 · HTML 141-205 · JS 206-653:
-  busca própria/bases abertas 217-283 · baseLocal + renderSlot 286-327 · OCR/rótulo (painel + ML Kit/iOS) 329-427 ·
-  scanner ZXing/BarcodeDetector 429-529 · tela de resultado (usa `Regras`/`Categorias`) 531-624 · histórico 625-651.
+  Faixas (em 2026-09-28, depois da frente UI; mudou? `grep -n '/\* ----------'` antes): tema escuro fixo no app nativo 23 ·
+  CSS 25-180 (tokens claro/escuro 33-62) · HTML 182-249 · JS 255-801: busca própria/bases abertas 271-339 ·
+  baseLocal + renderSlot 340-385 · OCR/rótulo (painel + ML Kit/iOS) 386-487 · scanner ZXing/BarcodeDetector 488-589 ·
+  tela de resultado (usa `Regras`/`Categorias`/`Troca`) 592-771 · histórico 772-800.
 - `www/regras.js` — motor de regras de ALIMENTO (NOVA, açúcar, adoçante, corante, conservante) → `globalThis.Regras`.
 - `www/categorias.js` — veredito de cosmético/pet/limpeza e informação (sem veredito) de remédio → `globalThis.Categorias`.
 - `www/troca.js` — "🔁 Tem melhor?": categoria do produto (OFF) → URL da busca no OFF (Brasil, mais escaneados) → até 3 trocas com "Pode levar" → `globalThis.Troca`; puro, o fetch e o botão ficam no `index.html` (`trocaBox`).
