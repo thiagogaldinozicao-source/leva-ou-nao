@@ -13,4 +13,5 @@ ext {
     androidxJunitVersion = '1.3.0'
     androidxEspressoCoreVersion = '3.7.0'
     cordovaAndroidVersion = '14.0.1'
+    kotlin_version = '2.2.21' // plugin ML Kit usa isto; o padrão dele (2.4) o lint do AGP 8.13 (Kotlin 2.2) não lê: "e: incompatible version of Kotlin"
 }

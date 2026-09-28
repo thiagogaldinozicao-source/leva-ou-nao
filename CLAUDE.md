@@ -30,7 +30,8 @@ Produto sem cadastro → ler ingredientes do rótulo (Android: ML Kit no aparelh
 - `www/offline.js` — registra o `sw.js` (só no site, não no app empacotado).
 - `www/_headers` — headers pra host que aplica o arquivo (Cloudflare Pages/Netlify); o GitHub Pages IGNORA: lá só vale a CSP da `<meta>` do `index.html`.
 - `tests/` — `node --test` puro: `regras.test.mjs` roda `www/regras.js` como script clássico via `vm`; `categorias.test.mjs` idem pra `www/categorias.js`; `fixtures/` = produtos reais (JSON) pros casos.
-- `scripts/vm-run.sh` (+ `vm-run.conf`) — TESTE NUNCA LOCAL: roda na VM tibiatest. `vm-run.sh test|check|api|android|quick` (segundos, exceto android ~3 min). `api` = `api/scripts/fumaca-local.mjs` (wrangler dev local + as 3 rotas).
+- `scripts/vm-run.sh` (+ `vm-run.conf`) — TESTE NUNCA LOCAL: roda na VM tibiatest. `vm-run.sh test|check|api|e2e|android|quick` (segundos, exceto android ~3 min). `api` = `api/scripts/fumaca-local.mjs` (wrangler dev local + as 3 rotas).
+- `tests/e2e/` — gate de navegador (`vm-run.sh e2e`, ~20 s): Chromium headless (playwright-core, `package.json` próprio) clica os fluxos com OFF mockado (`mock-off.mjs`) + axe + Lighthouse com piso (`lighthouse.test.mjs`) + instalável/SW; relatório e prints em `.vm-run/e2e/` do espelho.
 - `android/` — Capacitor 8 (id `br.com.zicao.levaounao`). `capacitor.config.json`.
 - `.github/workflows/site.yml` — `www/` → GitHub Pages a cada push na main.
 - `.github/workflows/android.yml` — APK → Releases quando muda `www/`, `android/` ou deps.
