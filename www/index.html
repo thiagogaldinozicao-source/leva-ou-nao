@@ -33,9 +33,9 @@
    (texto ≥4.5:1, borda de controle ≥3:1). Sem color-mix (iOS < 16.2) fica só o escuro, como sempre foi. */
 :root{
   --preto:#000000; --branco:#FFFFFF; --ouro:#EBB533; --ouro-l:#F4CB63; --verde:#3FCB7A; --vermelho:#FF6B5E;
-  /* régua (a do adpulse): raio sm/md/lg, espaço 4/8/12/16, alvo de toque 44 (Apple HIG) */
-  --r-sm:10px; --r-md:14px; --r-lg:18px; --r-full:999px; --s1:4px; --s2:8px; --s3:12px; --s4:16px;
-  --alvo:44px; --foco:3px solid var(--gold-l);
+  /* régua (a do adpulse): raio sm/md/lg/xl, espaço 4/8/12/16/24, alvo de toque 44 (Apple HIG); sombra só no claro (no escuro some: fica a borda) */
+  --r-sm:10px; --r-md:14px; --r-lg:18px; --r-xl:24px; --r-full:999px; --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px;
+  --alvo:44px; --foco:3px solid var(--gold-l); --sh:none; --ease:cubic-bezier(.2,.8,.2,1);
   color-scheme:dark;
   --bg:var(--preto); --card:#121212; --card2:#1A1A1A; --line:#2A2A2A; --edge:var(--line); --campo:var(--preto);
   --ink:var(--branco); --ink2:#DDDDDD; --muted:#A8A8A8; --gold:var(--ouro); --gold-t:var(--ouro); --gold-l:var(--ouro-l);
@@ -51,7 +51,8 @@
     --gold-t:color-mix(in srgb,var(--ouro) 55%,var(--preto)); --gold-l:var(--gold-t);
     --go:color-mix(in srgb,var(--verde) 55%,var(--preto)); --go-bg:color-mix(in srgb,var(--verde) 14%,var(--branco));
     --wait:color-mix(in srgb,var(--ouro-l) 50%,var(--preto)); --wait-bg:color-mix(in srgb,var(--ouro-l) 18%,var(--branco));
-    --stop:color-mix(in srgb,var(--vermelho) 65%,var(--preto)); --stop-bg:color-mix(in srgb,var(--vermelho) 12%,var(--branco)); } }
+    --stop:color-mix(in srgb,var(--vermelho) 65%,var(--preto)); --stop-bg:color-mix(in srgb,var(--vermelho) 12%,var(--branco));
+    --sh:0 1px 2px color-mix(in srgb,var(--preto) 5%,transparent),0 14px 32px -16px color-mix(in srgb,var(--preto) 22%,transparent); } }
   :root[data-theme="light"]{ color-scheme:light;
     --bg:color-mix(in srgb,var(--preto) 5%,var(--branco)); --card:var(--branco); --card2:color-mix(in srgb,var(--preto) 4%,var(--branco));
     --line:color-mix(in srgb,var(--preto) 12%,var(--branco)); --edge:color-mix(in srgb,var(--ink) 52%,var(--card)); --campo:var(--branco);
@@ -59,25 +60,28 @@
     --gold-t:color-mix(in srgb,var(--ouro) 55%,var(--preto)); --gold-l:var(--gold-t);
     --go:color-mix(in srgb,var(--verde) 55%,var(--preto)); --go-bg:color-mix(in srgb,var(--verde) 14%,var(--branco));
     --wait:color-mix(in srgb,var(--ouro-l) 50%,var(--preto)); --wait-bg:color-mix(in srgb,var(--ouro-l) 18%,var(--branco));
-    --stop:color-mix(in srgb,var(--vermelho) 65%,var(--preto)); --stop-bg:color-mix(in srgb,var(--vermelho) 12%,var(--branco)); }
+    --stop:color-mix(in srgb,var(--vermelho) 65%,var(--preto)); --stop-bg:color-mix(in srgb,var(--vermelho) 12%,var(--branco));
+    --sh:0 1px 2px color-mix(in srgb,var(--preto) 5%,transparent),0 14px 32px -16px color-mix(in srgb,var(--preto) 22%,transparent); }
 }
 *,*::before,*::after{box-sizing:border-box}
 html{background:var(--bg);scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"Barlow",system-ui,-apple-system,sans-serif;
   font-size:17px;line-height:1.45;-webkit-font-smoothing:antialiased;
   padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
-main{max-width:520px;margin:0 auto;padding:18px var(--s4) 40px}
-header{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;border-bottom:2px solid var(--gold);padding-bottom:10px;margin-bottom:var(--s4)}
-h1{font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:clamp(2.3rem,12.5vw,2.8rem);line-height:.9;letter-spacing:.06em;color:var(--gold-t);margin:0}
-header p{margin:0;color:var(--muted);font-size:.85rem;text-align:right;max-width:min(170px,44vw)}
+main{max-width:520px;margin:0 auto;padding:var(--s4) 20px 48px}
+/* Carimbo: título grande numa linha + traço de ouro; o ⓘ fica na linha de cima (não aperta o título no 320) */
+header{margin-bottom:var(--s5)}
+header::after{content:"";display:block;width:56px;height:4px;border-radius:2px;background:var(--gold);margin-top:var(--s4)}
+h1{font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:clamp(2.4rem,13.5vw,3.6rem);line-height:.9;letter-spacing:.04em;white-space:nowrap;color:var(--gold-t);margin:0}
+header p{margin:var(--s2) 0 0;color:var(--ink2);font-size:1.02rem}
 .sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
-.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--card);padding:5px;border-radius:var(--r-md);margin-bottom:var(--s4)}
-.tabs button{font:inherit;font-weight:700;border:0;border-radius:var(--r-sm);padding:12px;min-height:var(--alvo);background:transparent;color:var(--muted);cursor:pointer}
-.tabs button[aria-pressed="true"]{background:var(--gold);color:var(--preto)}
-.slot{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:14px;margin-bottom:var(--s3)}
-.slot h2{font-family:"Bebas Neue",sans-serif;font-weight:400;letter-spacing:.08em;font-size:1.4rem;color:var(--gold-t);margin:0 0 10px}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:var(--s1);background:var(--card2);padding:var(--s1);border-radius:var(--r-lg);box-shadow:inset 0 0 0 1px var(--line);margin-bottom:22px}
+.tabs button{font:inherit;font-size:1rem;font-weight:700;border:0;border-radius:var(--r-md);padding:12px;min-height:var(--alvo);background:transparent;color:var(--muted);cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}   /* aba ativa invertida: o ouro fica só pra ação */
+.slot{margin-bottom:22px}
+.slot h2{font-family:"Bebas Neue",sans-serif;font-weight:400;letter-spacing:.14em;font-size:1.05rem;color:var(--muted);margin:0 0 10px}
 input[type=file]{position:absolute;left:0;bottom:0;width:1px;height:1px;opacity:0;pointer-events:none}
-.row{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);margin:var(--s1) 0 var(--s4);padding:12px 14px;background:var(--card);border-radius:var(--r-md);border:1px solid var(--line);cursor:pointer}
+.row{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);margin:0 0 var(--s3);padding:14px var(--s4);background:var(--card);border-radius:var(--r-lg);border:1px solid var(--line);box-shadow:var(--sh);cursor:pointer}
 .row small{display:block;color:var(--muted);font-size:.85rem}
 .switch{position:relative;width:52px;height:32px;flex:none}
 .switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:1}
@@ -86,7 +90,7 @@ input[type=file]{position:absolute;left:0;bottom:0;width:1px;height:1px;opacity:
 .switch input:checked + i{background:var(--gold);box-shadow:inset 0 0 0 2px var(--gold-t)}
 .switch input:checked + i::after{transform:translateX(20px);top:4px;left:4px;width:24px;height:24px;background:var(--preto)}
 .switch input:focus-visible + i{outline:var(--foco);outline-offset:2px}
-.perfis{display:flex;flex-wrap:wrap;gap:var(--s2);margin:-8px 0 var(--s4)}
+.perfis{display:flex;flex-wrap:wrap;gap:var(--s2);margin:0 0 var(--s5)}
 .perfis label{position:relative;cursor:pointer}
 .perfis input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
 .perfis label>span{display:flex;align-items:center;gap:6px;min-height:var(--alvo);padding:0 14px;border-radius:var(--r-full);background:var(--card);border:1px solid var(--edge);color:var(--muted);font-size:.9rem}
@@ -94,25 +98,36 @@ input[type=file]{position:absolute;left:0;bottom:0;width:1px;height:1px;opacity:
 .perfis input:checked + span{background:var(--card2);background:color-mix(in srgb,var(--gold) 18%,var(--card));border-color:var(--gold-t);color:var(--gold-l)}
 .perfis input:checked + span::before{content:"✓";font-weight:700}
 .perfis input:focus-visible + span{outline:var(--foco);outline-offset:2px}
-.go{width:100%;border:0;border-radius:var(--r-md);padding:17px;font-family:"Bebas Neue",sans-serif;font-size:1.6rem;letter-spacing:.08em;background:var(--gold);color:var(--preto);cursor:pointer}
-.go:disabled{opacity:.35;cursor:default}
+.go{width:100%;border:0;border-radius:var(--r-lg);padding:18px;font-family:"Bebas Neue",sans-serif;font-size:1.9rem;line-height:1;letter-spacing:.08em;background:var(--gold);color:var(--preto);cursor:pointer;
+  box-shadow:0 16px 34px -18px color-mix(in srgb,var(--ouro) 90%,transparent)}
+.go:disabled{background:var(--card2);color:var(--muted);box-shadow:inset 0 0 0 1px var(--line);cursor:default}   /* cinza legível, não ouro apagado */
+button:active:not(:disabled){transform:scale(.98)}
 button:focus-visible,summary:focus-visible,a:focus-visible,.alt input:focus-visible,.ler-ta:focus-visible,.alt label:focus-within,.ler-btn:focus-within{outline:var(--foco);outline-offset:2px}
 .status{margin:14px 0 0;color:var(--muted);text-align:center;min-height:1.4em}
 .status.warn{color:var(--stop);font-weight:600}
-.res{margin-top:18px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:18px;margin-bottom:var(--s3)}
-.stamp{display:inline-block;max-width:100%;font-family:"Bebas Neue",sans-serif;font-size:min(2rem,8.4vw);letter-spacing:.05em;line-height:1;padding:9px 14px 6px;border-radius:var(--r-sm);border:3px solid currentColor;transform:rotate(-2deg);margin-bottom:10px}
-.comprar .stamp,.stamp.comprar{color:var(--go);background:var(--go-bg)}
-.moderacao .stamp,.stamp.moderacao{color:var(--wait);background:var(--wait-bg)}
-.evitar .stamp,.stamp.evitar{color:var(--stop);background:var(--stop-bg)}
-.pname{font-weight:700;font-size:1.1rem;margin:2px 0 6px}
-.summary{margin:0 0 12px;color:var(--ink2)}
-.talk{margin:0 0 14px;padding:12px 14px;border-left:3px solid var(--gold);background:var(--card2);border-radius:0 var(--r-sm) var(--r-sm) 0;color:var(--ink2);font-size:.95rem}
+/* Resultado: o veredito é uma FAIXA sólida no topo do cartão (carimbo), cor do veredito com texto preto (≥7:1 nas 3).
+   O ✓/!/✕ é desenho (máscara SVG, content vazio): o leitor de tela lê só o texto do veredito. Cor por veredito num lugar só
+   (.comprar/.moderacao/.evitar valem pro cartão, pro selo do comparar e pro mini-carimbo do histórico). */
+.comprar{--v:var(--go);--v-bg:var(--go-bg);--v-solid:var(--verde);
+  --gl:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cmask id='m'%3E%3Crect width='24' height='24' fill='%23fff'/%3E%3Cpath d='M6.8 12.5l3.4 3.4 7-7.2' fill='none' stroke='%23000' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/mask%3E%3Ccircle cx='12' cy='12' r='12' mask='url(%23m)'/%3E%3C/svg%3E")}
+.moderacao{--v:var(--wait);--v-bg:var(--wait-bg);--v-solid:var(--ouro-l);
+  --gl:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cmask id='m'%3E%3Crect width='24' height='24' fill='%23fff'/%3E%3Cpath d='M12 6.2v7.4' stroke='%23000' stroke-width='3' stroke-linecap='round'/%3E%3Ccircle cx='12' cy='17.7' r='1.8'/%3E%3C/mask%3E%3Ccircle cx='12' cy='12' r='12' mask='url(%23m)'/%3E%3C/svg%3E")}
+.evitar{--v:var(--stop);--v-bg:var(--stop-bg);--v-solid:var(--vermelho);
+  --gl:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cmask id='m'%3E%3Crect width='24' height='24' fill='%23fff'/%3E%3Cpath d='M8.3 8.3l7.4 7.4M15.7 8.3l-7.4 7.4' stroke='%23000' stroke-width='2.8' stroke-linecap='round'/%3E%3C/mask%3E%3Ccircle cx='12' cy='12' r='12' mask='url(%23m)'/%3E%3C/svg%3E")}
+.res{margin-top:var(--s5)}
+.card{--pad:20px;background:var(--card);border:1px solid var(--line);border-radius:var(--r-xl);padding:var(--pad);margin-bottom:var(--s3);box-shadow:var(--sh);overflow:hidden}
+.stamp,.winner>.crown{display:flex;align-items:center;justify-content:center;gap:12px;margin:calc(-1 * var(--pad)) calc(-1 * var(--pad)) var(--s5);padding:28px 18px 22px;
+  background:var(--v-solid);color:var(--preto);font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:clamp(2.4rem,12vw,3.4rem);line-height:.95;letter-spacing:.04em;text-align:left;
+  box-shadow:inset 0 0 0 .2em var(--v-solid),inset 0 0 0 calc(.2em + 2px) color-mix(in srgb,var(--preto) 30%,var(--v-solid))}
+.stamp::before{content:"";flex:none;width:.95em;height:.95em;margin-top:-.08em;background:var(--preto);-webkit-mask:var(--gl) center/contain no-repeat;mask:var(--gl) center/contain no-repeat}
+.pname{font-weight:700;font-size:1.4rem;line-height:1.2;margin:6px 0 8px}
+.summary{margin:0 0 var(--s3);color:var(--ink2);font-size:1.06rem}
+.talk{margin:0 0 14px;padding:12px 14px;border-left:3px solid var(--gold);background:var(--card2);border-radius:0 var(--r-md) var(--r-md) 0;color:var(--ink2);font-size:.95rem}
 .list{list-style:none;padding:0;margin:0 0 10px}
-.list li{padding:7px 0 7px 26px;position:relative;border-top:1px solid var(--line)}
-.list li::before{position:absolute;left:2px;top:7px;font-weight:800}
-.good li::before{content:"✓";color:var(--go)}
-.bad li::before{content:"✕";color:var(--stop)}
+.list li{padding:11px 0 11px 36px;position:relative;border-top:1px solid var(--line)}
+.list li::before{position:absolute;left:0;top:10px;display:grid;place-items:center;width:26px;height:26px;border-radius:50%;font-size:.8rem;font-weight:800}
+.good li::before{content:"✓";color:var(--go);background:var(--go-bg)}
+.bad li::before{content:"✕";color:var(--stop);background:var(--stop-bg)}
 .baby{margin-top:8px;padding:11px 13px;border-radius:var(--r-sm);font-weight:700}
 .baby.ok{background:var(--go-bg);color:var(--go)}
 .baby.no{background:var(--stop-bg);color:var(--stop)}
@@ -121,36 +136,44 @@ button:focus-visible,summary:focus-visible,a:focus-visible,.alt input:focus-visi
 .ing{margin-top:var(--s1);font-size:.9rem;color:var(--muted)}
 .ing summary,.how summary{cursor:pointer;font-weight:600;padding:var(--s3) 0}
 .ing summary{color:var(--ink)}
-.winner{border:2px solid var(--gold)}
-.winner .crown{font-family:"Bebas Neue",sans-serif;letter-spacing:.08em;color:var(--gold-t);font-size:1.5rem;margin:0 0 4px}
+.winner{--v-solid:var(--ouro);border:2px solid var(--gold)}   /* "Leva o A"/"Empate" = faixa de ouro */
 .vs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
-.vs .card{padding:14px;margin:0}
+.vs .card{--pad:14px;margin:0}
 .vs .tag{font-family:"Bebas Neue",sans-serif;letter-spacing:.08em;color:var(--muted);font-size:1.1rem}
-.vs .stamp{font-size:1.25rem;padding:6px 9px 4px;border-width:2px}
+.vs .stamp{flex-direction:column;gap:6px;text-align:center;margin:var(--s2) calc(-1 * var(--pad)) var(--s3);padding:14px 8px 10px;font-size:1.4rem}
 .vs .pname{font-size:.98rem}
 .vs .summary{font-size:.92rem;margin:0}
-.again{width:100%;border:1px solid var(--edge);border-radius:var(--r-md);padding:14px;font:inherit;font-weight:600;background:transparent;color:var(--ink);cursor:pointer;margin-top:4px}
-.hist{margin-top:30px}
-.hist h2{font-family:"Bebas Neue",sans-serif;font-weight:400;letter-spacing:.08em;color:var(--gold-t);font-size:1.4rem;margin:0 0 6px}
-.hist ul{list-style:none;padding:0;margin:0}
-.hist li{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
-.dot{font-weight:700;white-space:nowrap}
-.dot.comprar{color:var(--go)} .dot.moderacao{color:var(--wait)} .dot.evitar{color:var(--stop)}
-.clear{background:none;border:0;color:var(--muted);font:inherit;font-size:.85rem;text-decoration:underline;cursor:pointer;min-height:var(--alvo);padding:0 var(--s2);margin-left:calc(-1 * var(--s2))}
-.fine{margin-top:26px;font-size:.8rem;color:var(--muted)}
-.scanbtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:74px;border:0;border-radius:var(--r-md);background:var(--gold);color:var(--preto);font-family:"Bebas Neue",sans-serif;font-size:1.5rem;letter-spacing:.06em;cursor:pointer}
-.scanbtn svg{width:30px;height:30px}
-.alt{display:flex;gap:8px;margin-top:10px}
-.alt input{flex:1;min-width:0;min-height:var(--alvo);padding:12px;border-radius:var(--r-sm);border:1px solid var(--edge);background:var(--campo);color:var(--ink);font:inherit;font-size:16px;letter-spacing:.04em}
+.again{width:100%;min-height:56px;border:2px solid var(--edge);border-radius:var(--r-lg);padding:14px;font:inherit;font-size:1.05rem;font-weight:700;background:transparent;color:var(--ink);cursor:pointer;margin-top:var(--s1)}
+.hist{margin-top:40px}
+.hist h2{font-family:"Bebas Neue",sans-serif;font-weight:400;letter-spacing:.08em;color:var(--gold-t);font-size:1.6rem;margin:0 0 var(--s3)}
+.hist ul{list-style:none;margin:0;padding:2px var(--s4);background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:var(--sh)}
+.hist li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 0;border-top:1px solid var(--line)}
+.hist li:first-child{border-top:0}
+/* mini-carimbo (histórico e trocas): mesma cor e mesmo ✓/!/✕ da faixa, em tamanho de etiqueta */
+.dot{flex:none;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:1.1rem;letter-spacing:.06em;line-height:1;
+  padding:5px 9px 3px;border:2px solid currentColor;border-radius:var(--s2);color:var(--v);background:var(--v-bg);transform:rotate(-2deg)}
+.dot::before{content:"";flex:none;width:.85em;height:.85em;margin-top:-.12em;background:currentColor;-webkit-mask:var(--gl) center/contain no-repeat;mask:var(--gl) center/contain no-repeat}
+.dot:empty{display:none}   /* remédio entra no histórico sem veredito */
+.clear{background:none;border:0;color:var(--muted);font:inherit;font-size:.85rem;text-decoration:underline;cursor:pointer;min-height:var(--alvo);padding:0 var(--s2);margin:var(--s1) 0 0 calc(-1 * var(--s2))}
+.fine{margin-top:32px;font-size:.8rem;color:var(--muted);text-align:center}
+/* escanear = o bloco de ouro grande (a ação da tela); no Comparar 2 são dois, então encolhem */
+.scanbtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;width:100%;min-height:184px;padding:var(--s4);border:0;border-radius:var(--r-xl);background:var(--gold);color:var(--preto);
+  font-family:"Bebas Neue",sans-serif;font-size:2.1rem;line-height:1.05;letter-spacing:.05em;cursor:pointer;
+  box-shadow:inset 0 1px 0 color-mix(in srgb,var(--branco) 35%,transparent),0 22px 44px -22px color-mix(in srgb,var(--ouro) 85%,transparent)}
+.scanbtn svg{width:64px;height:64px;stroke-width:1.6}
+main:has(#slotB:not(.hidden)) [data-pick] .scanbtn{min-height:120px;font-size:1.7rem}
+main:has(#slotB:not(.hidden)) [data-pick] .scanbtn svg{width:44px;height:44px}
+.alt{display:flex;gap:var(--s2);margin-top:var(--s3)}
+.alt input{flex:1;min-width:0;min-height:52px;padding:12px 14px;border-radius:var(--r-md);border:1px solid var(--edge);background:var(--campo);color:var(--ink);font:inherit;font-size:16px;letter-spacing:.04em}
 input::placeholder,textarea::placeholder{color:var(--muted);opacity:1}
-.alt label,.alt button{position:relative;flex:none;display:flex;align-items:center;justify-content:center;min-width:var(--alvo);min-height:var(--alvo);padding:0 14px;border-radius:var(--r-sm);border:1px solid var(--edge);background:var(--card2);color:var(--ink);font:inherit;font-weight:600;cursor:pointer}
-.found{display:flex;gap:var(--s2);align-items:center;padding:10px;border-radius:var(--r-md);background:var(--card2);margin-bottom:10px}
+.alt label,.alt button{position:relative;flex:none;display:flex;align-items:center;justify-content:center;min-width:52px;min-height:52px;padding:0 var(--s4);border-radius:var(--r-md);border:1px solid var(--edge);background:var(--card2);color:var(--ink);font:inherit;font-weight:700;cursor:pointer}
+.found{display:flex;gap:var(--s2);align-items:center;padding:12px;border-radius:var(--r-lg);background:var(--card);border:1px solid var(--line);box-shadow:var(--sh);margin-bottom:10px}
 .found img{width:58px;height:58px;object-fit:contain;border-radius:var(--r-sm);background:var(--branco);flex:none}
 .found .nm{font-weight:700;line-height:1.2}
 .found .sub{color:var(--muted);font-size:.85rem}
 .found .x{flex:none;margin-left:auto;display:grid;place-items:center;min-width:var(--alvo);min-height:var(--alvo);background:none;border:0;border-radius:var(--r-sm);color:var(--muted);font-size:1.4rem;cursor:pointer;padding:0}
 .found .x ~ .x{margin-left:0}
-.found.miss{border:1px solid var(--stop)}
+.found.miss{border-color:var(--stop)}
 /* leitor: sempre escuro (é câmera), nos 2 temas */
 #scanner{position:fixed;inset:0;z-index:50;background:var(--preto);display:flex;flex-direction:column;color-scheme:dark}
 #scanner video{flex:1;width:100%;object-fit:cover}
@@ -158,38 +181,41 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:1}
 #scanner .bar{position:absolute;left:0;right:0;bottom:0;padding:36px max(16px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:10px;align-items:center;background:linear-gradient(to top,rgba(0,0,0,.85) 60%,rgba(0,0,0,0))}
 #scanner .bar p{margin:0;color:var(--branco);text-align:center;max-width:420px}
 #scanner .bar button{width:100%;max-width:420px;min-height:var(--alvo);padding:15px;border-radius:var(--r-md);border:1px solid rgba(255,255,255,.5);background:var(--preto);color:var(--branco);font:inherit;font-weight:700}
-.prodimg{float:right;width:74px;height:74px;object-fit:contain;background:var(--branco);border-radius:var(--r-sm);margin:0 0 8px 10px}
+.prodimg{float:right;width:88px;height:88px;object-fit:contain;background:var(--branco);border-radius:var(--r-lg);box-shadow:0 0 0 1px var(--line);margin:0 0 8px 12px}
 .src{font-size:.8rem;color:var(--muted);margin-top:10px}
 .src a{color:var(--gold-l)}
 .cat{margin-right:.3em} .info li{padding-left:0} .info small{display:block;color:var(--muted);font-size:.8rem}
 .ler{margin-top:4px}
 .ler-t{margin:0 0 8px;color:var(--ink2);font-size:.95rem}
 .ler-ta{width:100%;min-height:96px;padding:12px;border-radius:var(--r-md);border:2px solid var(--gold-t);background:var(--campo);color:var(--ink);font:inherit;font-size:16px;resize:vertical}
-.ler-btn{position:relative;margin-top:10px;min-height:56px;font-size:1.3rem}
+.ler-btn{position:relative;flex-direction:row;margin-top:10px;min-height:56px;padding:var(--s2) var(--s4);border-radius:var(--r-lg);font-size:1.3rem}
 .how{margin:6px 0 0;font-size:.88rem;color:var(--muted)}
 .how summary{color:var(--gold-l)}
 .how p{margin:6px 0 0}
-.trocab{display:block;min-height:var(--alvo);margin:0 0 10px;padding:8px 14px;border:1px solid var(--gold-t);border-radius:var(--r-sm);background:transparent;color:var(--gold-l);font:inherit;font-weight:600;cursor:pointer}
+.trocab{display:flex;align-items:center;justify-content:center;width:100%;min-height:50px;margin:0 0 var(--s4);padding:8px 14px;border:2px solid var(--gold-t);border-radius:var(--r-md);background:transparent;color:var(--gold-l);font:inherit;font-weight:700;cursor:pointer}
 .trocab:disabled{opacity:.6}
 .troca p{margin:0 0 10px;color:var(--muted)}
 .trocal{display:flex;justify-content:space-between;gap:10px;width:100%;min-height:48px;align-items:center;padding:10px 0;border:0;border-top:1px solid var(--line);background:transparent;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
 .trocal .dot{margin-left:auto}
 .trocal::after{content:"›";flex:none;color:var(--muted);font-size:1.5rem;line-height:1}
 .hidden{display:none!important}
-@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+/* resultado chega subindo 10px (só transform: opacidade no meio da animação derrubaria a medida de contraste) */
+@keyframes sobe{from{transform:translateY(10px)}}
+@media (prefers-reduced-motion:no-preference){.res .card{animation:sobe .28s var(--ease)}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}button:active:not(:disabled){transform:none}}
 /* ---------- sobre ---------- */
 .sobre-btn{display:flex;margin:-10px -10px 0 auto;align-items:center;justify-content:center;min-width:var(--alvo);min-height:var(--alvo);padding:0;border:0;border-radius:var(--r-full);background:none;color:var(--muted);cursor:pointer}
 .sobre-btn svg{width:24px;height:24px}
 .sobre-btn:hover{color:var(--gold-t)}
-dialog.sobre{width:min(calc(100% - 2 * var(--s4)),480px);max-height:calc(100vh - 2 * var(--s4));max-height:calc(100dvh - 2 * var(--s4));padding:0;border:1px solid var(--edge);border-radius:var(--r-lg);background:var(--card);color:var(--ink);overflow:auto}
+dialog.sobre{width:min(calc(100% - 2 * var(--s4)),480px);max-height:calc(100vh - 2 * var(--s4));max-height:calc(100dvh - 2 * var(--s4));padding:0;border:1px solid var(--edge);border-radius:var(--r-xl);background:var(--card);color:var(--ink);overflow:auto}
 dialog.sobre::backdrop{background:rgba(0,0,0,.7)}
-.sobre-corpo{padding:var(--s4)}
+.sobre-corpo{padding:20px}
 .sobre h2{font-family:"Bebas Neue",sans-serif;font-weight:400;letter-spacing:.08em;font-size:1.5rem;line-height:1.1;color:var(--gold-t);margin:0 0 var(--s3)}
 .sobre p{margin:0 0 var(--s3);color:var(--ink2);font-size:.95rem}
 .sobre strong{color:var(--ink)}
 .sobre a{color:var(--gold-t);text-underline-offset:3px}
 .sobre a:focus-visible{outline:var(--foco);outline-offset:2px}
-.sobre-fechar{width:100%;min-height:var(--alvo);border:1px solid var(--edge);border-radius:var(--r-md);background:transparent;color:var(--ink);font:inherit;font-weight:600;cursor:pointer}
+.sobre-fechar{width:100%;min-height:52px;border:2px solid var(--edge);border-radius:var(--r-lg);background:transparent;color:var(--ink);font:inherit;font-weight:700;cursor:pointer}
 </style>
 </head>
 <body>
@@ -753,7 +779,7 @@ function trocaBox(p){
 }
 function showOne(r, p){
   result.innerHTML = ""; const c = cartao(r, p), st = c.querySelector(".stamp");
-  if (st && p && p.data && r._cat === "alimento" && vOk(r.veredito) !== "comprar" && Troca.categoriaDe(p.data)) st.after(trocaBox(p));
+  if (st && p && p.data && r._cat === "alimento" && vOk(r.veredito) !== "comprar" && Troca.categoriaDe(p.data)) (c.querySelector(".summary") || st).after(trocaBox(p));
   result.append(c, againBtn()); show();
 }
 // Comparar 2 só dentro da mesma categoria; remédio não compara: mostra o card de cada um.
