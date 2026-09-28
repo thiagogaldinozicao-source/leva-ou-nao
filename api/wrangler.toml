@@ -1,0 +1,38 @@
+# API do "Leva ou não?" — Cloudflare Workers + D1 (plano grátis). Passo a passo: api/README.md
+name = "leva-ou-nao-api"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+workers_dev = true
+
+[vars]
+# Quem pode chamar a API (separado por vírgula): site no GitHub Pages + app Android/iOS (Capacitor).
+# Domínio próprio no futuro: acrescentar aqui.
+ALLOWED_ORIGINS = "https://thiagogaldinozicao-source.github.io,https://localhost,capacitor://localhost"
+# O Open Food Facts exige User-Agent com nome do app + contato.
+OFF_USER_AGENT = "LevaOuNao/1.0 (+https://github.com/thiagogaldinozicao-source/leva-ou-nao)"
+
+# Segredos: NUNCA aqui nem no repositório. Cada um com `npx wrangler secret put NOME` (todos opcionais):
+#   TURNSTILE_SECRET   liga o captcha invisível no POST /v1/rotulo-texto
+#   OFF_USER, OFF_PASS conta do app no Open Food Facts; sem eles o cron não envia nada
+
+[[d1_databases]]
+binding = "DB"
+database_name = "leva-ou-nao"
+# Cole aqui o database_id que o `npx wrangler d1 create leva-ou-nao` imprimir.
+database_id = "PREENCHER"
+migrations_dir = "migrations"
+
+# Limite por IP. O IP só vive no contador da Cloudflare; nada é gravado.
+[[ratelimits]]
+name = "RL_BUSCA"          # GET /v1/produto e POST /v1/metrica
+namespace_id = "1001"
+simple = { limit = 120, period = 60 }
+
+[[ratelimits]]
+name = "RL_ROTULO"         # POST /v1/rotulo-texto
+namespace_id = "1002"
+simple = { limit = 20, period = 60 }
+
+[triggers]
+# Devolve ao Open Food Facts os ingredientes lidos do rótulo (4x por dia, até 25 produtos por vez).
+crons = ["17 */6 * * *"]
