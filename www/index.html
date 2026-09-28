@@ -192,7 +192,7 @@ button:focus-visible,.shoot:focus-within{outline:3px solid var(--gold-l);outline
     <button class="clear" id="clearHist">Limpar lista</button>
   </section>
 
-  <p class="fine">Nada é salvo além do nome e veredito na lista acima. Dados do Open Food Facts, Open Beauty Facts, Open Pet Food Facts e Open Products Facts (bases abertas e colaborativas, licença ODbL) e da CMED/Anvisa (preços de remédio). Não substitui pediatra ou nutricionista.</p>
+  <p class="fine">Nada é salvo além do nome e veredito no histórico. Dados do Open Food Facts, Open Beauty Facts, Open Pet Food Facts e Open Products Facts (bases abertas e colaborativas, licença ODbL) e da CMED/Anvisa (preços de remédio). Não substitui pediatra ou nutricionista.</p>
 </main>
 
 <div id="scanner" class="hidden" role="dialog" aria-label="Leitor de código de barras">
@@ -345,7 +345,8 @@ function painelLeitura(k, p){
     inp.onchange = async () => { const f = inp.files && inp.files[0]; inp.value = ""; if (f) await lerFotoNativo(k, f); };
     lab.append(inp); w.append(lab);
   } else {
-    const ta = el("textarea","ler-ta"); ta.rows = 4; ta.placeholder = "Toque aqui → Escanear Texto → aponte pros ingredientes → Inserir";
+    const ta = el("textarea","ler-ta"); ta.rows = 4;
+    ta.placeholder = IOS ? "Toque aqui → Escanear Texto → aponte pros ingredientes → Inserir" : "Digite ou cole os ingredientes do rótulo";
     ta.setAttribute("aria-label","Ingredientes do rótulo");
     // De onde veio o texto (vai pro servidor): o "Escanear Texto" do iPhone entra de uma vez; digitando, letra a letra.
     let antes = 0, emBloco = false;
@@ -354,7 +355,7 @@ function painelLeitura(k, p){
     ok.onclick = async () => { ok.disabled = true; await usarIngredientes(k, ta.value, IOS && emBloco ? "ios" : "digitado"); ok.disabled = false; };
     const dica = el("details","how"); dica.append(el("summary",null,"Não aparece o Escanear Texto?"),
       el("p",null,"Toque no campo e depois toque de novo (ou segure) pra abrir o menu com \"Escanear Texto\". Precisa de iPhone XS ou mais novo. Também dá pra digitar ou colar os ingredientes."));
-    w.append(ta, dica, ok);
+    w.append(ta, ...(IOS ? [dica] : []), ok);   // o Escanear Texto é do iPhone: fora dele a dica só confunde
   }
   return w;
 }

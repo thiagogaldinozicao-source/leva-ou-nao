@@ -2,7 +2,7 @@
 // Só roda no site (quem registra é offline.js); no app Android os arquivos já vêm no APK.
 //
 // Estratégia:
-//  - index.html e *.js/*.json do app: rede primeiro (atualização chega na hora), cache se estiver offline.
+//  - index.html e *.js/*.json do app: rede primeiro (atualização chega na hora), cache se estiver offline ou a rede passar de 3 s.
 //  - lib/, fonts/, icons/: cache primeiro (não mudam; o .js e o .wasm do ZXing ficam sempre do mesmo par).
 //  - Open Food Facts, API e qualquer outro domínio: o SW não toca, vai direto pra rede.
 //
@@ -10,6 +10,7 @@
 // O prefixo é só deste app porque o domínio *.github.io é dividido com outros sites do mesmo dono.
 const PREFIXO = "levaounao-";
 const VERSAO = PREFIXO + "v1";
+const PRAZO_REDE_MS = 3000; // rede mais lenta que isso => cópia guardada
 
 const SHELL = [
   "./",
@@ -56,7 +57,7 @@ self.addEventListener("fetch", (ev) => {
   if (url.origin !== self.location.origin) return; // Open Food Facts / API: sem cache do SW
   if (ESTATICO.test(url.pathname)) { ev.respondWith(cachePrimeiro(req)); return; }
   if (req.mode === "navigate" || /(\/|\.html|\.js|\.json|\.webmanifest)$/.test(url.pathname)) {
-    ev.respondWith(redePrimeiro(req, url));
+    ev.respondWith(redePrimeiro(ev, req, url));
   }
   // O resto do mesmo domínio passa direto, sem cache.
 });
@@ -70,20 +71,26 @@ async function cachePrimeiro(req) {
   return res;
 }
 
-async function redePrimeiro(req, url) {
+async function redePrimeiro(ev, req, url) {
   const cache = await caches.open(VERSAO);
   const chave = url.origin + url.pathname; // sem ?query, pra não acumular cópia
-  try {
-    const res = await fetch(req, { cache: "no-cache" }); // revalida com o servidor (304 é barato)
-    if (res.ok && res.type === "basic") cache.put(chave, res.clone());
+  const rede = fetch(req, { cache: "no-cache" }).then(res => { // revalida com o servidor (304 é barato)
+    if (res.ok && res.type === "basic") return cache.put(chave, res.clone()).then(() => res, () => res);
     return res;
-  } catch (e) {
+  });
+  ev.waitUntil(rede.catch(() => {})); // se a cópia guardada sair antes, a rede ainda atualiza o cache
+  const guardado = async () => {
     const velho = await cache.match(chave, { ignoreVary: true });
-    if (velho) return velho;
-    if (req.mode === "navigate") {
-      const casca = (await cache.match("./", { ignoreVary: true })) || (await cache.match("index.html", { ignoreVary: true }));
-      if (casca) return casca;
-    }
-    return Response.error();
+    if (velho || req.mode !== "navigate") return velho;
+    return (await cache.match("./", { ignoreVary: true })) || (await cache.match("index.html", { ignoreVary: true }));
+  };
+  try {
+    // Sinal fraco no mercado: sem resposta em PRAZO_REDE_MS, serve a cópia guardada (se houver).
+    const lenta = new Promise(r => setTimeout(r, PRAZO_REDE_MS, null));
+    const res = await Promise.race([rede, lenta]);
+    if (res) return res;
+    return (await guardado()) || (await rede);
+  } catch (e) {
+    return (await guardado()) || Response.error();
   }
 }

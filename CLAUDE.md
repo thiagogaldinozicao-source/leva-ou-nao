@@ -27,7 +27,7 @@ Produto sem cadastro → ler ingredientes do rótulo (Android: ML Kit no aparelh
 - `www/rotulo.js` — parser por regras do texto lido no rótulo (ingredientes, alérgenos, "ALTO EM") → `globalThis.Rotulo`; mesmo arquivo usado pela API (`api/src/index.js`).
 - `www/sw.js` — service worker do site: cache-first em `lib/fonts/icons`, rede-primeiro no shell; nunca intercepta Open Food Facts/irmãs nem a API.
 - `www/offline.js` — registra o `sw.js` (só no site, não no app empacotado).
-- `www/_headers` — headers do GitHub Pages (CSP igual à `<meta>` do `index.html`, cache).
+- `www/_headers` — headers pra host que aplica o arquivo (Cloudflare Pages/Netlify); o GitHub Pages IGNORA: lá só vale a CSP da `<meta>` do `index.html`.
 - `tests/` — `node --test` puro: `regras.test.mjs` roda `www/regras.js` como script clássico via `vm`; `fixtures/` = produtos reais (JSON) pros casos.
 - `android/` — Capacitor 8 (id `br.com.zicao.levaounao`). `capacitor.config.json`.
 - `.github/workflows/site.yml` — `www/` → GitHub Pages a cada push na main.

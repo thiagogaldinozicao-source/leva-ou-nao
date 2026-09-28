@@ -134,7 +134,7 @@ function analisarProduto(d, isBaby){
   if (r.comentario && r.comentario !== "Nada que chame atenção no rótulo.") coment.push(r.comentario);
   const resumo = v === "comprar" ? "Pode levar tranquilo." : v === "moderacao" ? "Não é dos piores, mas tem ressalvas. De vez em quando tá ok." : "Muita coisa industrial aqui. Melhor deixar na prateleira.";
   const out = { legivel: true, produto: nomeProd(d), imagem: d.image_front_small_url || "", veredito: v, resumo,
-    comentario: coment.slice(0, 2).join(" ") || "Rótulo sem nada que chame atenção.", pontos_bons: bons.slice(0, 4), pontos_ruins: [...new Set(ruins)].slice(0, 6),
+    comentario: coment.slice(0, 2).join(" ") || (ing ? "Rótulo sem nada que chame atenção." : ""), pontos_bons: bons.slice(0, 4), pontos_ruins: [...new Set(ruins)].slice(0, 6),
     ingredientes: ing.slice(0, 700), _pts: pts, _n: r._n || 0 };
   if (isBaby) out.bebe = { serve: v === "comprar", motivo: v === "comprar" ? "Sem açúcar adicionado, adoçante ou corante artificial." : "Tem coisa que é melhor evitar pra idade dele." };
   return out;

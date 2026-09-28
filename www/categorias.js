@@ -54,7 +54,8 @@ function rodar(regras, t, ctx){
     pts += p; if (p >= 3) grave = true;
     if (r.tag) bateu.add(r.tag);
     const m = typeof r.m === "function" ? r.m(ctx) : r.m;
-    ruins.push(r.lista === false ? m : m + " (" + ach.slice(0, 3).join(", ") + ")");
+    const soOMesmo = ach.length === 1 && nrm(m).includes(nrm(ach[0]));   // "Libera formol (formol)" não
+    ruins.push(r.lista === false || soOMesmo ? m : m + " (" + ach.slice(0, 3).join(", ") + ")");
     if (r.dica) dicas.push(typeof r.dica === "function" ? r.dica(ctx) : r.dica);
   });
   return { pts, grave, ruins, dicas, bateu };
@@ -145,7 +146,8 @@ const PET = [
            [/azul brilhante|brilliant blue/, "azul brilhante"], [/indigotin/, "indigotina"], [/eritrosin|erythrosin/, "eritrosina"],
            [/ponceau/, "ponceau"], [/carame(lo|l) i[v3]/, "caramelo IV"], [/dioxido de titanio|titanium dioxide/, "dióxido de titânio"],
            [/corante artificial|artificial colou?r/, "corante artificial"],
-           [/\be ?1(02|10|22|24|27|29|32|33|71)\b/, "corante (E1xx)"]] }
+           // o lookbehind evita "vitamina E 110 UI" (enriquecimento) virar corante E110
+           [/(?<!vitamina |vit\.? )\be ?1(02|10|22|24|27|29|32|33|71)\b/, "corante (E1xx)"]] }
 ];
 const RESUMO_PET = { comprar:"Ração sem os aditivos que preocupam. Pode levar.",
   moderacao:"Não é das piores, mas tem ressalvas. Ok se o bicho vai bem com ela.",
@@ -227,7 +229,7 @@ function avaliar(d){
   const n = L.length;
   if (r.pts === 0 && n <= 8) bons.unshift("Fórmula curtinha (" + n + " ingredientes)");
   return { legivel: true, produto: nome(d), imagem: d.image_front_small_url || "", veredito: v, resumo,
-    comentario: r.dicas.slice(0, 2).join(" ") || "Nada que chame atenção na fórmula.",
+    comentario: r.dicas.slice(0, 2).join(" ") || (r.ruins.length ? "" : "Nada que chame atenção na fórmula."),
     pontos_bons: bons.slice(0, 4), pontos_ruins: [...new Set(r.ruins)].slice(0, 6),
     ingredientes: String(raw).slice(0, 700), _pts: r.pts, _n: n, _icone: icone };
 }
