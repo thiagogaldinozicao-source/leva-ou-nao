@@ -120,6 +120,7 @@ button:focus-visible,.shoot:focus-within{outline:3px solid var(--gold-l);outline
 .prodimg{float:right;width:74px;height:74px;object-fit:contain;background:#fff;border-radius:12px;margin:0 0 8px 10px}
 .src{font-size:.8rem;color:var(--muted);margin-top:10px}
 .src a{color:var(--gold-l)}
+.cat{margin-right:.3em} .info li{padding-left:0} .info small{display:block;color:var(--muted);font-size:.8rem}
 .ler{margin-top:4px}
 .ler-t{margin:0 0 8px;color:#DDD;font-size:.95rem}
 .ler-ta{width:100%;min-height:96px;padding:12px;border-radius:14px;border:2px solid var(--gold);background:#000;color:#fff;font:inherit;font-size:16px;resize:vertical}
@@ -194,6 +195,7 @@ button:focus-visible,.shoot:focus-within{outline:3px solid var(--gold-l);outline
   <div class="box" aria-hidden="true"></div>
   <div class="bar"><p id="scanMsg">Aponte pro código de barras</p><button id="scanClose">Cancelar</button></div>
 </div>
+<script src="categorias.js"></script>
 <script src="lib/zxing-reader.js"></script>
 <script>
 const $ = s => document.querySelector(s);
@@ -598,16 +600,34 @@ function againBtn(){
 }
 function show(){ result.classList.remove("hidden"); result.scrollIntoView({behavior:"smooth", block:"start"}); }
 
-function showOne(r){
-  result.innerHTML = "";
-  const c = el("div","card");
-  if (!r || r.legivel === false){
+/* Categoria vem da busca em d._categoria (sem = alimento). Alimento = motor do app; cosmético/pet/limpeza =
+   categorias.js; remédio nunca tem veredito, só card de informação. */
+function analisarCat(d, isBaby){
+  const cat = Categorias.categoria(d);
+  const r = cat === "alimento" ? analisarProduto(d, isBaby) : cat === "remedio" ? Categorias.remedio(d) : Categorias.avaliar(d);
+  r._cat = cat; return r;
+}
+function nomeCom(cat, r, nome){
+  const p = el("p","pname"), i = el("span","cat",Categorias.icone(cat, r));
+  i.setAttribute("role","img"); i.setAttribute("aria-label", Categorias.NOME[cat]); i.title = Categorias.NOME[cat];
+  p.append(i, nome); return p;
+}
+const histNome = (cat, r, nome) => (cat === "alimento" ? "" : Categorias.icone(cat, r) + " ") + nome;
+
+function cartao(r, p){
+  const c = el("div","card"), cat = (r && r._cat) || "alimento";
+  if (r && r.remedio){
+    if (r.imagem){ const im = el("img","prodimg"); im.src = r.imagem; im.alt = ""; c.append(im); }
+    c.append(nomeCom(cat, r, r.produto), el("p","summary","Remédio não tem veredito, só informação. Na dúvida, fala com o farmacêutico."));
+    if (r.linhas.length){ const ul = el("ul","list info"); r.linhas.forEach(([k, v]) => { const li = el("li"); li.append(el("small",null,k), v); ul.append(li); }); c.append(ul); }
+    saveHist(histNome(cat, r, r.produto), "info");
+  } else if (!r || r.legivel === false){
     c.append(el("p","pname","Não consegui ler o rótulo"), el("p","summary",(r && r.resumo) || "Tire mais de perto a lista de ingredientes, com luz e sem reflexo."));
   } else {
     const v = vOk(r.veredito); c.classList.add(v);
     c.append(el("div","stamp",LABEL[v]));
     if (r.imagem){ const im = el("img","prodimg"); im.src = r.imagem; im.alt = ""; c.append(im); }
-    if (r.produto) c.append(el("p","pname",r.produto));
+    if (r.produto) c.append(nomeCom(cat, r, r.produto));
     if (r.resumo) c.append(el("p","summary",r.resumo));
     if (r.comentario) c.append(el("p","talk","💬 " + r.comentario));
     [list(r.pontos_bons,"good"), list(r.pontos_ruins,"bad")].forEach(x => x && c.append(x));
@@ -616,19 +636,29 @@ function showOne(r){
       if (r.bebe.motivo) b.append(el("span",null,r.bebe.motivo)); c.append(b);
     }
     if (r.ingredientes){ const d = el("details","ing"); d.append(el("summary",null,"Ingredientes lidos"), el("p",null,r.ingredientes)); c.append(d); }
-    saveHist(r.produto || "Produto", v);
+    saveHist(histNome(cat, r, r.produto || "Produto"), v);
   }
-  result.append(c, againBtn()); show();
+  if (p) c.append(fonte(p.code, p.data && p.data._lido, cat));
+  return c;
+}
+function showOne(r, p){ result.innerHTML = ""; result.append(cartao(r, p), againBtn()); show(); }
+// Comparar 2 só dentro da mesma categoria; remédio não compara: mostra o card de cada um.
+function showCards(rs, ps, nota){
+  result.innerHTML = "";
+  result.append(el("p","summary",nota));
+  rs.forEach((r, i) => result.append(cartao(r, ps[i])));
+  result.append(againBtn()); show();
 }
 
-function showTwo(r){
+function showTwo(r, cat){
+  cat = cat || "alimento";
   result.innerHTML = "";
   const a = (r && r.a) || {}, b = (r && r.b) || {};
   const best = r && ["a","b"].includes(r.melhor) ? r.melhor : null;
   const top = el("div","card winner");
   const winName = best === "a" ? (a.produto || "Produto A") : best === "b" ? (b.produto || "Produto B") : null;
   top.append(el("p","crown", winName ? "Leva o " + (best === "a" ? "A" : "B") : "Empate"));
-  if (winName) top.append(el("p","pname",winName));
+  if (winName) top.append(nomeCom(cat, null, winName));
   if (r && r.motivo) top.append(el("p","summary",r.motivo));
   if (r && r.comentario) top.append(el("p","talk","💬 " + r.comentario));
   const dl = list(r && r.diferencas, "good"); if (dl) top.append(dl);
@@ -641,9 +671,9 @@ function showTwo(r){
     else {
       const v = vOk(p.veredito);
       c.append(el("div","stamp " + v, LABEL[v]));
-      if (p.produto) c.append(el("p","pname",p.produto));
+      if (p.produto) c.append(nomeCom(cat, null, p.produto));
       if (p.resumo) c.append(el("p","summary",p.resumo));
-      saveHist(p.produto || ("Produto " + t), v);
+      saveHist(histNome(cat, null, p.produto || ("Produto " + t)), v);
     }
     vs.append(c);
   });
@@ -665,14 +695,17 @@ $("#clearHist").onclick = () => { store("hist", []); renderHist(); };
 renderHist();
 
 
-function fonte(code, lido){ const p = el("p","src"); if (lido){ p.append("Ingredientes lidos do rótulo no seu celular."); return p; } p.append("Fonte: "); const a = el("a",null,"Open Food Facts"); a.href = "https://br.openfoodfacts.org/produto/" + code; a.target = "_blank"; a.rel = "noopener"; p.append(a); return p; }
+function fonte(code, lido, cat){ const p = el("p","src"); if (lido){ p.append("Ingredientes lidos do rótulo no seu celular."); return p; } const f = Categorias.fonte(cat || "alimento", code); p.append("Fonte: "); const a = el("a",null,f.nome); a.href = f.url; a.target = "_blank"; a.rel = "noopener"; p.append(a); return p; }
 
 goBtn.onclick = () => {
   if (!ready() || busy) return;
   statusEl.className = "status"; statusEl.textContent = "";
   const isBaby = baby.checked;
-  if (mode === "one"){ showOne(analisarProduto(prod.A.data, isBaby)); result.querySelector(".card").append(fonte(prod.A.code, prod.A.data._lido)); }
-  else showTwo(comparar(analisarProduto(prod.A.data, isBaby), analisarProduto(prod.B.data, isBaby), isBaby));
+  if (mode === "one") return showOne(analisarCat(prod.A.data, isBaby), prod.A);
+  // Modo bebê só vale pra alimento; comparar só dentro da mesma categoria e nunca remédio.
+  const a = analisarCat(prod.A.data, isBaby), b = analisarCat(prod.B.data, isBaby);
+  if (a._cat === b._cat && a._cat !== "remedio") return showTwo(comparar(a, b, isBaby && a._cat === "alimento"), a._cat);
+  showCards([a, b], [prod.A, prod.B], a._cat === b._cat ? "💊 Remédio não entra na comparação." : Categorias.icone(a._cat, a) + " e " + Categorias.icone(b._cat, b) + " não se comparam: vai o de cada um.");
 };
 render();
 </script>
