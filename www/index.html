@@ -219,6 +219,7 @@ button:focus-visible,.shoot:focus-within{outline:3px solid var(--gold-l);outline
 <script src="categorias.js"></script>
 <script src="lib/zxing-reader.js"></script>
 <script src="regras.js"></script>
+<script src="rotulo.js"></script>
 <script src="troca.js"></script>
 <script>
 const $ = s => document.querySelector(s);
@@ -430,7 +431,8 @@ async function usarIngredientes(k, texto, fonte){
   if (texto.length < 10){ statusEl.className = "status warn"; statusEl.textContent = "Faltam os ingredientes. Escaneia ou digita."; return; }
   const p = prod[k]; if (!p) return;
   const base = p.status === "ok" && p.data ? p.data : { product_name: "Produto " + p.code };
-  let dados = { ...base, ingredients_text_pt: texto, _lido: true };
+  // A lupa "ALTO EM" lida do rótulo vale mesmo sem API (com API, o _rotulo do servidor entra por cima, abaixo).
+  let dados = { ...base, ingredients_text_pt: texto, _lido: true, _rotulo: { ...base._rotulo, altoEm: globalThis.Rotulo ? Rotulo.ler(texto).altoEm : [] } };
   if (API_URL){
     statusEl.className = "status"; statusEl.textContent = "Lendo os ingredientes…";
     const srv = await enviarRotulo(p.code, texto, fonte);
@@ -580,6 +582,7 @@ function nomeCom(cat, r, nome){
 // Selo por perfil ligado (mesmo estilo do selo do bebê): ícone + [ok, atenção, não].
 const SELO_PERFIL = { gluten: ["🌾", "Sem glúten", "Pode ter glúten", "Tem glúten"], lactose: ["🥛", "Sem lactose", "Pode ter lactose", "Tem lactose"], acucar: ["🍬", "Pouco açúcar", "Açúcar a conferir", "Tem açúcar"] };
 const CLS_PERFIL = { ok: "ok", atencao: "warn", nao: "no" };
+const LUPA_TXT = { acucar: "AÇÚCAR ADICIONADO", gordura: "GORDURA SATURADA", sodio: "SÓDIO" };   // ids de r.lupa (regras.js) → texto da lupa da Anvisa
 function seloPerfil(titulo, estado, motivo){ const s = el("div","baby " + (CLS_PERFIL[estado] || "warn"), titulo); if (motivo) s.append(el("span",null,motivo)); return s; }
 const histNome = (cat, r, nome) => (cat === "alimento" ? "" : Categorias.icone(cat, r) + " ") + nome;
 
@@ -599,6 +602,8 @@ function cartao(r, p){
     if (r.produto) c.append(nomeCom(cat, r, r.produto));
     if (r.resumo) c.append(el("p","summary",r.resumo));
     (Array.isArray(r.perfis) ? r.perfis : []).forEach(p => { const s = SELO_PERFIL[p.id]; if (s) c.append(seloPerfil(s[0] + " " + s[{ ok: 1, atencao: 2, nao: 3 }[p.estado] || 2], p.estado, p.motivo)); });
+    const lupa = (Array.isArray(r.lupa) ? r.lupa : []).map(k => LUPA_TXT[k]).filter(Boolean);
+    if (lupa.length) c.append(seloPerfil("🔍 ALTO EM " + lupa.join(" · "), "atencao"));
     if (r.comentario) c.append(el("p","talk","💬 " + r.comentario));
     [list(r.pontos_bons,"good"), list(r.pontos_ruins,"bad")].forEach(x => x && c.append(x));
     if (r.bebe && typeof r.bebe === "object"){
