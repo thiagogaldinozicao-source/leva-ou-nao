@@ -1,0 +1,10 @@
+{
+  "code": "7891000100103",
+  "product_name_pt": "Iogurte de morango",
+  "brands": "Nestlé",
+  "quantity": "170 g",
+  "ingredients_text_pt": "Leite integral, açúcar, preparado de morango (morango, água, amido modificado, aromatizante, corante natural carmim, acidulante ácido cítrico), fermento lácteo",
+  "additives_tags": ["en:e120", "en:e330", "en:e1422"],
+  "nova_group": 4,
+  "nutriments": { "sugars_100g": 12, "salt_100g": 0.1, "saturated-fat_100g": 1.9 }
+}

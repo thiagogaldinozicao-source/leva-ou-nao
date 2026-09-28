@@ -1,0 +1,10 @@
+{
+  "code": "7891000055120",
+  "product_name_pt": "Nescau 2.0",
+  "brands": "Nestlé",
+  "quantity": "400 g",
+  "ingredients_text_pt": "Açúcar, cacau em pó, maltodextrina, extrato de malte, minerais (carbonato de cálcio e pirofosfato férrico), vitaminas (C, B3, D e B12), emulsificante lecitina de soja, sal, aromatizante",
+  "additives_tags": ["en:e322"],
+  "nova_group": 4,
+  "nutriments": { "sugars_100g": 75, "salt_100g": 0.3, "saturated-fat_100g": 1.5 }
+}
