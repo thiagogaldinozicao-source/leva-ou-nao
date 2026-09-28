@@ -1,6 +1,7 @@
 # Leva ou não? — ideias pra virar produto
 
 Hoje: uso pessoal do Thiago (site no GitHub Pages + APK Android automático).
+Plano técnico por fases (API, foto do rótulo, segurança, lojas): `docs/ROADMAP-TECNICO.md`.
 
 ## O que já temos
 - Leitura de código de barras ao vivo (ZXing WebAssembly / leitor nativo Android) e por foto
