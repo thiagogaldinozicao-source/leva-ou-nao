@@ -625,7 +625,10 @@ function offJson(url){
       try { res = await fetch(url, { signal }); } catch (e) { if (signal.aborted) throw falha(); }
       if (res && res.ok){ try { return await res.json(); } catch (e) { throw falha(); } }
       if (i >= 3 || (res && res.status !== 503 && res.status !== 429)) throw falha();
-      await new Promise(r => setTimeout(r, 700 * (i + 1)));
+      await new Promise((ok, erro) => {   // prazo estourou no meio da espera = para aqui, sem mais um fetch
+        const t = setTimeout(ok, 700 * (i + 1));
+        signal.addEventListener("abort", () => { clearTimeout(t); erro(falha()); }, { once: true });
+      });
     }
   });
 }
@@ -644,7 +647,8 @@ async function trocaPais(d, code){
   const url = Troca.urlTaxonomia(d);
   if (!url) return {};
   const j = await offJson(url);
-  if (!j || typeof j !== "object" || Array.isArray(j)) throw new Error("http");
+  // 200 sem nenhum tag = todos empatam em 0 pais e ganharia o último tag (Pepsi de novo): trata como falha, ! cache
+  if (!j || typeof j !== "object" || Array.isArray(j) || !Object.keys(j).length) throw new Error("http");
   try { sessionStorage.setItem(k, JSON.stringify(j)); } catch (e) {}
   return j;
 }

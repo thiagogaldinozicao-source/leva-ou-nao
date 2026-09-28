@@ -42,7 +42,7 @@ const GL_GRAO = /(?<![a-z])(trigo(?![ -]sarraceno)|centeio|cevada|malte|aveia|es
 const LC_NEG = new RegExp("(?<![a-z])(?:" + NEG + "|(?<![\\d.,])0(?:[.,]0+)? ?% ?(?:de )?)lactose(?![a-z])|lactose[ -]free", "g");
 const LC_SIM = /(?<![a-z])cont[e3]m ?lactose(?![a-z])/;
 const LEITE_NEG = /(?<![a-z])(?:nao cont[e3]m|sem|isent[oa] de|livre de) (?:leite|derivados de leite|lacteos)(?![a-z])/g;
-const LACTEO = /(?<![a-z])(soro de leite|creme de leite|leites?(?![ -]de[ -](?:coco|amendoas?|soja|aveia|arroz|castanhas?|caju|amendoim))(?! vegeta)|lactose|manteiga(?! de (?:cacau|amendoim|karite|castanhas?))|queijos?|requeijao|iogurtes?|leitelho|whey|composto lacteo|solidos (?:lacteos|de leite)|nata|(?<!(?:coconut|almond|soy|soya|oat|rice|cashew|hazelnut|peanut|pea|hemp|nut|plant) )milks?|buttermilk|cheeses?|(?<!(?:cocoa|cacao|peanut|shea|almond|nut|cashew|coconut) )butter|(?<!coconut )cream(?! of (?:tartar|coconut))|yogh?urts?)(?![a-z])/;
+const LACTEO = /(?<![a-z])(soro de leite|creme de leite|leites?(?![ -]de[ -](?:coco|amendoas?|soja|aveia|arroz|castanhas?|caju|amendoim))(?! vegeta)|lactose|manteiga(?! de (?:cacau|amendoim|karite|castanhas?))|queijos?|requeijao|iogurtes?|leitelho|whey|composto lacteo|solidos (?:lacteos|de leite)|nata|(?<!\b(?:coconut|almond|soy|soya|oat|rice|cashew|hazelnut|peanut|pea|hemp|nut|plant) )milks?|buttermilk|cheeses?|(?<!\b(?:cocoa|cacao|peanut|shea|almond|nut|cashew|coconut) )butter|(?<!\bcoconut )cream(?! of (?:tartar|coconut))|yogh?urts?)(?![a-z])/;
 const ACU_ADD = /(a[cg]ucar|azucar|xarope|jarabe|sacarose|glicose|glucosa|frutose|fructosa|maltodextrina|dextrose|melado|melaco|rapadura|(?<![a-z])mel(?![a-z])|(?<![a-z])(?:sugars?|syrups?|honey|glucose|fructose|maltodextrin|sucrose|molasses)(?![a-z]))/;
 // Negação e tabela não são açúcar adicionado: "não contém açúcar", "sem adição de açúcares", "no added sugar", "sugar free", "açúcares totais 0 g".
 const ACU_NEG = new RegExp("(?<![a-z])(?:" + NEG + "(?:adicao de )?a[cgz]ucar(?:es)?(?: adicionados?)?|(?:no|without|zero|free of) (?:added )?sugars?|sugars?[ -]free)(?![a-z])|a[cg]ucares totais", "g");
@@ -222,7 +222,8 @@ function analisarProduto(d, isBaby, perfis){
   const out = { legivel: true, produto: nomeProd(d), imagem: d.image_front_small_url || "", veredito: v, resumo,
     comentario: coment.slice(0, 2).join(" ") || (ing ? "Rótulo sem nada que chame atenção." : ""), pontos_bons: bons.slice(0, 4), pontos_ruins: [...new Set(ruins)].slice(0, 6),
     ingredientes: ing.slice(0, 700), _pts: pts, _n: r._n || 0 };
-  aplicarPerfis(out, perfis, d, ing, !!ing, !!ing && acucarAdicionado(ingredientesDe(ing, true).texto));
+  // texto inteiro do OFF (já é a lista): ingredientesDe corta antes de "ingrediente" e em 700 chars, e açúcar sumia
+  aplicarPerfis(out, perfis, d, ing, !!ing, !!ing && acucarAdicionado(ing));
   if (isBaby) out.bebe = bebeDe(out, v);
   return out;
 }

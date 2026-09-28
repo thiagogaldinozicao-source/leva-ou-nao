@@ -253,6 +253,9 @@ test("pouco açúcar: 'não contém açúcar', 'sem adição de açúcares' e 'A
   assert.equal(ac("Water, sugar. No added sugar", true).estado, "nao");
   assert.equal(p("Cereal, xarope de glicose. Sem adição de açúcar").estado, "nao");
   assert.equal(p("Arroz, mel").motivo, "Tem açúcar adicionado");
+  // OFF = lista inteira: nada antes de "ingrediente" nem depois de 700 chars pode sumir
+  assert.equal(p("Açúcar, cacau, lecitina de soja*. *Ingrediente transgênico").estado, "nao");
+  assert.equal(p("Ingredientes: farinha, " + "fibra de trigo, ".repeat(60) + "açúcar").estado, "nao");
 });
 
 test("lactose: '10% lactose' não vira 'sem lactose'; '0%' e '0,0%' continuam valendo", () => {
@@ -266,7 +269,7 @@ test("lactose: '10% lactose' não vira 'sem lactose'; '0%' e '0,0%' continuam va
 
 test("inglês: milk/cheese/butter/cream/yogurt = lactose; sugar/syrup/honey/glucose/fructose/dextrose/maltodextrin = açúcar adicionado", () => {
   const en = (ing, perfis) => analisarProduto(prodT({ ingredients_text: ing }), false, perfis);
-  for (const ing of ["Water, skim milk, salt", "Wheat flour, butter, salt", "Cheddar cheese, water", "Sweet cream, salt", "Yoghurt, fruit", "Buttermilk", "Whey protein", "Milk chocolate, lactose"])
+  for (const ing of ["Goat milk, salt", "Whole goat milk powder", "Water, skim milk, salt", "Wheat flour, butter, salt", "Cheddar cheese, water", "Sweet cream, salt", "Yoghurt, fruit", "Buttermilk", "Whey protein", "Milk chocolate, lactose"])
     assert.equal(perfil(en(ing, LAC), "lactose").estado, "nao", ing);
   assert.equal(perfil(en("Whole milk powder", LAC), "lactose").motivo, "Tem leite nos ingredientes");   // nome em português na tela
   // leites vegetais, manteiga de cacau/amendoim e creme de tártaro não são lactose (igual às exceções em português)
