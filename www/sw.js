@@ -9,7 +9,7 @@
 // Trocou algo em lib/, fonts/ ou icons/ (ou a lista SHELL)? Suba a VERSAO: o cache velho é apagado.
 // O prefixo é só deste app porque o domínio *.github.io é dividido com outros sites do mesmo dono.
 const PREFIXO = "levaounao-";
-const VERSAO = PREFIXO + "v4";
+const VERSAO = PREFIXO + "v5";
 const PRAZO_REDE_MS = 3000; // rede mais lenta que isso => cópia guardada
 
 const SHELL = [
@@ -24,7 +24,8 @@ const SHELL = [
   "categorias.js",
   "troca.js",
   "offline.js",
-  "manifest.json",
+  "manifest.webmanifest",
+  "favicon.svg",
   "lib/zxing-reader.js",
   "lib/zxing_reader.wasm",
   "fonts/bebas-neue-latin-400-normal.woff2",
@@ -32,7 +33,9 @@ const SHELL = [
   "fonts/barlow-latin-500-normal.woff2",
   "fonts/barlow-latin-600-normal.woff2",
   "fonts/barlow-latin-700-normal.woff2",
-  "icons/icon-180.png",
+  "icons/apple-touch-icon.png",
+  "icons/favicon-32.png",
+  "icons/icon-maskable-512.png",
   "icons/icon-192.png",
   "icons/icon-512.png",
 ];
