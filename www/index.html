@@ -429,7 +429,7 @@ function setCode(k, code, abrir){
     if (d && local && semIngredientes(d)) d = { ...d, ingredients_text_pt: local.ingredients_text_pt, _lido: true, _rotulo: local._rotulo };
     if (!d && local) d = local;
     prod[k] = { code, status: d ? "ok" : "miss", data: d }; renderSlot(k); render();
-    if (abrir && ready()) goBtn.click();   // vindo de "Tem melhor?": já abre o veredito, como o rótulo lido faz
+    if (abrir && ready()) goBtn.click();   // leu pela câmera/foto ou veio do "Tem melhor?": já abre o veredito, sem tocar em Analisar
   }).catch(() => {
     if (!prod[k] || prod[k].code !== code) return;
     prod[k] = local ? { code, status: "ok", data: local } : { code, status: "erro" }; renderSlot(k); render();
@@ -610,7 +610,7 @@ async function abrirScanner(k){
       cx.drawImage(video, sx, sy, sw, sh, 0, 0, cv.width, cv.height);
       try{
         const code = await detectar(cv);
-        if (code && rodando){ Sons.bipe(); fecharScanner(); setCode(alvo, code); return; }
+        if (code && rodando){ Sons.bipe(); fecharScanner(); setCode(alvo, code, true); return; }
       }catch(e){}
     }
     setTimeout(passo, 60);
@@ -643,7 +643,7 @@ document.querySelectorAll("[data-photo]").forEach(inp => inp.onchange = async ()
     if (ZW) code = await detectar(f).catch(() => null);
     if (!code){ const bmp = await createImageBitmap(f); const esc = Math.min(1, 1600 / Math.max(bmp.width, bmp.height)); cv.width = Math.round(bmp.width * esc); cv.height = Math.round(bmp.height * esc); cx.drawImage(bmp, 0, 0, cv.width, cv.height); code = await detectar(cv); }
     if (!code) throw 0;
-    statusEl.textContent = ""; Sons.bipe(); setCode(k, code);
+    statusEl.textContent = ""; Sons.bipe(); setCode(k, code, true);
   }catch(e){ statusEl.className = "status warn"; statusEl.textContent = "Não achei código de barras nessa foto. Tira mais de perto, reto e com luz."; }
 });
 
