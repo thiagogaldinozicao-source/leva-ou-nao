@@ -228,7 +228,12 @@ dialog.sobre:not([open]){display:none}
 .som span{display:flex;align-items:center;justify-content:center;gap:6px;min-height:var(--alvo);padding:0 var(--s3);border:2px solid var(--edge);border-radius:var(--r-lg);color:var(--ink2);font-weight:600}
 .som input:checked+span{border-color:var(--gold-t);color:var(--ink);background:rgba(235,181,51,.14)}
 .som input:focus-visible+span{outline:var(--foco);outline-offset:2px}
-.som .som-vib{flex-basis:100%}
+.som .som-chave{flex:1 1 calc(50% - var(--s2))}
+.som-leg{width:100%;margin:var(--s1) 0 0 !important;font-size:.85rem !important;color:var(--muted) !important}
+.som-bipes{display:flex;gap:var(--s2);width:100%}
+.som-bipes label{flex:1 1 0}
+.som-bipes span{padding:0 var(--s1)}
+#som:has(#somLiga:not(:checked)) .som-bipes{opacity:.45}
 .sobre-fechar{width:100%;min-height:52px;border:2px solid var(--edge);border-radius:var(--r-lg);background:transparent;color:var(--ink);font:inherit;font-weight:700;cursor:pointer}
 </style>
 </head>
@@ -303,12 +308,15 @@ dialog.sobre:not([open]){display:none}
   <div class="sobre-corpo">
     <h2 id="sobreTit">Sobre o Leva ou não?</h2>
     <fieldset class="som" id="som">
-      <legend>Som ao ler o código</legend>
-      <label><input type="radio" name="som" value="mercado"><span>🛒 Mercado</span></label>
-      <label><input type="radio" name="som" value="gota"><span>💧 Gotinha</span></label>
-      <label><input type="radio" name="som" value="duplo"><span>🔔 Duplo</span></label>
-      <label><input type="radio" name="som" value="off"><span>🔇 Sem som</span></label>
-      <label class="som-vib"><input type="checkbox" role="switch" id="vibrar"><span>📳 Vibrar</span></label>
+      <legend>Som e vibração</legend>
+      <label class="som-chave" data-mudo><input type="checkbox" role="switch" id="somLiga" data-mudo><span>🔊 Som</span></label>
+      <label class="som-chave" data-mudo><input type="checkbox" role="switch" id="vibrar" data-mudo><span>📳 Vibrar</span></label>
+      <p class="som-leg" id="bipeLeg">Bipe ao ler o código</p>
+      <div class="som-bipes" role="radiogroup" aria-labelledby="bipeLeg">
+        <label data-mudo><input type="radio" name="bipe" value="mercado" data-mudo><span>🛒 Mercado</span></label>
+        <label data-mudo><input type="radio" name="bipe" value="gota" data-mudo><span>💧 Gotinha</span></label>
+        <label data-mudo><input type="radio" name="bipe" value="duplo" data-mudo><span>🔔 Duplo</span></label>
+      </div>
     </fieldset>
     <p>Ajuda a comparar rótulos: olha ingredientes, açúcar adicionado, adoçante, corante, conservante e NOVA, e mostra o motivo de cada ponto. <a href="criterios.html">Ver os critérios</a></p>
     <p><strong>Não substitui nutricionista, médico ou pediatra.</strong> Alergia? Confira sempre a embalagem.</p>
@@ -331,13 +339,15 @@ const suave = () => matchMedia("(prefers-reduced-motion: reduce)").matches ? "au
 let mode = "one", busy = false;
 const prod = { A: null, B: null };      // {code, status:'loading'|'ok'|'miss'|'erro', data}
 
+// Erro/validação: aviso na tela + som de erro (Sons, www/sons.js)
+function ruim(msg){ statusEl.className = "status warn"; statusEl.textContent = msg; Sons.erro(); }
 function store(k, v){ try{ if(v===undefined) return JSON.parse(localStorage.getItem(k)); localStorage.setItem(k, JSON.stringify(v)); }catch(e){ return null; } }
 baby.checked = store("baby2") ?? false;
-baby.onchange = () => store("baby2", baby.checked);
+baby.onchange = () => { store("baby2", baby.checked); Sons.chave(baby.checked); };
 // Perfis (glúten/lactose/açúcar): {gluten, lactose, acucar} salvo em "perfis"; só valem pra alimento (regras.js).
 const perfilInputs = [...document.querySelectorAll("[data-perfil]")];
 const perfisAtuais = () => Object.fromEntries(perfilInputs.map(i => [i.dataset.perfil, i.checked]));
-{ const salvos = store("perfis") || {}; perfilInputs.forEach(i => { i.checked = !!salvos[i.dataset.perfil]; i.onchange = () => store("perfis", perfisAtuais()); }); }
+{ const salvos = store("perfis") || {}; perfilInputs.forEach(i => { i.checked = !!salvos[i.dataset.perfil]; i.onchange = () => { store("perfis", perfisAtuais()); Sons.marcaChip(i.checked); }; }); }
 function el(tag, cls, text){ const e = document.createElement(tag); if(cls) e.className = cls; if(text!=null) e.textContent = text; return e; }
 
 /* ---------- busca: API própria (se houver) ou direto nas bases abertas ----------
@@ -420,7 +430,7 @@ const semIngredientes = d => !d || !(d.ingredients_text_pt || d.ingredients_text
 
 function setCode(k, code, abrir){
   code = String(code || "").replace(/\D/g, "");
-  if (code.length < 8){ statusEl.className = "status warn"; statusEl.textContent = "Código incompleto. Confere os números."; return; }
+  if (code.length < 8){ ruim("Código incompleto. Confere os números."); return; }
   statusEl.className = "status"; statusEl.textContent = "";
   prod[k] = { code, status: "loading" }; renderSlot(k); render();
   const local = baseLocal.get(code);
@@ -429,10 +439,12 @@ function setCode(k, code, abrir){
     if (d && local && semIngredientes(d)) d = { ...d, ingredients_text_pt: local.ingredients_text_pt, _lido: true, _rotulo: local._rotulo };
     if (!d && local) d = local;
     prod[k] = { code, status: d ? "ok" : "miss", data: d }; renderSlot(k); render();
+    if (!d) Sons.nada();
     if (abrir && ready()) goBtn.click();   // vindo de "Tem melhor?": já abre o veredito, como o rótulo lido faz
   }).catch(() => {
     if (!prod[k] || prod[k].code !== code) return;
     prod[k] = local ? { code, status: "ok", data: local } : { code, status: "erro" }; renderSlot(k); render();
+    if (!local) Sons.erro();
   });
 }
 function renderSlot(k){
@@ -449,7 +461,7 @@ function renderSlot(k){
   if (p.status === "erro") t.append(el("div","nm","Sem conexão"), el("div","sub","Confere a internet e toca no ↻"));
   f.append(t);
   if (p.status === "erro"){ const r = el("button","x","↻"); r.setAttribute("aria-label","Tentar de novo"); r.onclick = () => setCode(k, p.code); f.append(r); }
-  const x = el("button","x","×"); x.setAttribute("aria-label","Trocar produto"); x.onclick = () => { prod[k] = null; renderSlot(k); render(); };
+  const x = el("button","x","×"); x.setAttribute("aria-label","Trocar produto"); x.onclick = () => { Sons.tirar(); prod[k] = null; renderSlot(k); render(); };
   f.append(x); box.append(f);
   const cat = p.data && p.data._categoria;
   if (cat !== "remedio" && (p.status === "miss" || (p.status === "ok" && semIngredientes(p.data)))) box.append(painelLeitura(k, p));
@@ -471,7 +483,7 @@ function painelLeitura(k, p){
   if (mlkit){
     const lab = el("label","scanbtn ler-btn"); lab.append("📸 Fotografar ingredientes");
     const inp = el("input"); inp.type = "file"; inp.accept = "image/*"; inp.setAttribute("capture","environment");   // escondido pelo CSS, mas alcançável por teclado/leitor
-    inp.onchange = async () => { const f = inp.files && inp.files[0]; inp.value = ""; if (f) await lerFotoNativo(k, f); };
+    inp.onchange = async () => { const f = inp.files && inp.files[0]; inp.value = ""; if (f){ Sons.foto(); await lerFotoNativo(k, f); } };
     lab.append(inp); w.append(lab);
   } else {
     const ta = el("textarea","ler-ta"); ta.rows = 4;
@@ -509,7 +521,7 @@ async function lerFotoNativo(k, file){
     try{
       const txt = await ocrNativo(file);
       statusEl.textContent = "";
-      if (txt.trim().length < 15){ statusEl.className = "status warn"; statusEl.textContent = "Não consegui ler. Tira mais de perto, reto e sem reflexo."; return; }
+      if (txt.trim().length < 15){ ruim("Não consegui ler. Tira mais de perto, reto e sem reflexo."); return; }
       return usarIngredientes(k, txt, "mlkit");   // sem await: erro dali não pode cair no "preparando o leitor"
     }catch(e){
       // 1ª vez: o Android ainda está baixando o leitor do Google
@@ -517,7 +529,7 @@ async function lerFotoNativo(k, file){
       await new Promise(r => setTimeout(r, 3000));
     }
   }
-  statusEl.className = "status warn"; statusEl.textContent = "O leitor ainda não ficou pronto. Confere a internet e tenta de novo em 1 minuto.";
+  ruim("O leitor ainda não ficou pronto. Confere a internet e tenta de novo em 1 minuto.");
 }
 // Manda o texto lido pro servidor (ele organiza e guarda por código). Falhou/sem API = null, sem erro na tela.
 async function enviarRotulo(ean, texto, fonte){
@@ -534,7 +546,7 @@ async function enviarRotulo(ean, texto, fonte){
 const semVazios = o => Object.fromEntries(Object.entries(o).filter(([, v]) => v != null && v !== ""));
 async function usarIngredientes(k, texto, fonte){
   texto = String(texto || "").trim();
-  if (texto.length < 10){ statusEl.className = "status warn"; statusEl.textContent = "Faltam os ingredientes. Escaneia ou digita."; return; }
+  if (texto.length < 10){ ruim("Faltam os ingredientes. Escaneia ou digita."); return; }
   const p = prod[k]; if (!p) return;
   const base = p.status === "ok" && p.data ? p.data : { product_name: "Produto " + p.code };
   // A lupa "ALTO EM" lida do rótulo vale mesmo sem API (com API, o _rotulo do servidor entra por cima, abaixo).
@@ -549,7 +561,7 @@ async function usarIngredientes(k, texto, fonte){
   prod[k] = { code: p.code, status: "ok", data: dados };
   statusEl.className = "status"; statusEl.textContent = "";
   renderSlot(k); render();
-  if (mode === "one") goBtn.click();
+  if (mode === "one") goBtn.click(); else Sons.ok();
 }
 function ready(){ const ok = k => prod[k] && prod[k].status === "ok"; return mode === "one" ? ok("A") : ok("A") && ok("B"); }
 function render(){ goBtn.textContent = mode === "one" ? "Analisar" : "Comparar"; goBtn.disabled = !ready() || busy; }
@@ -581,18 +593,18 @@ function fecharScanner(){
   video.srcObject = null; $("#scanner").classList.add("hidden");
 }
 async function abrirScanner(k){
-  if (!nativo && !ZW){ statusEl.className = "status warn"; statusEl.textContent = "Leitor não carregou. Digita o número do código."; return; }
-  alvo = k; $("#scanMsg").textContent = "Aponte pro código de barras"; $("#scanner").classList.remove("hidden");
+  if (!nativo && !ZW){ ruim("Leitor não carregou. Digita o número do código."); return; }
+  alvo = k; $("#scanMsg").textContent = "Aponte pro código de barras"; $("#scanner").classList.remove("hidden"); Sons.abre();
   try{
     stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } } });
     const tr = stream.getVideoTracks()[0];
     try { await tr.applyConstraints({ advanced: [{ focusMode: "continuous" }] }); } catch (e) {}
     video.srcObject = stream; await video.play();
   }catch(e){
-    fecharScanner(); statusEl.className = "status warn";
-    statusEl.textContent = NO_APP
+    fecharScanner();
+    ruim(NO_APP
       ? "Câmera bloqueada. Libera em Configurações → Apps → Leva ou não → Permissões → Câmera, ou digita o número."
-      : "Não consegui abrir a câmera. Libera a câmera pro site (Ajustes → Safari → Câmera) ou digita o número.";
+      : "Não consegui abrir a câmera. Libera a câmera pro site (Ajustes → Safari → Câmera) ou digita o número.");
     return;
   }
   tDica = setTimeout(() => { if (rodando) $("#scanMsg").textContent = "Não tá lendo? Afasta um pouco (uns 15 cm) pra câmera focar, e deixa o código deitado na faixa."; }, 5000);
@@ -617,7 +629,7 @@ async function abrirScanner(k){
   };
   passo();
 }
-$("#scanClose").onclick = fecharScanner;
+$("#scanClose").onclick = () => { Sons.fecha(); fecharScanner(); };
 // desliga a câmera se o app for pra segundo plano (não fica com a câmera ligada à toa)
 document.addEventListener("visibilitychange", () => { if (document.hidden && rodando) fecharScanner(); });
 // botão voltar do Android: fecha o leitor, depois o resultado, e só então sai do app
@@ -636,7 +648,7 @@ if (NO_APP){
 document.querySelectorAll("[data-scan]").forEach(b => b.onclick = () => abrirScanner(b.dataset.scan));
 document.querySelectorAll("[data-photo]").forEach(inp => inp.onchange = async () => {
   const f = inp.files && inp.files[0]; inp.value = ""; if (!f) return;
-  const k = inp.dataset.photo;
+  const k = inp.dataset.photo; Sons.foto();
   statusEl.className = "status"; statusEl.textContent = "Lendo o código da foto…";
   try{
     let code = null;
@@ -644,7 +656,7 @@ document.querySelectorAll("[data-photo]").forEach(inp => inp.onchange = async ()
     if (!code){ const bmp = await createImageBitmap(f); const esc = Math.min(1, 1600 / Math.max(bmp.width, bmp.height)); cv.width = Math.round(bmp.width * esc); cv.height = Math.round(bmp.height * esc); cx.drawImage(bmp, 0, 0, cv.width, cv.height); code = await detectar(cv); }
     if (!code) throw 0;
     statusEl.textContent = ""; Sons.bipe(); setCode(k, code);
-  }catch(e){ statusEl.className = "status warn"; statusEl.textContent = "Não achei código de barras nessa foto. Tira mais de perto, reto e com luz."; }
+  }catch(e){ ruim("Não achei código de barras nessa foto. Tira mais de perto, reto e com luz."); }
 });
 
 function setMode(m){
@@ -656,8 +668,8 @@ function setMode(m){
   result.classList.add("hidden"); statusEl.textContent = "";
   render();
 }
-$("#tabOne").onclick = () => setMode("one");
-$("#tabTwo").onclick = () => setMode("two");
+$("#tabOne").onclick = () => { if (mode !== "one") Sons.selecao(); setMode("one"); };
+$("#tabTwo").onclick = () => { if (mode !== "two") Sons.selecao(); setMode("two"); };
 function clearPhotos(){ prod.A = null; prod.B = null; document.querySelectorAll("[data-code]").forEach(i => i.value = ""); renderSlot("A"); renderSlot("B"); }
 
 /* ---------- regras: www/regras.js (nrm, nomeProd, avaliar, comparar, analisarProduto) ---------- */
@@ -669,7 +681,7 @@ function el(tag, cls, text){ const e = document.createElement(tag); if(cls) e.cl
 function list(arr, cls){ if (!Array.isArray(arr) || !arr.length) return null; const ul = el("ul","list "+cls); arr.forEach(t => ul.append(el("li",null,String(t)))); return ul; }
 function againBtn(){
   const b = el("button","again","Analisar outro");
-  b.onclick = () => { clearPhotos(); result.classList.add("hidden"); statusEl.textContent = ""; render(); window.scrollTo({top:0,behavior:suave()}); };
+  b.onclick = () => { Sons.volta(); clearPhotos(); result.classList.add("hidden"); statusEl.textContent = ""; render(); window.scrollTo({top:0,behavior:suave()}); };
   return b;
 }
 // Leitor de tela ouve só o veredito + produto (não o cartão inteiro): o resto fica na ordem de leitura logo depois do botão.
@@ -785,16 +797,17 @@ async function trocaAcha(d, code){
 function trocaBox(p){
   const box = el("div","troca"), b = el("button","trocab","🔁 Tem melhor?"), out = el("div");
   b.onclick = async () => {
-    b.disabled = true; b.textContent = "Buscando…"; out.textContent = "";
+    b.disabled = true; b.textContent = "Buscando…"; out.textContent = ""; Sons.procura();
     let m;
     try { m = await trocaAcha(p.data, p.code); }
-    catch (e) { b.disabled = false; b.textContent = "🔁 Tem melhor?"; out.append(el("p",null,e.message === "http" ? "Busca ocupada agora. Toca de novo." : "Sem conexão agora.")); return; }
+    catch (e) { Sons.erro(); b.disabled = false; b.textContent = "🔁 Tem melhor?"; out.append(el("p",null,e.message === "http" ? "Busca ocupada agora. Toca de novo." : "Sem conexão agora.")); return; }
     b.remove();
-    if (!m.length){ out.append(el("p",null,"Não achei melhor por aqui.")); return; }
+    if (!m.length){ Sons.nada(); out.append(el("p",null,"Não achei melhor por aqui.")); return; }
+    Sons.ok();
     m.forEach(x => {
       const row = el("button","trocal");
       row.append(el("span",null,nomeProd({ product_name_pt: x.nome, brands: x.marca })), el("span","dot " + x.veredito,LABEL[x.veredito]));
-      row.onclick = () => { result.classList.add("hidden"); window.scrollTo({top:0,behavior:suave()}); setCode("A", x.code, true); };
+      row.onclick = () => { Sons.entra(); result.classList.add("hidden"); window.scrollTo({top:0,behavior:suave()}); setCode("A", x.code, true); };
       out.append(row);
     });
   };
@@ -855,7 +868,7 @@ function renderHist(){
   const ul = $("#histList"); ul.innerHTML = "";
   h.forEach(x => { const li = el("li"); li.append(el("span",null,x.name), el("span","dot "+x.v, LABEL[x.v]||"")); ul.append(li); });
 }
-$("#clearHist").onclick = () => { store("hist", []); renderHist(); };
+$("#clearHist").onclick = () => { Sons.apagaTudo(); store("hist", []); renderHist(); };
 renderHist();
 
 
@@ -865,11 +878,20 @@ goBtn.onclick = () => {
   if (!ready() || busy) return;
   statusEl.className = "status"; statusEl.textContent = "";
   const isBaby = baby.checked, perfis = perfisAtuais();
-  if (mode === "one") return showOne(analisarCat(prod.A.data, isBaby, perfis), prod.A);
+  if (mode === "one"){
+    const r = analisarCat(prod.A.data, isBaby, perfis);
+    if (r && r._cat === "remedio") Sons.veredito("info"); else if (!r || r.legivel === false) Sons.erro(); else Sons.veredito(vOk(r.veredito));
+    return showOne(r, prod.A);
+  }
   // Modo bebê e perfis só valem pra alimento; comparar só dentro da mesma categoria e nunca remédio.
   const a = analisarCat(prod.A.data, isBaby, perfis), b = analisarCat(prod.B.data, isBaby, perfis);
   const alim = a._cat === "alimento";
-  if (a._cat === b._cat && a._cat !== "remedio") return showTwo(comparar(a, b, isBaby && alim, alim ? perfis : null), a._cat);
+  if (a._cat === b._cat && a._cat !== "remedio"){
+    const r = comparar(a, b, isBaby && alim, alim ? perfis : null);
+    Sons.vencedor(!(r && ["a","b"].includes(r.melhor)));
+    return showTwo(r, a._cat);
+  }
+  Sons.veredito("info");
   showCards([a, b], [prod.A, prod.B], a._cat === b._cat ? "💊 Remédio não entra na comparação." : Categorias.icone(a._cat, a) + " e " + Categorias.icone(b._cat, b) + " não se comparam: vai o de cada um.");
 };
 render();
@@ -877,20 +899,22 @@ render();
 /* ---------- sobre (ⓘ): crédito ODbL, aviso, contato pra contestar dado, páginas de texto ---------- */
 const sobre = $("#sobre"), sobreBtn = $("#sobreBtn");
 const sobreAberto = () => sobre.hasAttribute("open");
-function fechaSobre(){ if (sobre.close) sobre.close(); else { sobre.removeAttribute("open"); sobreBtn.focus(); } }   // sem <dialog> (iOS < 15.4): só atributo
-sobreBtn.onclick = () => { if (sobre.showModal) sobre.showModal(); else { sobre.classList.add("solto"); sobre.setAttribute("open", ""); } };
+function fechaSobre(){ if (sobre.close) sobre.close(); else { sobre.removeAttribute("open"); Sons.fecha(); sobreBtn.focus(); } }   // sem <dialog> (iOS < 15.4): só atributo
+sobreBtn.onclick = () => { Sons.abre(); if (sobre.showModal) sobre.showModal(); else { sobre.classList.add("solto"); sobre.setAttribute("open", ""); } };
 $("#sobreFechar").onclick = fechaSobre;
-sobre.addEventListener("close", () => sobreBtn.focus());
+sobre.addEventListener("close", () => { Sons.fecha(); sobreBtn.focus(); });
 sobre.addEventListener("click", e => { if (e.target === sobre) fechaSobre(); });   // toque no fundo escuro fecha
 
-/* ---------- som e vibração (www/sons.js): escolha no ⓘ, clique fino nos botões ---------- */
-document.querySelectorAll('#som [name="som"]').forEach(r => { r.checked = r.value === Sons.tipo; r.onchange = () => { Sons.tipo = r.value; Sons.bipe(); }; });
-{ const v = $("#vibrar"); v.checked = Sons.vibrar; v.onchange = () => { Sons.vibrar = v.checked; if (v.checked) Sons.toque(); }; }
-document.addEventListener("click", e => {
-  // botão, ou chave/opção (o toque no <label> chega aqui como clique no <input>: conta 1 vez só)
-  const alvo = e.target.closest("button") || (e.target.matches('input[type="checkbox"], input[type="radio"]') && e.target);
-  if (alvo && e.isTrusted && !alvo.closest("#som")) Sons.toque();
-});
+/* ---------- som e vibração (www/sons.js): Som, Vibrar e o bipe no ⓘ; os sons de cada ação ficam nos handlers ---------- */
+{ const som = $("#somLiga"), vib = $("#vibrar");
+  som.checked = Sons.som; vib.checked = Sons.vibra;
+  // desligando: toca o "desliga" antes de calar; ligando: liga e já toca
+  som.onchange = () => { if (!som.checked) Sons.chave(false); Sons.som = som.checked; if (som.checked) Sons.chave(true); };
+  vib.onchange = () => { if (!vib.checked) Sons.chave(false); Sons.vibra = vib.checked; if (vib.checked) Sons.chave(true); };
+  document.querySelectorAll('#som [name="bipe"]').forEach(r => { r.checked = r.value === Sons.bipeTipo; r.onchange = () => { Sons.bipeTipo = r.value; Sons.bipe(); }; });
+}
+// <details> ("Não aparece o Escanear Texto?", ingredientes, como foi avaliado): abre/fecha com sopro
+document.addEventListener("toggle", e => { if (e.target.tagName === "DETAILS") Sons.expande(e.target.open); }, true);
 </script>
 </body>
 </html>

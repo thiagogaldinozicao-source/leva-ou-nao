@@ -28,6 +28,7 @@ Produto sem cadastro → ler ingredientes do rótulo (Android: ML Kit no aparelh
 - `www/troca.js` — "🔁 Tem melhor?": categoria do produto (OFF) → URL da busca no OFF (Brasil, mais escaneados) → até 3 trocas com "Pode levar" → `globalThis.Troca`; puro, o fetch e o botão ficam no `index.html` (`trocaBox`).
 - `www/rotulo.js` — parser por regras do texto lido no rótulo (ingredientes, alérgenos, "ALTO EM") → `globalThis.Rotulo`; mesmo arquivo usado pela API (`api/src/index.js`).
 - `www/criterios.html`, `www/privacidade.html`, `www/termos.html` (+ `www/paginas.css`) — páginas públicas estáticas (mesma CSP `<meta>` e tokens do app, sem JS de tela), linkadas do ⓘ Sobre. `privacidade`/`termos` = texto de `docs/POLITICA-DE-PRIVACIDADE.md`/`docs/TERMOS-DE-USO.md` (mudou lá? muda aqui); `criterios` = pesos reais de `regras.js`/`categorias.js` (mudou regra? muda lá).
+- `www/sons.js` — sons e vibração (Web Audio sintetizado, sem arquivo) → `globalThis.Sons`; cada ação chama o seu (`Sons.veredito(v)`, `chave`, `marcaChip`, `erro` via `ruim(msg)`…); clique sem som próprio = tic genérico; `[data-mudo]` cala. Ajustes no ⓘ.
 - `www/sw.js` — service worker do site: cache-first em `lib/fonts/icons`, rede-primeiro no shell; nunca intercepta Open Food Facts/irmãs nem a API.
 - `www/offline.js` — registra o `sw.js` (só no site, não no app empacotado).
 - `www/_headers` — headers pra host que aplica o arquivo (Cloudflare Pages/Netlify); o GitHub Pages IGNORA: lá só vale a CSP da `<meta>` do `index.html`.
