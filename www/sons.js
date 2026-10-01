@@ -5,6 +5,8 @@
    (fim do arquivo) fica quieto se outro som tocou há < 120 ms. Elemento com [data-mudo] não faz tic.
    Ajustes (no ⓘ): Sons.som (liga/desliga), Sons.vibra (liga/desliga), Sons.bipeTipo ("mercado"|"gota"|"duplo"). */
 (() => {
+  // Personalidade: app de comida/mercado = macio e orgânico (seno/triângulo, sopro de papel), com o bipe de caixa como temático.
+  const VOLUME = 0.5;   // volume geral do app: mexe só aqui
   const KEY = "sons";
   let cfg = { som: true, vibra: true, bipe: "mercado" };
   try {
@@ -26,7 +28,7 @@
       ctx = new C();
       const comp = ctx.createDynamicsCompressor();
       comp.threshold.value = -18; comp.ratio.value = 4;
-      out = ctx.createGain(); out.gain.value = 0.55;
+      out = ctx.createGain(); out.gain.value = VOLUME;
       out.connect(comp); comp.connect(ctx.destination);
       // eco curto: só nos sons de "deu bom" (fx: true)
       const d = ctx.createDelay(); d.delayTime.value = 0.11;
@@ -45,6 +47,8 @@
   const destrava = () => { if (cfg.som) ac(); };
   addEventListener("pointerdown", destrava, { passive: true, capture: true });
   addEventListener("touchend", destrava, { passive: true, capture: true });
+  // voltou do segundo plano: o iPhone suspende o áudio, retoma (só se já foi destravado por um toque)
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && ctx && ctx.state !== "running") ctx.resume().catch(() => {}); });
 
   let ultimo = 0;
   const marca = () => { ultimo = performance.now(); };
@@ -95,7 +99,9 @@
   let sw = null;
   function vib(n = 1) {
     if (!cfg.vibra) return;
-    if (navigator.vibrate) { navigator.vibrate(n > 1 ? [14, 70, 14] : 14); return; }
+    if (navigator.vibrate) { try { navigator.vibrate(n > 1 ? [14, 70, 14] : 14); } catch (e) {} return; }
+    // iPhone: o truque só vale dentro do toque (fora dele o iOS ignora); sem userActivation = não tenta
+    if (!navigator.userActivation || !navigator.userActivation.isActive) return;
     if (!sw) {
       const l = document.createElement("label");
       l.setAttribute("aria-hidden", "true"); l.dataset.mudo = "1";
