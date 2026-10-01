@@ -9,7 +9,7 @@
 // Trocou algo em lib/, fonts/ ou icons/ (ou a lista SHELL)? Suba a VERSAO: o cache velho é apagado.
 // O prefixo é só deste app porque o domínio *.github.io é dividido com outros sites do mesmo dono.
 const PREFIXO = "levaounao-";
-const VERSAO = PREFIXO + "v5";
+const VERSAO = PREFIXO + "v6";
 const PRAZO_REDE_MS = 3000; // rede mais lenta que isso => cópia guardada
 
 const SHELL = [
@@ -24,6 +24,7 @@ const SHELL = [
   "categorias.js",
   "troca.js",
   "offline.js",
+  "sons.js",
   "manifest.webmanifest",
   "favicon.svg",
   "lib/zxing-reader.js",

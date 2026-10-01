@@ -221,6 +221,14 @@ dialog.sobre:not([open]){display:none}
 .sobre strong{color:var(--ink)}
 .sobre a{color:var(--gold-t);text-underline-offset:3px}
 .sobre a:focus-visible{outline:var(--foco);outline-offset:2px}
+.som{display:flex;flex-wrap:wrap;gap:var(--s2);margin:0 0 var(--s4);padding:0;border:0}
+.som legend{width:100%;padding:0;margin:0 0 var(--s2);color:var(--ink);font-weight:700}
+.som label{flex:1 1 calc(50% - var(--s2));cursor:pointer}
+.som input{position:absolute;opacity:0;pointer-events:none}
+.som span{display:flex;align-items:center;justify-content:center;gap:6px;min-height:var(--alvo);padding:0 var(--s3);border:2px solid var(--edge);border-radius:var(--r-lg);color:var(--ink2);font-weight:600}
+.som input:checked+span{border-color:var(--gold-t);color:var(--ink);background:rgba(235,181,51,.14)}
+.som input:focus-visible+span{outline:var(--foco);outline-offset:2px}
+.som .som-vib{flex-basis:100%}
 .sobre-fechar{width:100%;min-height:52px;border:2px solid var(--edge);border-radius:var(--r-lg);background:transparent;color:var(--ink);font:inherit;font-weight:700;cursor:pointer}
 </style>
 </head>
@@ -294,6 +302,14 @@ dialog.sobre:not([open]){display:none}
 <dialog id="sobre" class="sobre" aria-labelledby="sobreTit">
   <div class="sobre-corpo">
     <h2 id="sobreTit">Sobre o Leva ou não?</h2>
+    <fieldset class="som" id="som">
+      <legend>Som ao ler o código</legend>
+      <label><input type="radio" name="som" value="mercado"><span>🛒 Mercado</span></label>
+      <label><input type="radio" name="som" value="gota"><span>💧 Gotinha</span></label>
+      <label><input type="radio" name="som" value="duplo"><span>🔔 Duplo</span></label>
+      <label><input type="radio" name="som" value="off"><span>🔇 Sem som</span></label>
+      <label class="som-vib"><input type="checkbox" role="switch" id="vibrar"><span>📳 Vibrar</span></label>
+    </fieldset>
     <p>Ajuda a comparar rótulos: olha ingredientes, açúcar adicionado, adoçante, corante, conservante e NOVA, e mostra o motivo de cada ponto. <a href="criterios.html">Ver os critérios</a></p>
     <p><strong>Não substitui nutricionista, médico ou pediatra.</strong> Alergia? Confira sempre a embalagem.</p>
     <p>Dados de produtos: <a href="https://world.openfoodfacts.org/" target="_blank" rel="noopener">Open Food Facts</a> e bases irmãs, licença <a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noopener">ODbL</a>. Preço de remédio: CMED/Anvisa.</p>
@@ -307,6 +323,7 @@ dialog.sobre:not([open]){display:none}
 <script src="regras.js"></script>
 <script src="rotulo.js"></script>
 <script src="troca.js"></script>
+<script src="sons.js"></script>
 <script>
 const $ = s => document.querySelector(s);
 const goBtn = $("#go"), statusEl = $("#status"), result = $("#result"), baby = $("#baby");
@@ -593,7 +610,7 @@ async function abrirScanner(k){
       cx.drawImage(video, sx, sy, sw, sh, 0, 0, cv.width, cv.height);
       try{
         const code = await detectar(cv);
-        if (code && rodando){ if (navigator.vibrate) navigator.vibrate(60); fecharScanner(); setCode(alvo, code); return; }
+        if (code && rodando){ Sons.bipe(); fecharScanner(); setCode(alvo, code); return; }
       }catch(e){}
     }
     setTimeout(passo, 60);
@@ -626,7 +643,7 @@ document.querySelectorAll("[data-photo]").forEach(inp => inp.onchange = async ()
     if (ZW) code = await detectar(f).catch(() => null);
     if (!code){ const bmp = await createImageBitmap(f); const esc = Math.min(1, 1600 / Math.max(bmp.width, bmp.height)); cv.width = Math.round(bmp.width * esc); cv.height = Math.round(bmp.height * esc); cx.drawImage(bmp, 0, 0, cv.width, cv.height); code = await detectar(cv); }
     if (!code) throw 0;
-    statusEl.textContent = ""; setCode(k, code);
+    statusEl.textContent = ""; Sons.bipe(); setCode(k, code);
   }catch(e){ statusEl.className = "status warn"; statusEl.textContent = "Não achei código de barras nessa foto. Tira mais de perto, reto e com luz."; }
 });
 
@@ -865,6 +882,15 @@ sobreBtn.onclick = () => { if (sobre.showModal) sobre.showModal(); else { sobre.
 $("#sobreFechar").onclick = fechaSobre;
 sobre.addEventListener("close", () => sobreBtn.focus());
 sobre.addEventListener("click", e => { if (e.target === sobre) fechaSobre(); });   // toque no fundo escuro fecha
+
+/* ---------- som e vibração (www/sons.js): escolha no ⓘ, clique fino nos botões ---------- */
+document.querySelectorAll('#som [name="som"]').forEach(r => { r.checked = r.value === Sons.tipo; r.onchange = () => { Sons.tipo = r.value; Sons.bipe(); }; });
+{ const v = $("#vibrar"); v.checked = Sons.vibrar; v.onchange = () => { Sons.vibrar = v.checked; if (v.checked) Sons.toque(); }; }
+document.addEventListener("click", e => {
+  // botão, ou chave/opção (o toque no <label> chega aqui como clique no <input>: conta 1 vez só)
+  const alvo = e.target.closest("button") || (e.target.matches('input[type="checkbox"], input[type="radio"]') && e.target);
+  if (alvo && e.isTrusted && !alvo.closest("#som")) Sons.toque();
+});
 </script>
 </body>
 </html>
