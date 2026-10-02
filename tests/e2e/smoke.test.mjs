@@ -225,8 +225,31 @@ describe("Leva ou não? no navegador", { concurrency: true }, () => {
     const depois = await page.locator("#histList li").allInnerTexts();
     assert.equal(depois.length, 2, "reabrir não duplica");
     assert.match(depois[0], /Nescau 2\.0/, "reaberto sobe pro topo");
+    // listas que ficam: Água (Pode levar) entrou sozinha; Nescau (Deixa) não entra em nenhuma
+    await page.click('[data-aba="comprar"]');
+    let fav = await page.locator("#histList li").allInnerTexts();
+    assert.equal(fav.length, 1); assert.match(fav[0], /Água mineral/);
+    await page.fill("#favTxt", "Banana");
+    await page.click("#favAdd button");
+    fav = await page.locator("#histList li").allInnerTexts();
+    assert.equal(fav.length, 2); assert.match(fav[0], /Banana/);
+    await page.click('[data-aba="moderacao"]');
+    assert.equal(await page.locator("#histList li").count(), 0);
+    assert.equal(await page.locator("#histVazio").isVisible(), true);
+    await page.click('[data-aba="comprar"]');
+    await page.click('#histList li:first-child .x');   // × tira da lista
+    assert.equal(await page.locator("#histList li").count(), 1);
+    await page.reload({ waitUntil: "load" });
+    await page.click('[data-aba="comprar"]');
+    assert.equal(await page.locator("#histList li").count(), 1, "lista sobrevive ao reload");
+    // limpar Recentes não apaga a lista Pode levar
+    await page.click('[data-aba="rec"]');
     await page.click("#clearHist");
-    assert.equal(await page.locator("#hist").isHidden(), true);
+    assert.equal(await page.locator("#hist").isVisible(), true);
+    await page.click('[data-aba="comprar"]');
+    assert.equal(await page.locator("#histList li").count(), 1);
+    await page.click('#histList li .x');
+    assert.equal(await page.locator("#hist").isHidden(), true, "tudo vazio: seção some");
     await fim();
   });
 
