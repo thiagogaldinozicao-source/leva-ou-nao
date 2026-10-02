@@ -146,12 +146,13 @@ button:focus-visible,summary:focus-visible,a:focus-visible,.alt input:focus-visi
 .vs .stamp{flex-direction:column;gap:6px;text-align:center;margin:var(--s2) calc(-1 * var(--pad)) var(--s3);padding:14px 8px 10px;font-size:1.4rem}
 .vs .pname{font-size:.98rem}
 .vs .summary{font-size:.92rem;margin:0}
-.again{width:100%;min-height:48px;border:2px solid var(--edge);border-radius:var(--r-lg);padding:10px;font:inherit;font-size:1rem;font-weight:700;background:transparent;color:var(--ink);cursor:pointer;margin-top:var(--s1)}
+.again{width:100%;min-height:48px;border:2px solid var(--edge);border-radius:var(--r-lg);padding:10px;font:inherit;font-size:1rem;font-weight:700;background:transparent;color:var(--ink);cursor:pointer;margin-bottom:var(--s1)}
 .hist{margin-top:var(--s5)}
 .hist h2{font-family:"Bebas Neue",sans-serif;font-weight:400;letter-spacing:.08em;color:var(--gold-t);font-size:1.3rem;margin:0 0 var(--s2)}
 .hist ul{list-style:none;margin:0;padding:0 var(--s3);background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--sh)}
 .hist li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;min-height:var(--alvo);border-top:1px solid var(--line)}
 .hist li:first-child{border-top:0}
+.hist li .trocal{border-top:0;padding:0;min-height:var(--alvo)}
 /* mini-carimbo (histórico e trocas): mesma cor e mesmo ✓/!/✕ da faixa, em tamanho de etiqueta */
 .dot{flex:none;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:1.1rem;letter-spacing:.06em;line-height:1;
   padding:5px 9px 3px;border:2px solid currentColor;border-radius:var(--s2);color:var(--v);background:var(--v-bg);transform:rotate(-2deg)}
@@ -189,6 +190,7 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:1}
 .src a{color:var(--gold-l)}
 .cat{margin-right:.3em} .info li{padding-left:0} .info small{display:block;color:var(--muted);font-size:.8rem}
 .ler{margin-top:4px}
+[data-found] .again{margin:var(--s1) 0 0}
 .ler-t{margin:0 0 8px;color:var(--ink2);font-size:.95rem}
 .ler-ta{width:100%;min-height:96px;padding:12px;border-radius:var(--r-md);border:2px solid var(--gold-t);background:var(--campo);color:var(--ink);font:inherit;font-size:16px;resize:vertical}
 .ler-btn{position:relative;flex-direction:row;margin-top:10px;min-height:56px;padding:var(--s2) var(--s4);border-radius:var(--r-lg);font-size:1.3rem}
@@ -452,7 +454,14 @@ function renderSlot(k){
   const x = el("button","x","×"); x.setAttribute("aria-label","Trocar produto"); x.onclick = () => { prod[k] = null; renderSlot(k); render(); };
   f.append(x); box.append(f);
   const cat = p.data && p.data._categoria;
-  if (cat !== "remedio" && (p.status === "miss" || (p.status === "ok" && semIngredientes(p.data)))) box.append(painelLeitura(k, p));
+  const semBase = cat !== "remedio" && (p.status === "miss" || (p.status === "ok" && semIngredientes(p.data)));
+  if (semBase) box.append(painelLeitura(k, p));
+  // sem cadastro/sem rede: "Analisar outro" ali mesmo, sem caçar o × pra ler o próximo
+  if (semBase || p.status === "erro"){
+    const o = el("button","again","Analisar outro");
+    o.onclick = () => { prod[k] = null; const i = document.querySelector(`[data-code="${k}"]`); if (i) i.value = ""; renderSlot(k); render(); window.scrollTo({top:0,behavior:suave()}); };
+    box.append(o);
+  }
 }
 
 /* ---------- ler ingredientes do rótulo (sem IA, de graça) ----------
@@ -704,7 +713,7 @@ function cartao(r, p){
     if (r.imagem){ const im = el("img","prodimg"); im.src = r.imagem; im.alt = ""; c.append(im); }
     c.append(nomeCom(cat, r, r.produto), el("p","summary","Remédio não tem veredito, só informação. Na dúvida, fala com o farmacêutico."));
     if (r.linhas.length){ const ul = el("ul","list info"); r.linhas.forEach(([k, v]) => { const li = el("li"); li.append(el("small",null,k), v); ul.append(li); }); c.append(ul); }
-    saveHist(histNome(cat, r, r.produto), "info");
+    saveHist(histNome(cat, r, r.produto), "info", p && p.code);
   } else if (!r || r.legivel === false){
     c.append(el("p","pname","Não consegui ler o rótulo"), el("p","summary",(r && r.resumo) || "Tire mais de perto a lista de ingredientes, com luz e sem reflexo."));
   } else {
@@ -725,7 +734,7 @@ function cartao(r, p){
     (v === "comprar" ? [bons, ruins] : [ruins, bons]).forEach(x => x && c.append(x));
     if (r.comentario) c.append(el("p","talk","💬 " + r.comentario));
     if (r.ingredientes){ const d = el("details","ing"); d.append(el("summary",null,"Ingredientes lidos"), el("p",null,r.ingredientes)); c.append(d); }
-    saveHist(histNome(cat, r, r.produto || "Produto"), v);
+    saveHist(histNome(cat, r, r.produto || "Produto"), v, p && p.code);
   }
   if (p) c.append(fonte(p.code, p.data && p.data._lido, cat));
   return c;
@@ -802,15 +811,15 @@ function trocaBox(p){
 }
 function showOne(r, p){
   result.innerHTML = ""; const c = cartao(r, p), st = c.querySelector(".stamp");
-  if (st && p && p.data && r._cat === "alimento" && vOk(r.veredito) !== "comprar" && Troca.categoriaDe(p.data)) (c.querySelector(".summary") || st).after(trocaBox(p));
-  result.append(c, againBtn()); show();
+  if (st && p && p.data && r._cat === "alimento" && Troca.categoriaDe(p.data)) (c.querySelector(".summary") || st).after(trocaBox(p));
+  result.append(againBtn(), c); show();
 }
 // Comparar 2 só dentro da mesma categoria; remédio não compara: mostra o card de cada um.
 function showCards(rs, ps, nota){
   result.innerHTML = "";
-  result.append(el("p","summary",nota));
+  result.append(againBtn(), el("p","summary",nota));
   rs.forEach((r, i) => result.append(cartao(r, ps[i])));
-  result.append(againBtn()); show();
+  show();
 }
 
 function showTwo(r, cat){
@@ -837,23 +846,33 @@ function showTwo(r, cat){
       c.append(el("div","stamp " + v, LABEL[v]));
       if (p.produto) c.append(nomeCom(cat, null, p.produto));
       if (p.resumo) c.append(el("p","summary",p.resumo));
-      saveHist(histNome(cat, null, p.produto || ("Produto " + t)), v);
+      saveHist(histNome(cat, null, p.produto || ("Produto " + t)), v, prod[t] && prod[t].code);
     }
     vs.append(c);
   });
-  result.append(top, vs, againBtn()); show();
+  result.append(againBtn(), top, vs); show();
 }
 
-function saveHist(name, v){
-  const h = store("hist") || [];
-  h.unshift({name: String(name).slice(0,60), v});
+// Com código, o item volta a ser tocável (reabre o veredito); reabrir o mesmo sobe ele pro topo, sem duplicar.
+function saveHist(name, v, code){
+  code = String(code || "").replace(/\D/g, "");
+  const h = (store("hist") || []).filter(x => !code || x.code !== code);
+  h.unshift(code ? {name: String(name).slice(0,60), v, code} : {name: String(name).slice(0,60), v});
   store("hist", h.slice(0,12)); renderHist();
 }
 function renderHist(){
   const h = store("hist") || [];
   $("#hist").classList.toggle("hidden", !h.length);
   const ul = $("#histList"); ul.innerHTML = "";
-  h.forEach(x => { const li = el("li"); li.append(el("span",null,x.name), el("span","dot "+x.v, LABEL[x.v]||"")); ul.append(li); });
+  h.forEach(x => {
+    const li = el("li"), alvo = x.code ? el("button","trocal") : li;
+    alvo.append(el("span",null,x.name), el("span","dot "+x.v, LABEL[x.v]||""));
+    if (x.code){
+      alvo.onclick = () => { if (mode !== "one") setMode("one"); result.classList.add("hidden"); window.scrollTo({top:0,behavior:suave()}); setCode("A", x.code, true); };
+      li.append(alvo);
+    }
+    ul.append(li);
+  });
 }
 $("#clearHist").onclick = () => { store("hist", []); renderHist(); };
 renderHist();

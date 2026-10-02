@@ -219,6 +219,12 @@ describe("Leva ou não? no navegador", { concurrency: true }, () => {
     await page.reload({ waitUntil: "load" });
     assert.equal(await page.locator("#hist").isVisible(), true);
     assert.deepEqual(await page.locator("#histList li").allInnerTexts(), antes, "histórico igual depois do reload");
+    await page.click("#histList li:nth-child(2) button");   // tocar no que já leu reabre o veredito
+    await page.locator("#result:not(.hidden) .card").first().waitFor();
+    assert.equal(await page.locator("#result .stamp").first().textContent(), "Deixa na prateleira");
+    const depois = await page.locator("#histList li").allInnerTexts();
+    assert.equal(depois.length, 2, "reabrir não duplica");
+    assert.match(depois[0], /Nescau 2\.0/, "reaberto sobe pro topo");
     await page.click("#clearHist");
     assert.equal(await page.locator("#hist").isHidden(), true);
     await fim();
