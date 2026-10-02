@@ -190,6 +190,7 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:1}
 .src a{color:var(--gold-l)}
 .cat{margin-right:.3em} .info li{padding-left:0} .info small{display:block;color:var(--muted);font-size:.8rem}
 .ler{margin-top:4px}
+[data-found] .again{margin:var(--s1) 0 0}
 .ler-t{margin:0 0 8px;color:var(--ink2);font-size:.95rem}
 .ler-ta{width:100%;min-height:96px;padding:12px;border-radius:var(--r-md);border:2px solid var(--gold-t);background:var(--campo);color:var(--ink);font:inherit;font-size:16px;resize:vertical}
 .ler-btn{position:relative;flex-direction:row;margin-top:10px;min-height:56px;padding:var(--s2) var(--s4);border-radius:var(--r-lg);font-size:1.3rem}
@@ -453,7 +454,14 @@ function renderSlot(k){
   const x = el("button","x","×"); x.setAttribute("aria-label","Trocar produto"); x.onclick = () => { prod[k] = null; renderSlot(k); render(); };
   f.append(x); box.append(f);
   const cat = p.data && p.data._categoria;
-  if (cat !== "remedio" && (p.status === "miss" || (p.status === "ok" && semIngredientes(p.data)))) box.append(painelLeitura(k, p));
+  const semBase = cat !== "remedio" && (p.status === "miss" || (p.status === "ok" && semIngredientes(p.data)));
+  if (semBase) box.append(painelLeitura(k, p));
+  // sem cadastro/sem rede: "Analisar outro" ali mesmo, sem caçar o × pra ler o próximo
+  if (semBase || p.status === "erro"){
+    const o = el("button","again","Analisar outro");
+    o.onclick = () => { prod[k] = null; const i = document.querySelector(`[data-code="${k}"]`); if (i) i.value = ""; renderSlot(k); render(); window.scrollTo({top:0,behavior:suave()}); };
+    box.append(o);
+  }
 }
 
 /* ---------- ler ingredientes do rótulo (sem IA, de graça) ----------
