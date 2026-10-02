@@ -146,7 +146,7 @@ button:focus-visible,summary:focus-visible,a:focus-visible,.alt input:focus-visi
 .vs .stamp{flex-direction:column;gap:6px;text-align:center;margin:var(--s2) calc(-1 * var(--pad)) var(--s3);padding:14px 8px 10px;font-size:1.4rem}
 .vs .pname{font-size:.98rem}
 .vs .summary{font-size:.92rem;margin:0}
-.again{width:100%;min-height:48px;border:2px solid var(--edge);border-radius:var(--r-lg);padding:10px;font:inherit;font-size:1rem;font-weight:700;background:transparent;color:var(--ink);cursor:pointer;margin-top:var(--s1)}
+.again{width:100%;min-height:48px;border:2px solid var(--edge);border-radius:var(--r-lg);padding:10px;font:inherit;font-size:1rem;font-weight:700;background:transparent;color:var(--ink);cursor:pointer;margin-bottom:var(--s1)}
 .hist{margin-top:var(--s5)}
 .hist h2{font-family:"Bebas Neue",sans-serif;font-weight:400;letter-spacing:.08em;color:var(--gold-t);font-size:1.3rem;margin:0 0 var(--s2)}
 .hist ul{list-style:none;margin:0;padding:0 var(--s3);background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--sh)}
@@ -804,14 +804,14 @@ function trocaBox(p){
 function showOne(r, p){
   result.innerHTML = ""; const c = cartao(r, p), st = c.querySelector(".stamp");
   if (st && p && p.data && r._cat === "alimento" && Troca.categoriaDe(p.data)) (c.querySelector(".summary") || st).after(trocaBox(p));
-  result.append(c, againBtn()); show();
+  result.append(againBtn(), c); show();
 }
 // Comparar 2 só dentro da mesma categoria; remédio não compara: mostra o card de cada um.
 function showCards(rs, ps, nota){
   result.innerHTML = "";
-  result.append(el("p","summary",nota));
+  result.append(againBtn(), el("p","summary",nota));
   rs.forEach((r, i) => result.append(cartao(r, ps[i])));
-  result.append(againBtn()); show();
+  show();
 }
 
 function showTwo(r, cat){
@@ -842,7 +842,7 @@ function showTwo(r, cat){
     }
     vs.append(c);
   });
-  result.append(top, vs, againBtn()); show();
+  result.append(againBtn(), top, vs); show();
 }
 
 // Com código, o item volta a ser tocável (reabre o veredito); reabrir o mesmo sobe ele pro topo, sem duplicar.
