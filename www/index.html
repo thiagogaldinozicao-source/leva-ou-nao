@@ -65,6 +65,7 @@
     --sh:0 1px 2px color-mix(in srgb,var(--preto) 5%,transparent),0 14px 32px -16px color-mix(in srgb,var(--preto) 22%,transparent); }
 }
 *,*::before,*::after{box-sizing:border-box}
+html,body{overflow-x:hidden;overflow-x:clip}   /* iPhone: trava o arrasto pro lado (tela "dançando") */
 html{background:var(--bg);scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"Barlow",system-ui,-apple-system,sans-serif;
   font-size:17px;line-height:1.45;-webkit-font-smoothing:antialiased;
@@ -76,7 +77,7 @@ header{margin-bottom:var(--s3);padding-right:calc(var(--alvo) + var(--s2))}
 h1{font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:2.2rem;line-height:1;letter-spacing:.04em;white-space:nowrap;color:var(--gold-t);margin:0}
 header p{margin:2px 0 0;color:var(--muted);font-size:.9rem;line-height:1.3}
 .sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
-.tabs{display:grid;grid-template-columns:1fr 1fr;gap:var(--s1);background:var(--card2);padding:3px;border-radius:var(--r-md);box-shadow:inset 0 0 0 1px var(--line);margin-bottom:var(--s3)}
+.tabs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--s1);background:var(--card2);padding:3px;border-radius:var(--r-md);box-shadow:inset 0 0 0 1px var(--line);margin-bottom:var(--s3)}
 .tabs button{font:inherit;font-size:.95rem;font-weight:700;border:0;border-radius:var(--r-sm);padding:6px;min-height:38px;background:transparent;color:var(--muted);cursor:pointer}
 .tabs button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}   /* aba ativa invertida: o ouro fica só pra ação */
 .slot{margin-bottom:var(--s3)}
@@ -151,9 +152,10 @@ button:focus-visible,summary:focus-visible,a:focus-visible,.alt input:focus-visi
 .hist h2{font-family:"Bebas Neue",sans-serif;font-weight:400;letter-spacing:.08em;color:var(--gold-t);font-size:1.3rem;margin:0 0 var(--s2)}
 .hist ul{list-style:none;margin:0;padding:0 var(--s3);background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--sh)}
 .hist li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;min-height:var(--alvo);border-top:1px solid var(--line)}
+.hist li>*{min-width:0;overflow-wrap:anywhere}
 .hist li:first-child{border-top:0}
 .hist li .trocal{border-top:0;padding:0;min-height:var(--alvo)}
-.tabs3{grid-template-columns:repeat(3,1fr);margin-bottom:var(--s2)}
+.tabs3{grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:var(--s2)}
 .hist li .x{flex:none;display:grid;place-items:center;min-width:var(--alvo);min-height:var(--alvo);margin-right:calc(-1 * var(--s2));background:none;border:0;color:var(--muted);font-size:1.4rem;cursor:pointer;padding:0}
 .hist li .manual{flex:1}
 .hist-vazio{color:var(--muted);font-size:.9rem;margin:0 0 var(--s1)}
