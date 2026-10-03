@@ -153,6 +153,10 @@ button:focus-visible,summary:focus-visible,a:focus-visible,.alt input:focus-visi
 .hist li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;min-height:var(--alvo);border-top:1px solid var(--line)}
 .hist li:first-child{border-top:0}
 .hist li .trocal{border-top:0;padding:0;min-height:var(--alvo)}
+.tabs3{grid-template-columns:repeat(3,1fr);margin-bottom:var(--s2)}
+.hist li .x{flex:none;display:grid;place-items:center;min-width:var(--alvo);min-height:var(--alvo);margin-right:calc(-1 * var(--s2));background:none;border:0;color:var(--muted);font-size:1.4rem;cursor:pointer;padding:0}
+.hist li .manual{flex:1}
+.hist-vazio{color:var(--muted);font-size:.9rem;margin:0 0 var(--s1)}
 /* mini-carimbo (histórico e trocas): mesma cor e mesmo ✓/!/✕ da faixa, em tamanho de etiqueta */
 .dot{flex:none;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:1.1rem;letter-spacing:.06em;line-height:1;
   padding:5px 9px 3px;border:2px solid currentColor;border-radius:var(--s2);color:var(--v);background:var(--v-bg);transform:rotate(-2deg)}
@@ -288,8 +292,15 @@ dialog.sobre:not([open]){display:none}
   <p id="aviso" class="sr" aria-live="polite"></p>
 
   <section class="hist hidden" id="hist">
-    <h2>Últimos que você olhou</h2>
+    <h2>Seus produtos</h2>
+    <div class="tabs tabs3" role="group" aria-label="Lista">
+      <button data-aba="rec" aria-pressed="true">Recentes</button>
+      <button data-aba="comprar" aria-pressed="false">Pode levar</button>
+      <button data-aba="moderacao" aria-pressed="false">Moderação</button>
+    </div>
     <ul id="histList"></ul>
+    <p class="hist-vazio hidden" id="histVazio"></p>
+    <form class="alt hidden" id="favAdd"><input id="favTxt" maxlength="40" placeholder="+ fruta, verdura…" aria-label="Adicionar item sem código de barras"><button aria-label="Adicionar">＋</button></form>
     <button class="clear" id="clearHist">Limpar lista</button>
   </section>
 
@@ -854,26 +865,59 @@ function showTwo(r, cat){
 }
 
 // Com código, o item volta a ser tocável (reabre o veredito); reabrir o mesmo sobe ele pro topo, sem duplicar.
+/* Seus produtos: Recentes (últimos 12) + listas que ficam: Pode levar e Moderação (até 100 cada, sem repetir).
+   Entram sozinhos pelo veredito; se o veredito mudar, o produto muda de lista (Deixa = sai). Tudo só no aparelho. */
+const FAV_MAX = 100;
+let aba = "rec";
 function saveHist(name, v, code){
   code = String(code || "").replace(/\D/g, "");
+  name = String(name).slice(0,60);
   const h = (store("hist") || []).filter(x => !code || x.code !== code);
-  h.unshift(code ? {name: String(name).slice(0,60), v, code} : {name: String(name).slice(0,60), v});
-  store("hist", h.slice(0,12)); renderHist();
+  h.unshift(code ? {name, v, code} : {name, v});
+  store("hist", h.slice(0,12));
+  if (code){
+    const f = (store("fav") || []).filter(x => x.code !== code);
+    if (v === "comprar" || v === "moderacao") f.unshift({name, v, code});
+    store("fav", ["comprar","moderacao"].flatMap(k => f.filter(x => x.v === k).slice(0, FAV_MAX)));
+  }
+  renderHist();
 }
+function abrirHist(code){ if (mode !== "one") setMode("one"); result.classList.add("hidden"); window.scrollTo({top:0,behavior:suave()}); setCode("A", code, true); }
 function renderHist(){
-  const h = store("hist") || [];
-  $("#hist").classList.toggle("hidden", !h.length);
-  const ul = $("#histList"); ul.innerHTML = "";
-  h.forEach(x => {
-    const li = el("li"), alvo = x.code ? el("button","trocal") : li;
-    alvo.append(el("span",null,x.name), el("span","dot "+x.v, LABEL[x.v]||""));
+  const h = store("hist") || [], f = store("fav") || [];
+  $("#hist").classList.toggle("hidden", !h.length && !f.length);
+  document.querySelectorAll("[data-aba]").forEach(b => b.setAttribute("aria-pressed", b.dataset.aba === aba));
+  const lista = aba === "rec" ? h : f.filter(x => x.v === aba);
+  const ul = $("#histList"); ul.innerHTML = ""; ul.classList.toggle("hidden", !lista.length);
+  lista.forEach(x => {
+    const li = el("li");
     if (x.code){
-      alvo.onclick = () => { if (mode !== "one") setMode("one"); result.classList.add("hidden"); window.scrollTo({top:0,behavior:suave()}); setCode("A", x.code, true); };
-      li.append(alvo);
+      const b = el("button","trocal"); b.append(el("span",null,x.name), el("span","dot "+x.v, LABEL[x.v]||""));
+      b.onclick = () => abrirHist(x.code); li.append(b);
+    } else if (x.manual) li.append(el("span","manual",x.name));
+    else li.append(el("span",null,x.name), el("span","dot "+x.v, LABEL[x.v]||""));
+    if (aba !== "rec"){
+      const tira = el("button","x","×"); tira.setAttribute("aria-label","Tirar " + x.name + " da lista");
+      tira.onclick = () => { store("fav", (store("fav") || []).filter(y => y !== x && !(y.code ? y.code === x.code : y.manual && y.name === x.name && y.v === x.v))); renderHist(); };
+      li.append(tira);
     }
     ul.append(li);
   });
+  const vazio = $("#histVazio");
+  vazio.classList.toggle("hidden", !!lista.length);
+  vazio.textContent = aba === "comprar" ? "O que der Pode levar entra aqui sozinho." : aba === "moderacao" ? "O que der Com moderação entra aqui sozinho." : "";
+  $("#favAdd").classList.toggle("hidden", aba !== "comprar");
+  $("#clearHist").classList.toggle("hidden", aba !== "rec" || !h.length);
 }
+document.querySelectorAll("[data-aba]").forEach(b => b.onclick = () => { aba = b.dataset.aba; renderHist(); });
+$("#favAdd").onsubmit = e => {
+  e.preventDefault();
+  const t = $("#favTxt").value.trim().slice(0,40); if (!t) return;
+  const f = (store("fav") || []).filter(x => !(x.manual && nrm(x.name) === nrm(t)));
+  f.unshift({name: t, v: "comprar", manual: true});
+  store("fav", ["comprar","moderacao"].flatMap(k => f.filter(x => x.v === k).slice(0, FAV_MAX)));
+  $("#favTxt").value = ""; renderHist();
+};
 $("#clearHist").onclick = () => { store("hist", []); renderHist(); };
 renderHist();
 
