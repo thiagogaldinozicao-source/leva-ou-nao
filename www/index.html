@@ -472,7 +472,7 @@ function renderSlot(k){
   // sem cadastro/sem rede: "Analisar outro" ali mesmo, sem caçar o × pra ler o próximo
   if (semBase || p.status === "erro"){
     const o = el("button","again","Analisar outro");
-    o.onclick = () => { prod[k] = null; const i = document.querySelector(`[data-code="${k}"]`); if (i) i.value = ""; renderSlot(k); render(); window.scrollTo({top:0,behavior:suave()}); };
+    o.onclick = () => { prod[k] = null; const i = document.querySelector(`[data-code="${k}"]`); if (i) i.value = ""; renderSlot(k); render(); window.scrollTo({top:0,behavior:suave()}); abrirScanner(k); };
     box.append(o);
   }
 }
@@ -691,7 +691,7 @@ function el(tag, cls, text){ const e = document.createElement(tag); if(cls) e.cl
 function list(arr, cls){ if (!Array.isArray(arr) || !arr.length) return null; const ul = el("ul","list "+cls); arr.forEach(t => ul.append(el("li",null,String(t)))); return ul; }
 function againBtn(){
   const b = el("button","again","Analisar outro");
-  b.onclick = () => { clearPhotos(); result.classList.add("hidden"); statusEl.textContent = ""; render(); window.scrollTo({top:0,behavior:suave()}); };
+  b.onclick = () => { clearPhotos(); result.classList.add("hidden"); statusEl.textContent = ""; render(); window.scrollTo({top:0,behavior:suave()}); abrirScanner("A"); };
   return b;
 }
 // Leitor de tela ouve só o veredito + produto (não o cartão inteiro): o resto fica na ordem de leitura logo depois do botão.
