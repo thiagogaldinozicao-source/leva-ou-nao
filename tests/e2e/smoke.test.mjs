@@ -20,7 +20,7 @@ const T = { timeout: 30000 };
 const AXE = createRequire(import.meta.url).resolve("axe-core/axe.min.js");
 
 let browser, srv;
-before(async () => { [browser, srv] = await Promise.all([chromium.launch(), sobe()]); });
+before(async () => { [browser, srv] = await Promise.all([chromium.launch({ args: ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream"] }), sobe()]); });
 after(async () => { await browser?.close(); await srv?.desce(); });
 
 // Contexto + página com os vigias de console/CSP. `permitido` = regex de erro de console esperado NAQUELE teste.
@@ -68,7 +68,13 @@ async function analisa(page, code) {
   await page.locator("#result:not(.hidden) .card").first().waitFor();
   return page.locator("#result .stamp").first().textContent();
 }
-const outro = page => page.click("#result .again");
+// "Analisar outro" já abre a câmera (câmera falsa do Chromium): confere e fecha pra seguir digitando.
+async function outro(page) {
+  await page.click("#result .again");
+  await page.locator("#scanner:not(.hidden)").waitFor();
+  await page.click("#scanClose");
+  await page.locator("#scanner.hidden").waitFor({ state: "attached" });
+}
 const textoResult = page => page.locator("#result").innerText();
 
 describe("Leva ou não? no navegador", { concurrency: true }, () => {
