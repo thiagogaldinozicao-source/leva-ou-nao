@@ -190,7 +190,24 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:1}
 #scanner .box{position:absolute;left:10%;right:10%;top:38%;height:22%;border:3px solid var(--gold);border-radius:16px;box-shadow:0 0 0 9999px rgba(0,0,0,.45)}
 #scanner .bar{position:absolute;left:0;right:0;bottom:0;padding:36px max(16px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:10px;align-items:center;background:linear-gradient(to top,rgba(0,0,0,.85) 60%,rgba(0,0,0,0))}
 #scanner .bar p{margin:0;color:var(--branco);text-align:center;max-width:420px}
-#scanner .bar button{width:100%;max-width:420px;min-height:var(--alvo);padding:15px;border-radius:var(--r-md);border:1px solid rgba(255,255,255,.5);background:var(--preto);color:var(--branco);font:inherit;font-weight:700}
+#scanner .acoes{display:flex;gap:10px;width:100%;max-width:420px;justify-content:center}
+#scanner .bar button{flex:1;min-height:var(--alvo);padding:15px;border-radius:var(--r-md);border:1px solid rgba(255,255,255,.5);background:var(--preto);color:var(--branco);font:inherit;font-weight:700}
+#scanTorch{flex:none !important;width:var(--alvo);padding:0 !important;font-size:1.3rem}
+#scanTorch[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:var(--preto)}
+/* leu um produto: a câmera encolhe pro topo e fica ligada; o veredito aparece embaixo e o próximo código já lê direto */
+:root{--cam:clamp(200px,38vh,360px)}
+#scanner.meio{inset:0 0 auto 0;height:var(--cam);overflow:hidden;border-bottom:1px solid rgba(255,255,255,.18)}
+#scanner.meio .box{top:30%;height:38%;left:14%;right:14%;border-width:2px}
+#scanner.meio .bar{flex-direction:row;align-items:center;gap:8px;padding:28px 12px 10px}
+#scanner.meio .bar p{flex:1;text-align:left;font-size:.85rem;line-height:1.25}
+#scanner.meio .acoes{width:auto;max-width:none}
+#scanner.meio .bar button{flex:none;min-height:40px;width:40px;padding:0;border-radius:50%;font-size:1.1rem}
+#scanner.meio #scanClose span{display:none}
+#scanner.meio #scanClose::before{content:"✕"}
+body.meio main{padding-top:calc(var(--cam) + var(--s2))}
+body.meio .res{scroll-margin-top:calc(var(--cam) + var(--s2))}
+body.meio .sobre-btn{top:calc(var(--cam) + var(--s3) - 4px)}
+body.meio #result > .again{display:none}   /* câmera já tá ligada ali em cima: é só apontar pro próximo */
 .prodimg{float:right;width:60px;height:60px;object-fit:contain;background:var(--branco);border-radius:var(--r-md);box-shadow:0 0 0 1px var(--line);margin:0 0 6px 10px}
 .src{font-size:.8rem;color:var(--muted);margin-top:10px}
 .src a{color:var(--gold-l)}
@@ -312,7 +329,7 @@ dialog.sobre:not([open]){display:none}
 <div id="scanner" class="hidden" role="dialog" aria-label="Leitor de código de barras">
   <video id="cam" playsinline muted autoplay></video>
   <div class="box" aria-hidden="true"></div>
-  <div class="bar"><p id="scanMsg">Aponte pro código de barras</p><button id="scanClose">Cancelar</button></div>
+  <div class="bar"><p id="scanMsg">Aponte pro código de barras</p><div class="acoes"><button id="scanTorch" class="hidden" aria-label="Lanterna" aria-pressed="false">🔦</button><button id="scanClose"><span>Cancelar</span></button></div></div>
 </div>
 <dialog id="sobre" class="sobre" aria-labelledby="sobreTit">
   <div class="sobre-corpo">
@@ -472,7 +489,7 @@ function renderSlot(k){
   // sem cadastro/sem rede: "Analisar outro" ali mesmo, sem caçar o × pra ler o próximo
   if (semBase || p.status === "erro"){
     const o = el("button","again","Analisar outro");
-    o.onclick = () => { prod[k] = null; const i = document.querySelector(`[data-code="${k}"]`); if (i) i.value = ""; renderSlot(k); render(); window.scrollTo({top:0,behavior:suave()}); abrirScanner(k); };
+    o.onclick = () => { prod[k] = null; const i = document.querySelector(`[data-code="${k}"]`); if (i) i.value = ""; renderSlot(k); render(); window.scrollTo({top:0,behavior:suave()}); if (rodando) encolher(false); else abrirScanner(k); };
     box.append(o);
   }
 }
@@ -600,15 +617,22 @@ let stream = null, rodando = false, alvo = null, tDica = null;
 function fecharScanner(){
   rodando = false; clearTimeout(tDica);
   if (stream){ stream.getTracks().forEach(t => t.stop()); stream = null; }
-  video.srcObject = null; $("#scanner").classList.add("hidden");
+  video.srcObject = null; $("#scanner").classList.add("hidden"); encolher(false);
+  $("#scanTorch").classList.add("hidden"); $("#scanTorch").setAttribute("aria-pressed","false");
 }
-async function abrirScanner(k, auto){
+// câmera no topo (meio) ou tela inteira
+function encolher(sim){ $("#scanner").classList.toggle("meio", !!sim); document.body.classList.toggle("meio", !!sim); }
+let tr = null, ultimo = { code: null, t: 0 };
+async function abrirScanner(k, auto, meio){
   if (!nativo && !ZW){ statusEl.className = "status warn"; statusEl.textContent = "Leitor não carregou. Digita o número do código."; return; }
-  alvo = k; $("#scanMsg").textContent = "Aponte pro código de barras"; $("#scanner").classList.remove("hidden");
+  alvo = k; $("#scanMsg").textContent = "Aponte pro código de barras"; $("#scanner").classList.remove("hidden"); encolher(meio);
   try{
     stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } } });
-    const tr = stream.getVideoTracks()[0];
+    tr = stream.getVideoTracks()[0];
     try { await tr.applyConstraints({ advanced: [{ focusMode: "continuous" }] }); } catch (e) {}
+    // lanterna: só onde a câmera tem (Android); no iPhone o Safari não deixa
+    let caps = {}; try { caps = tr.getCapabilities ? tr.getCapabilities() : {}; } catch (e) {}
+    $("#scanTorch").classList.toggle("hidden", !caps.torch);
     video.srcObject = stream; await video.play();
   }catch(e){
     fecharScanner(); if (auto) return;   // abertura sozinha: sem câmera, fica quieto na tela
@@ -633,7 +657,17 @@ async function abrirScanner(k, auto){
       cx.drawImage(video, sx, sy, sw, sh, 0, 0, cv.width, cv.height);
       try{
         const code = await detectar(cv);
-        if (code && rodando){ Sons.bipe(); fecharScanner(); setCode(alvo, code, true); return; }
+        if (code && rodando){
+          const agora = Date.now(), mesmo = prod[alvo] && prod[alvo].code === code;
+          if (mesmo || (code === ultimo.code && agora - ultimo.t < 4000)){ ultimo = { code, t: agora }; }   // mesmo produto na frente da câmera: não analisa de novo
+          else {
+            ultimo = { code, t: agora }; Sons.bipe();
+            if (mode === "one"){ encolher(true); $("#scanMsg").textContent = "Aponte pro próximo código"; clearTimeout(tDica); }
+            else { fecharScanner(); }
+            setCode(alvo, code, true);
+            if (!rodando) return;
+          }
+        }
       }catch(e){}
     }
     setTimeout(passo, 60);
@@ -641,6 +675,10 @@ async function abrirScanner(k, auto){
   passo();
 }
 $("#scanClose").onclick = fecharScanner;
+$("#scanTorch").onclick = async () => {
+  const b = $("#scanTorch"), liga = b.getAttribute("aria-pressed") !== "true";
+  try { await tr.applyConstraints({ advanced: [{ torch: liga }] }); b.setAttribute("aria-pressed", String(liga)); } catch (e) {}
+};
 // desliga a câmera se o app for pra segundo plano (não fica com a câmera ligada à toa)
 document.addEventListener("visibilitychange", () => { if (document.hidden && rodando) fecharScanner(); });
 // botão voltar do Android: fecha o leitor, depois o resultado, e só então sai do app
@@ -658,7 +696,11 @@ if (NO_APP){
 }
 document.querySelectorAll("[data-scan]").forEach(b => b.onclick = () => abrirScanner(b.dataset.scan));
 // abriu o app (ou voltou pra ele) na tela inicial: já abre o leitor, sem precisar tocar (fora de teste automatizado)
-const abreSozinho = () => { if (!navigator.webdriver && !rodando && !prod.A && result.classList.contains("hidden") && !sobreAberto()) abrirScanner("A", true); };
+const abreSozinho = () => {
+  if (navigator.webdriver || rodando || sobreAberto() || mode !== "one") return;
+  if (!prod.A && result.classList.contains("hidden")) abrirScanner("A", true);
+  else if (prod.A && !result.classList.contains("hidden")) abrirScanner("A", true, true);
+};
 setTimeout(abreSozinho, 300);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) abreSozinho(); });
 document.querySelectorAll("[data-photo]").forEach(inp => inp.onchange = async () => {
@@ -679,6 +721,7 @@ function setMode(m){
   $("#tabOne").setAttribute("aria-pressed", m === "one");
   $("#tabTwo").setAttribute("aria-pressed", m === "two");
   $("#slotB").classList.toggle("hidden", m === "one");
+  if (m === "two" && rodando) fecharScanner();   // comparar usa a tela toda
   $("#slotATitle").textContent = m === "one" ? "Produto" : "Produto A";
   result.classList.add("hidden"); statusEl.textContent = "";
   render();
@@ -696,7 +739,7 @@ function el(tag, cls, text){ const e = document.createElement(tag); if(cls) e.cl
 function list(arr, cls){ if (!Array.isArray(arr) || !arr.length) return null; const ul = el("ul","list "+cls); arr.forEach(t => ul.append(el("li",null,String(t)))); return ul; }
 function againBtn(){
   const b = el("button","again","Analisar outro");
-  b.onclick = () => { clearPhotos(); result.classList.add("hidden"); statusEl.textContent = ""; render(); window.scrollTo({top:0,behavior:suave()}); abrirScanner("A"); };
+  b.onclick = () => { clearPhotos(); result.classList.add("hidden"); statusEl.textContent = ""; render(); window.scrollTo({top:0,behavior:suave()}); if (rodando) encolher(false); else abrirScanner("A"); };
   return b;
 }
 // Leitor de tela ouve só o veredito + produto (não o cartão inteiro): o resto fica na ordem de leitura logo depois do botão.
